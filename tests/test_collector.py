@@ -239,6 +239,29 @@ class CollectorTests(unittest.TestCase):
         self.assertTrue(result['full_scan'])
         self.assertEqual(result['transaction_count'], 2)
 
+    def test_periodic_backstop_does_not_repage_the_whole_retention_window(self):
+        previous = collect_category(SequenceClient([page([raw('known', hours=1)])]), CAT, {}, NOW)
+        self.assertTrue(previous['history_complete'])
+        previous['last_full_scan_at'] = c.stamp(NOW - timedelta(hours=7))
+        client = SequenceClient([page([raw('known', hours=1)], 'n1'),
+                                 page([raw('deep', hours=c.BACKSTOP_HOURS + 2)], 'n2'),
+                                 page([raw('deeper', hours=100)], 'n3')])
+        result = collect_category(client, CAT, previous, NOW)
+        self.assertTrue(result['full_scan'])
+        self.assertEqual(result['stop_reason'], f'backstop_{c.BACKSTOP_HOURS:g}h')
+        self.assertEqual(len(client.calls), 2)
+
+    def test_cache_that_never_completed_history_still_pages_to_the_boundary(self):
+        first = collect_category(SequenceClient([page([raw('a')], 'next'), c.ApiError('outage')]), CAT, {}, NOW)
+        self.assertFalse(first['history_complete'])
+        client = SequenceClient([page([raw('a')], 'n1'),
+                                 page([raw('mid', hours=c.BACKSTOP_HOURS + 2)], 'n2'),
+                                 page([raw('old', hours=RETAINED_PAST)], 'n3')])
+        result = collect_category(client, CAT, first, NOW)
+        self.assertEqual(result['stop_reason'], 'retention_boundary')
+        self.assertEqual(len(client.calls), 3)
+        self.assertTrue(result['history_complete'])
+
     def test_failed_call_preserves_good_cache_but_expires_stale_row(self):
         previous = {'transactions': [self.normalized('fresh'), self.normalized('old', hours=RETAINED_PAST)],
                     'history_complete': True, 'last_full_scan_at': c.stamp(NOW), 'last_success_at': c.stamp(NOW)}

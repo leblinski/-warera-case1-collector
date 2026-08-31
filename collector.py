@@ -39,6 +39,12 @@ PRIMARY_HOURS = 24
 # full_rescan_interval_hours is the real backstop.
 OVERLAP_HOURS = 0.5
 FULL_RESCAN_HOURS = 6
+# How deep the periodic backstop re-reads. It exists to recover records that arrived late
+# and the overlap missed, not to rebuild the cache: the retained week accumulates forward
+# and re-paging it costs about 62 pages per hour of history, so the full window is several
+# thousand pages and cannot complete in one run. Six times the incremental overlap is far
+# beyond the upstream scrape delay of five seconds.
+BACKSTOP_HOURS = 3
 RECENCY_HALF_LIFE_HOURS = 12
 MIN_PRIMARY_COMPS = 3
 
@@ -308,8 +314,15 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
     known = {txid for rows in kept.values() for txid in rows}
     checkpoints = [row.get("last_success_at") for row in old.values()]
     checkpoint = min(checkpoints, key=parse_time) if all(checkpoints) else None
-    full_scan = any(not row.get("history_complete") or not row.get("last_full_scan_at")
-                    or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=FULL_RESCAN_HOURS) for row in old.values())
+    # A cache that has never reached the boundary has to page all the way there. A cache
+    # that already has must not: re-reading the whole retention window every six hours is
+    # what made the scan unable to finish inside any sane time budget.
+    never_complete = any(not row.get("history_complete") for row in old.values())
+    periodic = any(not row.get("last_full_scan_at")
+                   or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=FULL_RESCAN_HOURS)
+                   for row in old.values())
+    full_scan = never_complete or periodic
+    deep_floor = cutoff if never_complete else max(cutoff, now - timedelta(hours=BACKSTOP_HOURS))
     overlap_cutoff = max(cutoff, parse_time(checkpoint) - timedelta(hours=OVERLAP_HOURS)) if checkpoint else cutoff
     cursor = None
     seen_cursors = set()
@@ -347,6 +360,8 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
                 stop = "retention_boundary"
             elif not next_cursor:
                 stop = "end_of_history"
+            elif full_scan and oldest is not None and oldest < deep_floor - timedelta(seconds=1):
+                stop = f"backstop_{BACKSTOP_HOURS:g}h"
             elif not full_scan and reached_known and oldest is not None and oldest < overlap_cutoff - timedelta(seconds=1):
                 stop = f"known_history_with_{OVERLAP_HOURS:g}h_overlap"
             if stop:
@@ -367,7 +382,8 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
             **category, "status": "error" if error else "ok", "error": error,
             "attempted_at": stamp(now), "last_success_at": old[code].get("last_success_at") if error else stamp(now),
             "last_full_scan_at": old[code].get("last_full_scan_at") if error or not full_scan else stamp(now),
-            "history_complete": bool(old[code].get("history_complete")) if error else True,
+            "history_complete": bool(old[code].get("history_complete"))
+                                if error or stop not in ("retention_boundary", "end_of_history") else True,
             "pages_fetched": pages, "stop_reason": stop, "full_scan": full_scan,
             "new_transaction_count": len(set(kept[code]) - known), "transaction_count": len(rows),
             "quality_issue_count": sum(bool(tx["quality_issues"]) for tx in rows),
@@ -519,6 +535,7 @@ def collect(client, previous=None, now=None, max_pages=1000):
                    "primary_hours": PRIMARY_HOURS, "min_primary_comps": MIN_PRIMARY_COMPS,
                    "full_condition_only": True, "recency_half_life_hours": RECENCY_HALF_LIFE_HOURS,
                    "incremental_overlap_hours": OVERLAP_HOURS, "full_rescan_interval_hours": FULL_RESCAN_HOURS,
+                   "backstop_hours": BACKSTOP_HOURS,
                    "scan_mode": "shared_itemMarket_stream"},
         "health": {"category_count": 36, "categories_ok": 36 - len(failed), "failed_categories": failed,
                    "failed_commodities": failed_inputs, "quality_issue_count": quality_issues,

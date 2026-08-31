@@ -92,8 +92,15 @@ rolling window, so a fresh cache reaches full depth only after running for a wee
 
 Incremental runs revisit 30 minutes before the previous successful checkpoint to capture
 delayed ingestion. The upstream Gateway scrapes every 5 seconds, so this is several hundred
-times the expected delay; a full scan every six hours is the real backstop, and it recovers
-anything the overlap missed.
+times the expected delay; a backstop scan every six hours recovers anything the overlap
+missed, reading 3 hours deep rather than stopping at the first record it already has.
+
+That backstop is deliberately bounded. Re-reading the whole retention window costs roughly
+62 pages per hour of history, so a week is several thousand pages and cannot complete in one
+run - and a scan that runs out of time never advances `last_full_scan_at`, which makes the
+next run attempt the same impossible scan again. The retained week is built by accumulating
+forward, not by re-paging, so only a cache that has never reached the boundary pages all the
+way to it.
 
 Each cached sale stores only the fields that come straight from the API: stable transaction
 ID, sale timestamp, seller/buyer IDs, offer timestamp, money, quantity, exact `skills` and
