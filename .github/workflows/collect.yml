@@ -3,7 +3,9 @@ name: Collect WarEra Case I market
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    # Every 10 minutes: 6 Pages deployments an hour, inside the ~10/hour soft limit.
+    # */5 would be 12/hour and over it, and GitHub drops short-interval schedules first.
+    - cron: '*/10 * * * *'
   push:
     branches: [main]
     paths:
@@ -14,6 +16,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: warera-case1-collector-main
@@ -23,6 +27,9 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 14
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,16 +50,27 @@ jobs:
         id: validate
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
         run: python collector.py --validate
-      - name: Commit updated rolling cache
+      # The rolling state file and the write-once archive are committed; the served
+      # artifacts under public/ are not, which is what keeps repository growth flat.
+      - name: Commit rolling cache and archive
         if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/warera_case1_market.json
+          git add data/warera_case1_market.json data/archive
           if ! git diff --cached --quiet; then
             git commit -m 'Update rolling WarEra Case I market cache'
             git push origin HEAD:main
           fi
+      - name: Package price shards for Pages
+        if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Publish price shards
+        id: deploy
+        if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
+        uses: actions/deploy-pages@v4
       - name: Retain cache for inspection
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4

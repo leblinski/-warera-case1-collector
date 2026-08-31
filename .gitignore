@@ -5,3 +5,6 @@ __pycache__/
 *.tmp
 *.log
 .pytest_cache/
+
+# Served price shards are rebuilt every run, never committed.
+public/
