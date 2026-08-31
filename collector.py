@@ -12,7 +12,6 @@ import tempfile
 import threading
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -243,14 +242,18 @@ def page_data(payload):
     return payload["items"], cursor
 
 
-def collect_category(client, category, previous, now, max_pages=1000):
-    code = category["item_code"]
+def collect_market(client, manifest, previous, now, max_pages=1000):
+    """Scan itemMarket once, then distribute exact records across Case I codes."""
     cutoff = now - timedelta(hours=48)
-    kept = {tx["id"]: tx for tx in previous.get("transactions", []) if cutoff <= parse_time(tx["sold_at"]) <= now}
-    known = set(kept)
-    checkpoint = previous.get("last_success_at")
-    full_scan_at = previous.get("last_full_scan_at")
-    full_scan = not previous.get("history_complete") or not full_scan_at or parse_time(full_scan_at) <= now - timedelta(hours=6)
+    codes = [cat["item_code"] for cat in manifest]
+    old = {code: previous.get(code, {}) for code in codes}
+    kept = {code: {tx["id"]: tx for tx in old[code].get("transactions", [])
+                   if cutoff <= parse_time(tx["sold_at"]) <= now} for code in codes}
+    known = {txid for rows in kept.values() for txid in rows}
+    checkpoints = [row.get("last_success_at") for row in old.values()]
+    checkpoint = min(checkpoints, key=parse_time) if all(checkpoints) else None
+    full_scan = any(not row.get("history_complete") or not row.get("last_full_scan_at")
+                    or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=6) for row in old.values())
     overlap_cutoff = max(cutoff, parse_time(checkpoint) - timedelta(hours=1)) if checkpoint else cutoff
     cursor = None
     seen_cursors = set()
@@ -260,20 +263,29 @@ def collect_category(client, category, previous, now, max_pages=1000):
     reached_known = False
     try:
         for _ in range(max_pages):
-            params = {"itemCode": code, "transactionType": "itemMarket", "limit": 100}
+            params = {"transactionType": "itemMarket", "limit": 100}
             if cursor:
                 params["cursor"] = cursor
             raw_rows, next_cursor = page_data(client.call("transaction.getPaginatedTransactions", params))
             pages += 1
-            rows = [normalize_transaction(raw, code) for raw in raw_rows]
-            dates = [parse_time(row["sold_at"]) for row in rows]
+            if any(not isinstance(raw, dict) or raw.get("transactionType") != "itemMarket" for raw in raw_rows):
+                raise CollectionError("Market stream returned a different transaction type")
+            dates = [parse_time(raw.get("createdAt")) for raw in raw_rows]
             if any(date > now + timedelta(minutes=5) for date in dates):
                 raise CollectionError("Transaction timestamp too far in the future")
-            for row, date in zip(rows, dates):
+            for raw, date in zip(raw_rows, dates):
+                code = raw.get("itemCode")
+                if not isinstance(code, str) or not code:
+                    raise CollectionError("Market transaction has no item code")
+                if code not in kept:
+                    continue
+                row = normalize_transaction(raw, code)
                 reached_known = reached_known or row["id"] in known
                 if cutoff <= date <= now:
-                    kept[row["id"]] = row
+                    kept[code][row["id"]] = row
             oldest = min(dates) if dates else None
+            if pages % 10 == 0:
+                print(f"Market history: {pages} pages, {sum(map(len, kept.values()))} Case I sales retained", flush=True)
             # Gateway sorts by whole seconds. Walk past the boundary second.
             if oldest is not None and oldest < cutoff - timedelta(seconds=1):
                 stop = "48h_boundary"
@@ -291,19 +303,25 @@ def collect_category(client, category, previous, now, max_pages=1000):
             raise CollectionError(f"Reached {max_pages} pages before covering the history window")
     except CollectionError as exc:
         error = str(exc)
-    rows = sorted(kept.values(), key=lambda tx: (tx["sold_at"], tx["id"]), reverse=True)
-    result = {
-        **category, "status": "error" if error else "ok", "error": error,
-        "attempted_at": stamp(now), "last_success_at": checkpoint if error else stamp(now),
-        "last_full_scan_at": full_scan_at if error or not full_scan else stamp(now),
-        "history_complete": bool(previous.get("history_complete")) if error else True,
-        "pages_fetched": pages, "stop_reason": stop, "full_scan": full_scan,
-        "new_transaction_count": len(set(kept) - known), "transaction_count": len(rows),
-        "quality_issue_count": sum(bool(tx["quality_issues"]) for tx in rows),
-        "transactions": rows,
-    }
-    result["rolls"] = aggregate(rows, now)
-    return result
+    results = {}
+    for category in manifest:
+        code = category["item_code"]
+        rows = sorted(kept[code].values(), key=lambda tx: (tx["sold_at"], tx["id"]), reverse=True)
+        result = {
+            **category, "status": "error" if error else "ok", "error": error,
+            "attempted_at": stamp(now), "last_success_at": old[code].get("last_success_at") if error else stamp(now),
+            "last_full_scan_at": old[code].get("last_full_scan_at") if error or not full_scan else stamp(now),
+            "history_complete": bool(old[code].get("history_complete")) if error else True,
+            "pages_fetched": pages, "stop_reason": stop, "full_scan": full_scan,
+            "new_transaction_count": len(set(kept[code]) - known), "transaction_count": len(rows),
+            "quality_issue_count": sum(bool(tx["quality_issues"]) for tx in rows),
+            "transactions": rows,
+        }
+        result["rolls"] = aggregate(rows, now)
+        results[code] = result
+    if error:
+        print(f"Market history incomplete: {error}", flush=True)
+    return results
 
 
 def summarize(rows, now):
@@ -418,19 +436,18 @@ def collect_commodities(client, previous, now):
     return result
 
 
-def collect(client, previous=None, now=None, workers=4, max_pages=1000):
-    now = now or utcnow()
+def collect(client, previous=None, now=None, max_pages=1000):
+    # Use the exact precision written to JSON so weighted summaries recompute identically.
+    now = parse_time(stamp(now or utcnow()))
     previous = previous or {}
     manifest = categories()
-    results = {}
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(collect_category, client, cat, previous.get("categories", {}).get(cat["item_code"], {}), now, max_pages): cat["item_code"] for cat in manifest}
-        for future in as_completed(futures):
-            code = futures[future]
-            results[code] = future.result()
-            row = results[code]
-            print(f"{code}: {row['status']}, {row['transaction_count']} cached, {row['pages_fetched']} pages", flush=True)
     commodities = collect_commodities(client, previous.get("commodities", {}), now)
+    results = collect_market(client, manifest, previous.get("categories", {}), now, max_pages)
+    for code, row in results.items():
+        print(f"{code}: {row['status']}, {row['transaction_count']} cached, {row['pages_fetched']} shared pages", flush=True)
+    for code, row in commodities.items():
+        if row["errors"]:
+            print(f"{code}: {'; '.join(row['errors'])}", flush=True)
     failed = [code for code, row in results.items() if row["status"] != "ok"]
     failed_inputs = [code for code, row in commodities.items() if row["status"] != "ok"]
     quality_issues = sum(row["quality_issue_count"] for row in results.values())
@@ -441,7 +458,8 @@ def collect(client, previous=None, now=None, workers=4, max_pages=1000):
         "status": status, "source": {"base_url": client.base_url, "attribution": "Supported by warerastats.io", "read_only": True},
         "policy": {"retention_hours": 48, "primary_hours": 24, "min_primary_comps": 3,
                    "full_condition_only": True, "recency_half_life_hours": 12,
-                   "incremental_overlap_hours": 1, "full_rescan_interval_hours": 6},
+                   "incremental_overlap_hours": 1, "full_rescan_interval_hours": 6,
+                   "scan_mode": "shared_itemMarket_stream"},
         "health": {"category_count": 36, "categories_ok": 36 - len(failed), "failed_categories": failed,
                    "failed_commodities": failed_inputs, "quality_issue_count": quality_issues,
                    "request_count": client.requests, "transaction_count": sum(row["transaction_count"] for row in results.values())},
@@ -504,7 +522,6 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "data/warera_case1_market.json")
     parser.add_argument("--base-url", choices=(GATEWAY, OFFICIAL), default=GATEWAY)
-    parser.add_argument("--workers", type=int, choices=range(1, 9), default=4)
     parser.add_argument("--max-pages", type=int, default=1000)
     parser.add_argument("--max-seconds", type=int, default=600)
     parser.add_argument("--validate", action="store_true", help="Validate existing JSON without network calls")
@@ -528,7 +545,7 @@ def main(argv=None):
                 for category in previous["categories"].values():
                     category["history_complete"] = False
         client = Client(args.base_url, api_key, max_seconds=args.max_seconds)
-        output = collect(client, previous, workers=args.workers, max_pages=args.max_pages)
+        output = collect(client, previous, max_pages=args.max_pages)
         validate(output)
         atomic_write(args.output, output)
         print(f"Saved {output['health']['transaction_count']} transactions; status={output['status']}")

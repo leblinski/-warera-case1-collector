@@ -41,7 +41,7 @@ python collector.py --base-url https://api2.warera.io/trpc
 ```
 
 Changing sources forces another full history scan; cursors are never shared between
-sources. `--output PATH`, `--workers 1..8`, `--max-pages N`, and `--max-seconds N`
+sources. `--output PATH`, `--max-pages N`, and `--max-seconds N`
 are available. Use a separate output path for experiments. Missing keys and corrupt
 existing caches cause a nonzero exit without overwriting the cache.
 
@@ -59,8 +59,14 @@ gloves, chest and pants in each tier:
 | Legendary | legendary | tank | 5 |
 | Mythic | mythic | jet | 6 |
 
-Every transaction request uses `transactionType=itemMarket`, its exact `itemCode`,
-`limit=100`, and the returned `nextCursor`. The first run scans back at least 48
+One shared market scan uses `transactionType=itemMarket`, `limit=100`, and the
+returned `nextCursor`. It distributes records by exact `itemCode` into all 36
+categories, ignoring equipment outside Case I. This avoids 36 separate filtered
+history queries. Category `pages_fetched` counts shared pages, not extra requests
+per category. Prices and order books are collected before the market scan so a
+slow history request cannot starve commodity collection.
+
+The first run scans back at least 48
 hours, or to the source's end of history. Incremental runs revisit one hour before
 the previous successful checkpoint to capture delayed ingestion. A full scan runs
 at least every six hours. Delays beyond the overlap are recovered on that full
@@ -126,12 +132,14 @@ This version was reconstructed from the requirements in the referenced conversat
 The original `warera-case1-collector.zip` was not available through the conversation
 handoff, so an identical original directory structure could not be verified.
 
-On 2026-08-31, local tests passed using explicitly synthetic equipment transactions.
-The live official game config confirmed all 36 codes and rarities. Public commodity
-price/order-book calls succeeded. Gateway calls returned HTTP 401 without an
-`X-API-Key`, and the official transaction endpoint returned `API token required`.
-Live transaction collection and the first Actions run still require authentication.
-Do not interpret synthetic test success as successful live collection.
+On 2026-08-31, the live official game config confirmed all 36 codes and rarities.
+Public commodity price/order-book calls succeeded. The first authenticated Actions
+run retrieved live equipment sales but exposed slow category-filtered queries and
+a timestamp-precision mismatch in summary validation. The collector now scans the
+shared market stream and uses the serialized timestamp precision throughout.
+All 27 local tests pass, including a regression for that validation failure.
+Check the Actions run and the JSON's health fields for live collection status;
+synthetic test success alone is not evidence of successful live collection.
 
 Sources checked for protocol/schema compatibility:
 

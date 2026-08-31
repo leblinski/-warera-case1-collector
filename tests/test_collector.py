@@ -30,6 +30,11 @@ def page(rows, cursor=None):
     return {'items': rows, 'nextCursor': cursor}
 
 
+def collect_category(client, category, previous, now, max_pages=1000):
+    code = category['item_code']
+    return c.collect_market(client, [category], {code: previous}, now, max_pages)[code]
+
+
 class SequenceClient:
     base_url = c.GATEWAY
     requests = 0
@@ -54,8 +59,8 @@ class FullClient:
     def call(self, procedure, params=None):
         self.requests += 1
         if procedure == 'transaction.getPaginatedTransactions':
-            code = params['itemCode']
-            return page([raw(code + '-new', code=code), raw(code + '-expired', hours=49, code=code)])
+            return page([raw(cat['item_code'] + '-new', code=cat['item_code']) for cat in c.categories()]
+                        + [raw('expired', hours=49)])
         if procedure == 'itemTrading.getPrices':
             return {'case1': 3.5, 'scraps': 0.22, 'steel': 1.68}
         return {'buyOrders': [], 'sellOrders': []}
@@ -88,6 +93,45 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(tx['skills'], {'attack': 121, 'criticalChance': 17})
         self.assertEqual(tx['time_to_sell_seconds'], 600)
         self.assertTrue(tx['eligible_for_comps'])
+
+    def test_submillisecond_run_clock_survives_json_validation(self):
+        now = NOW.replace(microsecond=123456)
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(FullClient(), now=now)
+        loaded = json.loads(json.dumps(output))
+        self.assertEqual(c.validate(loaded, True, now), 36)
+
+    def test_shared_market_scan_distributes_and_filters_categories(self):
+        client = SequenceClient([page([raw('knife-sale', code='knife'), raw('outside', code='other-case-equipment')], 'next'),
+                                 page([raw('knife-sale', code='knife'), raw('jet-sale', code='jet'), raw('old', hours=49)])])
+        result = c.collect_market(client, c.categories(), {}, NOW)
+        self.assertEqual(len(client.calls), 2)
+        self.assertNotIn('itemCode', client.calls[0][1])
+        self.assertEqual(sum(row['transaction_count'] for row in result.values()), 2)
+        self.assertEqual(result['knife']['transactions'][0]['item_code'], 'knife')
+        self.assertEqual(result['jet']['transactions'][0]['item_code'], 'jet')
+        self.assertTrue(all(row['history_complete'] for row in result.values()))
+        self.assertEqual(result['sniper']['transaction_count'], 0)
+
+    def test_one_incomplete_category_forces_complete_market_backfill(self):
+        previous = c.collect_market(SequenceClient([page([raw('known', hours=2)])]), c.categories(), {}, NOW)
+        previous['jet']['history_complete'] = False
+        client = SequenceClient([page([raw('known', hours=2)], 'next'), page([raw('late-jet', code='jet', hours=40)])])
+        result = c.collect_market(client, c.categories(), previous, NOW)
+        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(result['jet']['transaction_count'], 1)
+        self.assertTrue(all(row['full_scan'] for row in result.values()))
+
+    def test_market_failure_keeps_commodity_observations(self):
+        class BrokenMarket(FullClient):
+            def call(self, procedure, params=None):
+                if procedure == 'transaction.getPaginatedTransactions':
+                    raise c.ApiError('Run time budget reached')
+                return super().call(procedure, params)
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = c.collect(BrokenMarket(), now=NOW)
+        self.assertTrue(all(row['status'] == 'ok' for row in result['commodities'].values()))
+        self.assertEqual(result['status'], 'degraded')
 
     def test_condition_unknown_or_used_excluded_but_retained(self):
         rows = [self.normalized('full'), self.normalized('used', state=99), self.normalized('unknown', state=None)]
@@ -123,7 +167,7 @@ class CollectorTests(unittest.TestCase):
     def test_paginated_backfill_deduplicates_and_prunes(self):
         client = SequenceClient([page([raw('a'), raw('b', hours=2)], 'cursor-a'),
                                  page([raw('b', hours=2), raw('c', hours=30), raw('old', hours=49)], 'unused')])
-        result = c.collect_category(client, CAT, {}, NOW)
+        result = collect_category(client, CAT, {}, NOW)
         self.assertEqual(result['status'], 'ok')
         self.assertEqual({tx['id'] for tx in result['transactions']}, {'a', 'b', 'c'})
         self.assertEqual(client.calls[1][1]['cursor'], 'cursor-a')
@@ -131,31 +175,31 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(result['stop_reason'], '48h_boundary')
 
     def test_partial_failure_does_not_poison_initial_backfill_checkpoint(self):
-        first = c.collect_category(SequenceClient([page([raw('a')], 'next'), c.ApiError('outage')]), CAT, {}, NOW)
+        first = collect_category(SequenceClient([page([raw('a')], 'next'), c.ApiError('outage')]), CAT, {}, NOW)
         self.assertFalse(first['history_complete'])
         self.assertIsNone(first['last_success_at'])
         self.assertEqual(first['transaction_count'], 1)
         retry = SequenceClient([page([raw('a')], 'next'), page([raw('b', hours=35)])])
-        result = c.collect_category(retry, CAT, first, NOW)
+        result = collect_category(retry, CAT, first, NOW)
         self.assertEqual(len(retry.calls), 2)
         self.assertTrue(result['history_complete'])
         self.assertEqual(result['transaction_count'], 2)
 
     def test_incremental_overlap_collects_delayed_transactions(self):
-        previous = c.collect_category(SequenceClient([page([raw('known', hours=0.5), raw('older', hours=2)])]), CAT, {}, NOW)
+        previous = collect_category(SequenceClient([page([raw('known', hours=0.5), raw('older', hours=2)])]), CAT, {}, NOW)
         previous['last_success_at'] = c.stamp(NOW - timedelta(minutes=15))
         client = SequenceClient([page([raw('new', hours=0.1), raw('known', hours=0.5)], 'next'),
                                  page([raw('late', hours=1), raw('older', hours=2)], 'unneeded')])
-        result = c.collect_category(client, CAT, previous, NOW)
+        result = collect_category(client, CAT, previous, NOW)
         self.assertEqual(len(client.calls), 2)
         self.assertEqual(result['stop_reason'], 'known_history_with_1h_overlap')
         self.assertIn('late', {row['id'] for row in result['transactions']})
 
     def test_periodic_full_rescan_does_not_stop_at_known_id(self):
-        previous = c.collect_category(SequenceClient([page([raw('known', hours=2)])]), CAT, {}, NOW)
+        previous = collect_category(SequenceClient([page([raw('known', hours=2)])]), CAT, {}, NOW)
         previous['last_full_scan_at'] = c.stamp(NOW - timedelta(hours=7))
         client = SequenceClient([page([raw('known', hours=2)], 'next'), page([raw('late', hours=40)])])
-        result = c.collect_category(client, CAT, previous, NOW)
+        result = collect_category(client, CAT, previous, NOW)
         self.assertEqual(len(client.calls), 2)
         self.assertTrue(result['full_scan'])
         self.assertEqual(result['transaction_count'], 2)
@@ -163,7 +207,7 @@ class CollectorTests(unittest.TestCase):
     def test_failed_call_preserves_good_cache_but_expires_49h_row(self):
         previous = {'transactions': [self.normalized('fresh'), self.normalized('old', hours=49)],
                     'history_complete': True, 'last_full_scan_at': c.stamp(NOW), 'last_success_at': c.stamp(NOW)}
-        result = c.collect_category(SequenceClient([c.ApiError('outage')]), CAT, previous, NOW)
+        result = collect_category(SequenceClient([c.ApiError('outage')]), CAT, previous, NOW)
         self.assertEqual(result['status'], 'error')
         self.assertEqual([row['id'] for row in result['transactions']], ['fresh'])
         self.assertEqual(result['last_success_at'], previous['last_success_at'])
@@ -171,13 +215,13 @@ class CollectorTests(unittest.TestCase):
     def test_cursor_loop_and_page_cap_are_errors(self):
         for client, cap in ((SequenceClient([page([raw()], 'same'), page([raw()], 'same')]), 10),
                             (SequenceClient([page([raw()], 'next')]), 1)):
-            result = c.collect_category(client, CAT, {}, NOW, cap)
+            result = collect_category(client, CAT, {}, NOW, cap)
             self.assertEqual(result['status'], 'error')
             self.assertFalse(result['history_complete'])
 
     def test_malformed_page_not_silently_treated_as_empty(self):
         for payload in ({}, {'items': []}, {'items': None, 'nextCursor': None}, page([], 'bad')):
-            result = c.collect_category(SequenceClient([payload]), CAT, {}, NOW)
+            result = collect_category(SequenceClient([payload]), CAT, {}, NOW)
             self.assertEqual(result['status'], 'error')
 
     def test_missing_id_timestamp_and_cross_category_fail(self):
@@ -213,14 +257,14 @@ class CollectorTests(unittest.TestCase):
     def test_failed_category_makes_whole_output_degraded(self):
         class BrokenClient(FullClient):
             def call(self, procedure, params=None):
-                if procedure == 'transaction.getPaginatedTransactions' and params['itemCode'] == 'sniper':
+                if procedure == 'transaction.getPaginatedTransactions':
                     raise c.ApiError('outage')
                 return super().call(procedure, params)
         with contextlib.redirect_stdout(io.StringIO()):
             output = c.collect(BrokenClient(), now=NOW)
         self.assertEqual(output['status'], 'degraded')
         self.assertIsNone(output['updated_at'])
-        self.assertEqual(output['health']['failed_categories'], ['sniper'])
+        self.assertEqual(len(output['health']['failed_categories']), 36)
         c.validate(output)
         with self.assertRaises(c.CollectionError):
             c.validate(output, True, NOW)
