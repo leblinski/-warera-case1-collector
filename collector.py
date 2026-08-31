@@ -23,7 +23,32 @@ ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
 COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+
+# How long retained transactions live in the rolling output. The source only exposes a short
+# rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
+# after running for that long. Distinct from COMPS_WINDOW_HOURS below.
+RETENTION_HOURS = 168
+# The price-comparison windows. These size the published roll statistics and are deliberately
+# narrower than retention: stale sales make poor comparables, but the retained rows remain
+# available to consumers that want to widen the window themselves.
+COMPS_WINDOW_HOURS = 48
+PRIMARY_HOURS = 24
+# Every incremental run re-reads this far past its checkpoint to catch delayed ingestion.
+# The upstream gateway scrapes every 5 seconds, so this is ~350x the expected delay;
+# full_rescan_interval_hours is the real backstop.
+OVERLAP_HOURS = 0.5
+FULL_RESCAN_HOURS = 6
+RECENCY_HALF_LIFE_HOURS = 12
+MIN_PRIMARY_COMPS = 3
+
+# Fields taken straight from the API. Everything else on a record is recomputed from these by
+# derive_transaction(), so the rolling cache stores only these and rehydrates on read: a
+# derived field that is never written can never drift from the values it came from.
+PRIMITIVE_FIELDS = ("id", "item_code", "sold_at", "seller_id", "buyer_id", "offer_created_at",
+                    "money", "quantity", "skills", "stats", "state", "max_state")
+# item_code is omitted on disk because a record already lives under its category's key.
+STORED_FIELDS = tuple(field for field in PRIMITIVE_FIELDS if field != "item_code")
 
 
 class CollectionError(Exception):
@@ -169,6 +194,67 @@ class Client:
         raise AssertionError("Unreachable retry state")
 
 
+def roll_of(transaction):
+    """Rebuild the exact roll from a record. roll_key is its canonical JSON form."""
+    fields = ((key, transaction.get(key)) for key in ("skills", "stats"))
+    return {key: value for key, value in fields if isinstance(value, dict) and value}
+
+
+def derive_transaction(base):
+    """Recompute every derived field from the primitive fields of a record.
+
+    Both normalize_transaction() and validate() go through this, so a stored record can be
+    re-derived and checked without retaining a copy of the original API payload.
+    """
+    exact_roll = roll_of(base)
+    numeric_roll = bool(exact_roll) and all(number(v) is not None for fields in exact_roll.values() for v in fields.values())
+    state = number(base.get("state"))
+    max_state = number(base.get("max_state"))
+    full_condition = state is not None and max_state is not None and max_state > 0 and state == max_state
+    ratio = state / max_state if state is not None and max_state is not None and max_state > 0 else None
+    money = number(base.get("money"))
+    quantity = number(base.get("quantity"))
+    unit_price = money / quantity if money is not None and quantity is not None and quantity > 0 else None
+    issues = []
+    if not numeric_roll:
+        issues.append("missing_or_invalid_exact_roll")
+    if ratio is None or not 0 <= ratio <= 1:
+        issues.append("missing_or_invalid_condition")
+    if unit_price is None or unit_price <= 0:
+        issues.append("missing_or_invalid_price")
+    if quantity != 1:
+        issues.append("non_single_equipment_quantity")
+    offer_time = base.get("offer_created_at")
+    time_to_sell = None
+    if offer_time is not None:
+        try:
+            time_to_sell = (parse_time(base["sold_at"]) - parse_time(offer_time)).total_seconds()
+            if time_to_sell < 0:
+                time_to_sell = None
+                issues.append("offer_after_sale")
+        except CollectionError:
+            issues.append("invalid_offer_timestamp")
+    return {
+        **{key: copy.deepcopy(base.get(key)) for key in PRIMITIVE_FIELDS},
+        "time_to_sell_seconds": time_to_sell, "unit_price": unit_price,
+        "condition_ratio": ratio, "full_condition": full_condition,
+        "roll_key": canonical(exact_roll) if numeric_roll else None,
+        "eligible_for_comps": full_condition and numeric_roll and unit_price is not None and unit_price > 0 and quantity == 1,
+        "quality_issues": issues,
+    }
+
+
+def pack_transaction(transaction):
+    """Project a record down to what is written to disk. Absent values are omitted."""
+    return {field: transaction[field] for field in STORED_FIELDS if transaction.get(field) is not None}
+
+
+def unpack_transaction(row, item_code):
+    if not isinstance(row, dict):
+        raise CollectionError("Stored transaction is not an object")
+    return derive_transaction({**row, "item_code": item_code})
+
+
 def normalize_transaction(raw, item_code):
     if not isinstance(raw, dict):
         raise CollectionError("Transaction is not an object")
@@ -183,48 +269,18 @@ def normalize_transaction(raw, item_code):
     code = equipment.get("code", equipment.get("itemCode"))
     if code is not None and code != item_code:
         raise CollectionError("Equipment code does not match its transaction")
-    skills = equipment.get("skills")
-    stats = equipment.get("stats")
-    exact_roll = {key: val for key, val in (("skills", skills), ("stats", stats)) if isinstance(val, dict) and val}
-    numeric_roll = bool(exact_roll) and all(number(v) is not None for fields in exact_roll.values() for v in fields.values())
-    state = number(equipment.get("state"))
-    max_state = number(equipment.get("maxState", equipment.get("max_state")))
-    full_condition = state is not None and max_state is not None and max_state > 0 and state == max_state
-    ratio = state / max_state if state is not None and max_state is not None and max_state > 0 else None
-    money = number(raw.get("money"))
-    quantity = number(raw.get("quantity", equipment.get("quantity", 1)))
-    unit_price = money / quantity if money is not None and quantity is not None and quantity > 0 else None
-    issues = []
-    if not numeric_roll:
-        issues.append("missing_or_invalid_exact_roll")
-    if ratio is None or not 0 <= ratio <= 1:
-        issues.append("missing_or_invalid_condition")
-    if unit_price is None or unit_price <= 0:
-        issues.append("missing_or_invalid_price")
-    if quantity != 1:
-        issues.append("non_single_equipment_quantity")
-    offer_time = raw.get("offerCreatedAt")
-    time_to_sell = None
-    if offer_time is not None:
-        try:
-            time_to_sell = (sold - parse_time(offer_time)).total_seconds()
-            if time_to_sell < 0:
-                time_to_sell = None
-                issues.append("offer_after_sale")
-        except CollectionError:
-            issues.append("invalid_offer_timestamp")
-    return {
+    # The original payload and the full equipment object are deliberately not retained: every
+    # field either survives below or is recomputed by derive_transaction() from what does.
+    return derive_transaction({
         "id": txid, "item_code": item_code, "sold_at": stamp(sold),
         "seller_id": raw.get("sellerId"), "buyer_id": raw.get("buyerId"),
-        "offer_created_at": offer_time, "time_to_sell_seconds": time_to_sell,
-        "money": money, "quantity": quantity, "unit_price": unit_price,
-        "equipment": copy.deepcopy(equipment), "skills": copy.deepcopy(skills), "stats": copy.deepcopy(stats),
-        "state": state, "max_state": max_state, "condition_ratio": ratio,
-        "full_condition": full_condition, "exact_roll": exact_roll,
-        "roll_key": canonical(exact_roll) if numeric_roll else None,
-        "eligible_for_comps": full_condition and numeric_roll and unit_price is not None and unit_price > 0 and quantity == 1,
-        "quality_issues": issues, "raw": copy.deepcopy(raw),
-    }
+        "offer_created_at": raw.get("offerCreatedAt"),
+        "money": number(raw.get("money")),
+        "quantity": number(raw.get("quantity", equipment.get("quantity", 1))),
+        "skills": equipment.get("skills"), "stats": equipment.get("stats"),
+        "state": number(equipment.get("state")),
+        "max_state": number(equipment.get("maxState", equipment.get("max_state"))),
+    })
 
 
 def page_data(payload):
@@ -244,17 +300,17 @@ def page_data(payload):
 
 def collect_market(client, manifest, previous, now, max_pages=1000):
     """Scan itemMarket once, then distribute exact records across Case I codes."""
-    cutoff = now - timedelta(hours=48)
+    cutoff = now - timedelta(hours=RETENTION_HOURS)
     codes = [cat["item_code"] for cat in manifest]
     old = {code: previous.get(code, {}) for code in codes}
-    kept = {code: {tx["id"]: tx for tx in old[code].get("transactions", [])
-                   if cutoff <= parse_time(tx["sold_at"]) <= now} for code in codes}
+    kept = {code: {row["id"]: unpack_transaction(row, code) for row in old[code].get("transactions", [])
+                   if cutoff <= parse_time(row["sold_at"]) <= now} for code in codes}
     known = {txid for rows in kept.values() for txid in rows}
     checkpoints = [row.get("last_success_at") for row in old.values()]
     checkpoint = min(checkpoints, key=parse_time) if all(checkpoints) else None
     full_scan = any(not row.get("history_complete") or not row.get("last_full_scan_at")
-                    or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=6) for row in old.values())
-    overlap_cutoff = max(cutoff, parse_time(checkpoint) - timedelta(hours=1)) if checkpoint else cutoff
+                    or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=FULL_RESCAN_HOURS) for row in old.values())
+    overlap_cutoff = max(cutoff, parse_time(checkpoint) - timedelta(hours=OVERLAP_HOURS)) if checkpoint else cutoff
     cursor = None
     seen_cursors = set()
     pages = 0
@@ -288,11 +344,11 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
                 print(f"Market history: {pages} pages, {sum(map(len, kept.values()))} Case I sales retained", flush=True)
             # Gateway sorts by whole seconds. Walk past the boundary second.
             if oldest is not None and oldest < cutoff - timedelta(seconds=1):
-                stop = "48h_boundary"
+                stop = "retention_boundary"
             elif not next_cursor:
                 stop = "end_of_history"
             elif not full_scan and reached_known and oldest is not None and oldest < overlap_cutoff - timedelta(seconds=1):
-                stop = "known_history_with_1h_overlap"
+                stop = f"known_history_with_{OVERLAP_HOURS:g}h_overlap"
             if stop:
                 break
             if next_cursor in seen_cursors:
@@ -315,7 +371,7 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
             "pages_fetched": pages, "stop_reason": stop, "full_scan": full_scan,
             "new_transaction_count": len(set(kept[code]) - known), "transaction_count": len(rows),
             "quality_issue_count": sum(bool(tx["quality_issues"]) for tx in rows),
-            "transactions": rows,
+            "transactions": [pack_transaction(tx) for tx in rows],
         }
         result["rolls"] = aggregate(rows, now)
         results[code] = result
@@ -329,7 +385,8 @@ def summarize(rows, now):
         return {"count": 0, "median": None, "recency_weighted_price": None, "weighted_median": None,
                 "min": None, "max": None, "median_time_to_sell_seconds": None}
     prices = [row["unit_price"] for row in rows]
-    weights = [2 ** (-max(0, (now - parse_time(row["sold_at"])).total_seconds()) / 43200) for row in rows]
+    half_life = RECENCY_HALF_LIFE_HOURS * 3600
+    weights = [2 ** (-max(0, (now - parse_time(row["sold_at"])).total_seconds()) / half_life) for row in rows]
     halfway = sum(weights) / 2
     cumulative = 0.0
     weighted_median = None
@@ -345,19 +402,21 @@ def summarize(rows, now):
             "median_time_to_sell_seconds": statistics.median(durations) if durations else None}
 
 
-def aggregate(transactions, now, min_primary_comps=3):
+def aggregate(transactions, now, min_primary_comps=MIN_PRIMARY_COMPS):
+    # Comparison windows are narrower than retention on purpose; stale sales make poor
+    # comparables, but the retained rows stay available for consumers wanting a wider view.
     groups = defaultdict(list)
     for tx in transactions:
-        if tx["eligible_for_comps"] and now - timedelta(hours=48) <= parse_time(tx["sold_at"]) <= now:
+        if tx["eligible_for_comps"] and now - timedelta(hours=COMPS_WINDOW_HOURS) <= parse_time(tx["sold_at"]) <= now:
             groups[tx["roll_key"]].append(tx)
     rolls = {}
     for key, rows in sorted(groups.items()):
-        recent = [row for row in rows if parse_time(row["sold_at"]) >= now - timedelta(hours=24)]
+        recent = [row for row in rows if parse_time(row["sold_at"]) >= now - timedelta(hours=PRIMARY_HOURS)]
         primary = summarize(recent, now)
         fallback = summarize(rows, now)
         use_primary = len(recent) >= min_primary_comps
-        rolls[key] = {"exact_roll": rows[0]["exact_roll"], "primary_24h": primary, "fallback_48h": fallback,
-                      "selected_window_hours": 24 if use_primary else 48,
+        rolls[key] = {"exact_roll": roll_of(rows[0]), "primary_24h": primary, "fallback_48h": fallback,
+                      "selected_window_hours": PRIMARY_HOURS if use_primary else COMPS_WINDOW_HOURS,
                       "selected": primary if use_primary else fallback,
                       "low_sample": (primary if use_primary else fallback)["count"] < min_primary_comps}
     return rolls
@@ -428,7 +487,7 @@ def collect_commodities(client, previous, now):
         row["status"] = "error" if row["errors"] else "ok"
         # Retention applies to commodity observations too; never resurrect old prices.
         for time_key, value_keys in (("price_fetched_at", ("price", "price_raw")), ("book_fetched_at", ("order_book",))):
-            if row.get(time_key) and parse_time(row[time_key]) < now - timedelta(hours=48):
+            if row.get(time_key) and parse_time(row[time_key]) < now - timedelta(hours=RETENTION_HOURS):
                 for key in value_keys:
                     row.pop(key, None)
                 row.pop(time_key, None)
@@ -456,15 +515,115 @@ def collect(client, previous=None, now=None, max_pages=1000):
         "schema_version": SCHEMA_VERSION, "generated_at": stamp(now),
         "updated_at": stamp(now) if status == "ok" else previous.get("updated_at"),
         "status": status, "source": {"base_url": client.base_url, "attribution": "Supported by warerastats.io", "read_only": True},
-        "policy": {"retention_hours": 48, "primary_hours": 24, "min_primary_comps": 3,
-                   "full_condition_only": True, "recency_half_life_hours": 12,
-                   "incremental_overlap_hours": 1, "full_rescan_interval_hours": 6,
+        "policy": {"retention_hours": RETENTION_HOURS, "comps_window_hours": COMPS_WINDOW_HOURS,
+                   "primary_hours": PRIMARY_HOURS, "min_primary_comps": MIN_PRIMARY_COMPS,
+                   "full_condition_only": True, "recency_half_life_hours": RECENCY_HALF_LIFE_HOURS,
+                   "incremental_overlap_hours": OVERLAP_HOURS, "full_rescan_interval_hours": FULL_RESCAN_HOURS,
                    "scan_mode": "shared_itemMarket_stream"},
         "health": {"category_count": 36, "categories_ok": 36 - len(failed), "failed_categories": failed,
                    "failed_commodities": failed_inputs, "quality_issue_count": quality_issues,
                    "request_count": client.requests, "transaction_count": sum(row["transaction_count"] for row in results.values())},
         "commodities": commodities, "categories": {cat["item_code"]: results[cat["item_code"]] for cat in manifest},
     }
+
+
+def epoch(value):
+    return int(parse_time(value).timestamp())
+
+
+def shard_rows(code, category):
+    """Compact sale rows for one item: [unit_price, sold_at, time_to_sell, roll_index].
+
+    The roll index covers every roll seen in the retained window, which is wider than the
+    comparison window, so a consumer can recompute statistics over more history than the
+    published summaries use.
+    """
+    rows, keys = [], {}
+    for stored in category["transactions"]:
+        tx = unpack_transaction(stored, code)
+        if not tx["eligible_for_comps"]:
+            continue
+        index = keys.setdefault(tx["roll_key"], len(keys))
+        duration = tx["time_to_sell_seconds"]
+        rows.append([tx["unit_price"], epoch(tx["sold_at"]),
+                     None if duration is None else int(duration), index])
+    rows.sort(key=lambda row: (row[1], row[0], row[3]))
+    return rows, [json.loads(key) for key in keys]
+
+
+def build_shard(code, category, payload):
+    rows, rolls = shard_rows(code, category)
+    return {"item_code": code, "name": category["name"], "tier": category["tier"],
+            "rarity": category["rarity"], "slot": category["slot"],
+            "generated_at": payload["generated_at"], "status": category["status"],
+            "last_success_at": category["last_success_at"],
+            "coverage_start": min((row[1] for row in rows), default=None),
+            "rolls": rolls, "summary": category["rolls"], "sales": rows}
+
+
+def build_summary(payload):
+    """Every item's roll statistics with no sale rows: one small fetch answers any price."""
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "updated_at": payload["updated_at"], "status": payload["status"],
+            "policy": payload["policy"],
+            "commodities": {code: {key: value for key, value in row.items() if key not in ("order_book", "price_raw")}
+                            for code, row in payload["commodities"].items()},
+            "categories": {code: {"name": row["name"], "tier": row["tier"], "rarity": row["rarity"],
+                                  "slot": row["slot"], "status": row["status"],
+                                  "last_success_at": row["last_success_at"],
+                                  "transaction_count": row["transaction_count"], "rolls": row["rolls"]}
+                           for code, row in payload["categories"].items()}}
+
+
+def build_index(payload):
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "updated_at": payload["updated_at"], "status": payload["status"],
+            "source": payload["source"], "policy": payload["policy"], "health": payload["health"],
+            "commodities": {code: {"price": row.get("price"), "status": row["status"],
+                                   "best_bid": (row.get("order_book") or {}).get("best_bid"),
+                                   "best_ask": (row.get("order_book") or {}).get("best_ask")}
+                            for code, row in payload["commodities"].items()},
+            "items": {code: {"status": row["status"], "transaction_count": row["transaction_count"],
+                             "roll_count": len(row["rolls"]), "last_success_at": row["last_success_at"]}
+                      for code, row in payload["categories"].items()}}
+
+
+def build_archive(payload, now):
+    """Group retained sales into whole UTC days. Today is still accumulating and is skipped,
+    so a day file is written once and then never changes again."""
+    today = now.date()
+    days = defaultdict(list)
+    for code, category in payload["categories"].items():
+        for stored in category["transactions"]:
+            day = parse_time(stored["sold_at"]).date()
+            if day < today:
+                days[day.isoformat()].append({**stored, "item_code": code})
+    for rows in days.values():
+        rows.sort(key=lambda row: (row["sold_at"], row["id"]))
+    return days
+
+
+def publish(payload, public_dir, archive_dir, now):
+    """Write the consumer-facing artifacts. These are served, not committed; only the
+    archive is durable, which is what keeps repository growth flat."""
+    public_dir, archive_dir = Path(public_dir), Path(archive_dir)
+    atomic_write(public_dir / "index.json", build_index(payload))
+    atomic_write(public_dir / "summary.json", build_summary(payload))
+    written = 2
+    for code, category in payload["categories"].items():
+        atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
+        written += 1
+    for day, rows in build_archive(payload, now).items():
+        target = archive_dir / f"{day}.json"
+        existing = json.loads(target.read_text(encoding="utf-8")) if target.exists() else None
+        merged = {row["id"]: row for row in (existing or {}).get("sales", [])}
+        merged.update({row["id"]: row for row in rows})
+        record = {"schema_version": SCHEMA_VERSION, "date": day, "sale_count": len(merged),
+                  "sales": sorted(merged.values(), key=lambda row: (row["sold_at"], row["id"]))}
+        if record != existing:
+            atomic_write(target, record)
+            written += 1
+    return written
 
 
 def atomic_write(path, payload):
@@ -493,23 +652,45 @@ def summaries_match(actual, expected):
     return actual == expected
 
 
+def migrate(payload):
+    """Upgrade an older cache in place so a format change never forces a full refetch.
+
+    Schema 1 stored `raw`, `equipment` and `exact_roll` alongside the fields they duplicated.
+    Every primitive field schema 2 needs is already present, so each record re-derives locally.
+    """
+    version = payload.get("schema_version")
+    if version == SCHEMA_VERSION:
+        return payload
+    if version != 1:
+        raise CollectionError(f"Cannot migrate cache schema version {version!r}")
+    for category in payload.get("categories", {}).values():
+        category["transactions"] = [pack_transaction(tx) for tx in category.get("transactions", [])]
+    payload["schema_version"] = SCHEMA_VERSION
+    print(f"Migrated cache from schema 1 to {SCHEMA_VERSION}", flush=True)
+    return payload
+
+
 def validate(payload, require_healthy=False, current_time=None):
     expected = {row["item_code"] for row in categories()}
     if payload.get("schema_version") != SCHEMA_VERSION or set(payload.get("categories", {})) != expected:
         raise CollectionError("Invalid schema version or incomplete category manifest")
     now = parse_time(payload.get("generated_at"))
-    cutoff = now - timedelta(hours=48)
+    cutoff = now - timedelta(hours=RETENTION_HOURS)
     seen = set()
     for code, category in payload["categories"].items():
-        rows = category["transactions"]
-        if category["transaction_count"] != len(rows):
+        stored = category["transactions"]
+        if category["transaction_count"] != len(stored):
             raise CollectionError("Transaction count mismatch")
-        for tx in rows:
-            if tx["id"] in seen or tx["item_code"] != code or not cutoff <= parse_time(tx["sold_at"]) <= now:
+        rows = []
+        for row in stored:
+            if set(row) - set(STORED_FIELDS):
+                raise CollectionError("Stored transaction carries unexpected fields")
+            if row["id"] in seen or not cutoff <= parse_time(row["sold_at"]) <= now:
                 raise CollectionError("Duplicate, misplaced, or expired transaction")
-            seen.add(tx["id"])
-            if normalize_transaction(tx["raw"], code) != tx:
-                raise CollectionError("Normalized transaction does not match its raw source")
+            seen.add(row["id"])
+            rows.append(unpack_transaction(row, code))
+        if category["quality_issue_count"] != sum(bool(tx["quality_issues"]) for tx in rows):
+            raise CollectionError("Quality issue count does not match the retained transactions")
         if not summaries_match(aggregate(rows, now), category["rolls"]):
             raise CollectionError("Roll summaries do not match retained transactions")
     if set(payload.get("commodities", {})) != set(COMMODITIES):
@@ -530,6 +711,10 @@ def validate(payload, require_healthy=False, current_time=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "data/warera_case1_market.json")
+    parser.add_argument("--public-dir", type=Path, default=ROOT / "public",
+                        help="Consumer-facing index/summary/price shards; served, not committed")
+    parser.add_argument("--archive-dir", type=Path, default=ROOT / "data/archive",
+                        help="Write-once daily sale files; the durable history")
     parser.add_argument("--base-url", choices=(GATEWAY, OFFICIAL), default=GATEWAY)
     parser.add_argument("--max-pages", type=int, default=1000)
     parser.add_argument("--max-seconds", type=int, default=600)
@@ -540,7 +725,7 @@ def main(argv=None):
         if args.max_pages < 1 or args.max_seconds < 1:
             raise CollectionError("Page and time limits must be positive")
         if args.validate:
-            count = validate(json.loads(args.output.read_text(encoding="utf-8")), args.require_healthy)
+            count = validate(migrate(json.loads(args.output.read_text(encoding="utf-8"))), args.require_healthy)
             print(f"Validated all 36 categories and {count} transactions")
             return 0
         api_key = os.environ.get("WARERA_API_KEY", "").strip()
@@ -548,7 +733,7 @@ def main(argv=None):
             raise CollectionError("WARERA_API_KEY is missing. Add the repository Actions secret or set it locally. No market cache was changed.")
         previous = None
         if args.output.exists():
-            previous = json.loads(args.output.read_text(encoding="utf-8"))
+            previous = migrate(json.loads(args.output.read_text(encoding="utf-8")))
             validate(previous)
             if previous["source"]["base_url"] != args.base_url:
                 for category in previous["categories"].values():
@@ -557,7 +742,8 @@ def main(argv=None):
         output = collect(client, previous, max_pages=args.max_pages)
         validate(output)
         atomic_write(args.output, output)
-        print(f"Saved {output['health']['transaction_count']} transactions; status={output['status']}")
+        files = publish(output, args.public_dir, args.archive_dir, parse_time(output["generated_at"]))
+        print(f"Saved {output['health']['transaction_count']} transactions and {files} published files; status={output['status']}")
         return 0 if output["status"] == "ok" else 1
     except (CollectionError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Collector failed: {exc}", file=sys.stderr)

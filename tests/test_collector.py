@@ -15,6 +15,8 @@ from urllib.error import HTTPError
 import collector as c
 
 NOW = datetime(2026, 8, 31, 12, tzinfo=timezone.utc)
+# Just past the retention window, for fixtures that must be pruned.
+RETAINED_PAST = c.RETENTION_HOURS + 1
 CAT = next(row for row in c.categories() if row['item_code'] == 'sniper')
 
 
@@ -61,7 +63,7 @@ class FullClient:
         self.requests += 1
         if procedure == 'transaction.getPaginatedTransactions':
             return page([raw(cat['item_code'] + '-new', code=cat['item_code']) for cat in c.categories()]
-                        + [raw('expired', hours=49)])
+                        + [raw('expired', hours=RETAINED_PAST)])
         if procedure == 'itemTrading.getPrices':
             return {'case1': 3.5, 'scraps': 0.22, 'steel': 1.68}
         return {'buyOrders': [], 'sellOrders': []}
@@ -84,16 +86,33 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(c.validate(loaded, True, NOW), 36)
             self.assertEqual(list(Path(tmp).glob('*.tmp')), [])
 
-    def test_exact_equipment_and_unknown_fields_retained(self):
+    def test_exact_roll_retained_and_every_derived_field_recomputable(self):
         original = raw()
         original['item']['futureField'] = {'value': 2}
         original['sellerCountryId'] = 'fixture-country'
         tx = c.normalize_transaction(original, 'sniper')
-        self.assertEqual(tx['raw'], original)
-        self.assertEqual(tx['equipment'], original['item'])
+        # Exact rolls are kept verbatim; the original payload and the wider equipment object
+        # are not, because every field the collector publishes is recomputed from what is.
         self.assertEqual(tx['skills'], {'attack': 121, 'criticalChance': 17})
         self.assertEqual(tx['time_to_sell_seconds'], 600)
         self.assertTrue(tx['eligible_for_comps'])
+        self.assertNotIn('raw', tx)
+        self.assertNotIn('equipment', tx)
+        self.assertEqual(c.derive_transaction(tx), tx)
+
+    def test_tampered_derived_field_is_rejected_without_the_raw_payload(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(FullClient(), now=NOW)
+        loaded = json.loads(json.dumps(output))
+        loaded['categories']['sniper']['transactions'][0]['unit_price'] = 999.0
+        with self.assertRaises(c.CollectionError):
+            c.validate(loaded)
+
+    def test_retention_exceeds_comparison_window(self):
+        # Rows older than the comparison window stay retained but stop being comparables.
+        rows = [self.normalized('fresh', hours=1), self.normalized('kept', hours=c.COMPS_WINDOW_HOURS + 10)]
+        self.assertGreater(c.RETENTION_HOURS, c.COMPS_WINDOW_HOURS)
+        self.assertEqual(next(iter(c.aggregate(rows, NOW).values()))['fallback_48h']['count'], 1)
 
     def test_submillisecond_run_clock_survives_json_validation(self):
         now = NOW.replace(microsecond=123456)
@@ -117,13 +136,15 @@ class CollectorTests(unittest.TestCase):
 
     def test_shared_market_scan_distributes_and_filters_categories(self):
         client = SequenceClient([page([raw('knife-sale', code='knife'), raw('outside', code='other-case-equipment')], 'next'),
-                                 page([raw('knife-sale', code='knife'), raw('jet-sale', code='jet'), raw('old', hours=49)])])
+                                 page([raw('knife-sale', code='knife'), raw('jet-sale', code='jet'), raw('old', hours=RETAINED_PAST)])])
         result = c.collect_market(client, c.categories(), {}, NOW)
         self.assertEqual(len(client.calls), 2)
         self.assertNotIn('itemCode', client.calls[0][1])
         self.assertEqual(sum(row['transaction_count'] for row in result.values()), 2)
-        self.assertEqual(result['knife']['transactions'][0]['item_code'], 'knife')
-        self.assertEqual(result['jet']['transactions'][0]['item_code'], 'jet')
+        # item_code is not stored per row; a record's category is its position in the output.
+        self.assertEqual(result['knife']['transactions'][0]['id'], 'knife-sale')
+        self.assertEqual(result['jet']['transactions'][0]['id'], 'jet-sale')
+        self.assertEqual(c.unpack_transaction(result['knife']['transactions'][0], 'knife')['item_code'], 'knife')
         self.assertTrue(all(row['history_complete'] for row in result.values()))
         self.assertEqual(result['sniper']['transaction_count'], 0)
 
@@ -180,13 +201,13 @@ class CollectorTests(unittest.TestCase):
 
     def test_paginated_backfill_deduplicates_and_prunes(self):
         client = SequenceClient([page([raw('a'), raw('b', hours=2)], 'cursor-a'),
-                                 page([raw('b', hours=2), raw('c', hours=30), raw('old', hours=49)], 'unused')])
+                                 page([raw('b', hours=2), raw('c', hours=30), raw('old', hours=RETAINED_PAST)], 'unused')])
         result = collect_category(client, CAT, {}, NOW)
         self.assertEqual(result['status'], 'ok')
         self.assertEqual({tx['id'] for tx in result['transactions']}, {'a', 'b', 'c'})
         self.assertEqual(client.calls[1][1]['cursor'], 'cursor-a')
         self.assertEqual(client.calls[0][1]['limit'], 100)
-        self.assertEqual(result['stop_reason'], '48h_boundary')
+        self.assertEqual(result['stop_reason'], 'retention_boundary')
 
     def test_partial_failure_does_not_poison_initial_backfill_checkpoint(self):
         first = collect_category(SequenceClient([page([raw('a')], 'next'), c.ApiError('outage')]), CAT, {}, NOW)
@@ -206,7 +227,7 @@ class CollectorTests(unittest.TestCase):
                                  page([raw('late', hours=1), raw('older', hours=2)], 'unneeded')])
         result = collect_category(client, CAT, previous, NOW)
         self.assertEqual(len(client.calls), 2)
-        self.assertEqual(result['stop_reason'], 'known_history_with_1h_overlap')
+        self.assertEqual(result['stop_reason'], f'known_history_with_{c.OVERLAP_HOURS:g}h_overlap')
         self.assertIn('late', {row['id'] for row in result['transactions']})
 
     def test_periodic_full_rescan_does_not_stop_at_known_id(self):
@@ -218,8 +239,8 @@ class CollectorTests(unittest.TestCase):
         self.assertTrue(result['full_scan'])
         self.assertEqual(result['transaction_count'], 2)
 
-    def test_failed_call_preserves_good_cache_but_expires_49h_row(self):
-        previous = {'transactions': [self.normalized('fresh'), self.normalized('old', hours=49)],
+    def test_failed_call_preserves_good_cache_but_expires_stale_row(self):
+        previous = {'transactions': [self.normalized('fresh'), self.normalized('old', hours=RETAINED_PAST)],
                     'history_complete': True, 'last_full_scan_at': c.stamp(NOW), 'last_success_at': c.stamp(NOW)}
         result = collect_category(SequenceClient([c.ApiError('outage')]), CAT, previous, NOW)
         self.assertEqual(result['status'], 'error')
@@ -264,7 +285,7 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(result['case1']['status'], 'error')
 
     def test_expired_commodity_price_not_carried_forward(self):
-        previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=49))}}
+        previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=RETAINED_PAST))}}
         client = SequenceClient([c.ApiError('prices down')] + [c.ApiError('books down')] * 3)
         self.assertNotIn('price', c.collect_commodities(client, previous, NOW)['case1'])
 
@@ -316,6 +337,58 @@ class CollectorTests(unittest.TestCase):
                 client.call('transaction.getPaginatedTransactions', {'limit': 100})
             self.assertEqual(opener.return_value.open.call_count, 1)
         self.assertNotIn(client.api_key, str(raised.exception))
+
+    def test_publish_emits_index_summary_and_one_shard_per_item(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(FullClient(), now=NOW)
+        with tempfile.TemporaryDirectory() as tmp:
+            public, archive = Path(tmp) / 'public', Path(tmp) / 'archive'
+            c.publish(output, public, archive, NOW)
+            self.assertEqual(len(list((public / 'prices').glob('*.json'))), 36)
+            index = json.loads((public / 'index.json').read_text(encoding='utf-8'))
+            self.assertEqual(set(index['items']), {row['item_code'] for row in c.categories()})
+            summary = json.loads((public / 'summary.json').read_text(encoding='utf-8'))
+            # The on-load bundle answers any price without carrying a single sale row.
+            self.assertNotIn('sales', json.dumps(summary))
+            self.assertTrue(summary['categories']['sniper']['rolls'])
+            shard = json.loads((public / 'prices' / 'sniper.json').read_text(encoding='utf-8'))
+            price, sold_at, time_to_sell, roll_index = shard['sales'][0]
+            self.assertEqual(price, 50)
+            self.assertEqual(time_to_sell, 600)
+            self.assertEqual(shard['rolls'][roll_index], {'skills': {'attack': 121, 'criticalChance': 17}})
+            self.assertEqual(shard['coverage_start'], sold_at)
+
+    def test_archive_covers_whole_days_only_and_is_written_once(self):
+        client, day_before = FullClient(), NOW - timedelta(days=1)
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(client, now=NOW)
+        # Backdate one sale into a completed day; today is still accumulating and is skipped.
+        rows = output['categories']['sniper']['transactions']
+        rows[0]['sold_at'] = c.stamp(day_before)
+        with tempfile.TemporaryDirectory() as tmp:
+            public, archive = Path(tmp) / 'public', Path(tmp) / 'archive'
+            c.publish(output, public, archive, NOW)
+            files = sorted(p.name for p in archive.glob('*.json'))
+            self.assertEqual(files, [day_before.date().isoformat() + '.json'])
+            target = archive / files[0]
+            record = json.loads(target.read_text(encoding='utf-8'))
+            self.assertEqual(record['sale_count'], 1)
+            self.assertEqual(record['sales'][0]['item_code'], 'sniper')
+            before = target.stat().st_mtime_ns
+            c.publish(output, public, archive, NOW)
+            self.assertEqual(target.stat().st_mtime_ns, before)
+
+    def test_schema_1_cache_migrates_without_a_refetch(self):
+        legacy = {'schema_version': 1, 'categories': {'sniper': {'transactions': [
+            dict(self.normalized('legacy'), raw=raw(), equipment={'gone': True},
+                 exact_roll={'skills': {'attack': 121}})]}}}
+        migrated = c.migrate(legacy)
+        row = migrated['categories']['sniper']['transactions'][0]
+        self.assertEqual(migrated['schema_version'], c.SCHEMA_VERSION)
+        self.assertEqual(set(row), set(c.STORED_FIELDS) - {'stats'})
+        self.assertEqual(c.unpack_transaction(row, 'sniper')['unit_price'], 50)
+        with self.assertRaises(c.CollectionError):
+            c.migrate({'schema_version': 99})
 
 
 if __name__ == '__main__':

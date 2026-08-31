@@ -1,7 +1,8 @@
 # WarEra Case I collector
 
-Standalone, read-only collector for the 36 Case I equipment categories. It writes
-`data/warera_case1_market.json` and updates it through GitHub Actions every 15 minutes.
+Standalone, read-only collector for the 36 Case I equipment categories. Every 10 minutes it
+commits a rolling cache plus a write-once daily archive, and publishes per-item price files to
+GitHub Pages for browser clients to read directly.
 Supported by [warerastats.io](https://warerastats.io/).
 
 ## Setup
@@ -16,8 +17,10 @@ Supported by [warerastats.io](https://warerastats.io/).
 3. A successful run commits the rolling JSON to `main`. The workflow's job requests
    `contents: write`; repository rules must permit its bot to update `main`.
 
-The workflow uses `*/15 * * * *` in UTC, a manual trigger, one serialized collection
-job, Python 3.12, and no third-party Python dependencies. GitHub scheduled runs can
+The workflow uses `*/10 * * * *` in UTC, a manual trigger, one serialized collection
+job, Python 3.12, and no third-party Python dependencies. Ten minutes is six Pages
+deployments an hour, inside the roughly 10/hour soft limit; `*/5` would exceed it, and
+GitHub drops short-interval schedules first under load. GitHub scheduled runs can
 be delayed; this is a requested cadence, not a guaranteed delivery time. GitHub may
 disable public-repository schedules after 60 days without repository activity.
 
@@ -31,6 +34,9 @@ python -m unittest discover -s tests -v
 python collector.py
 python collector.py --validate --require-healthy
 ```
+
+`--public-dir` (default `public/`) and `--archive-dir` (default `data/archive/`) control where
+the published files are written.
 
 The default source is `https://gateway.warerastats.io/trpc`. Both the Gateway and
 the official transaction API require an API key for the required data. To explicitly
@@ -66,25 +72,36 @@ history queries. Category `pages_fetched` counts shared pages, not extra request
 per category. Prices and order books are collected before the market scan so a
 slow history request cannot starve commodity collection.
 
-The first run scans back at least 48
-hours, or to the source's end of history. Incremental runs revisit one hour before
-the previous successful checkpoint to capture delayed ingestion. A full scan runs
-at least every six hours. Delays beyond the overlap are recovered on that full
-scan, provided the source still exposes them within the rolling 48-hour window.
+Retention is 168 hours (one week) and accumulates forward: the source only exposes a short
+rolling window, so a fresh cache reaches full depth only after running for a week.
+`coverage_start` on each price file reports the depth actually reached.
 
-Each cached sale includes:
+Incremental runs revisit 30 minutes before the previous successful checkpoint to capture
+delayed ingestion. The upstream Gateway scrapes every 5 seconds, so this is several hundred
+times the expected delay; a full scan every six hours is the real backstop, and it recovers
+anything the overlap missed.
 
-- Stable transaction ID, sale timestamp, seller/buyer IDs, total money and quantity.
-- Full original transaction in `raw`, plus its original equipment object.
-- Exact `skills` and `stats`, with separate roll keys; no rounded/bucketed rolls.
-- Equipment `state`, `max_state`, condition ratio and full-condition flag.
-- Offer timestamp and time-to-sell when available. Missing durations stay null.
+Each cached sale stores only the fields that come straight from the API: stable transaction
+ID, sale timestamp, seller/buyer IDs, offer timestamp, money, quantity, exact `skills` and
+`stats`, and equipment `state`/`max_state`. Everything else the collector publishes -
+unit price, condition ratio, full-condition flag, roll key, time-to-sell, comparability and
+quality flags - is recomputed on read by `derive_transaction`.
+
+Storing primitives instead of their consequences is what makes a derived field unable to
+drift from the values it came from, and it cut the rolling file by 76% (53.0 MB to 12.5 MB
+on real data), which is what makes a one-week window fit at all. Rolls stay exact; nothing
+is rounded or bucketed. Schema 1 caches migrate in place without a refetch.
 
 Only single equipment sales with known 100% condition, valid exact stats, and a
 positive price enter comparisons. Used equipment remains in the raw cache. Missing
 stats/condition are flagged and excluded; they are never assumed to be full condition.
-Raw transactions are retained exactly as JSON values; transport whitespace is not
-preserved. Unknown fields remain available for auditing.
+Fields the collector does not publish are no longer retained, so unknown or future API fields
+are not available for auditing from the cache alone. Git history holds the schema 1 snapshots
+that did carry them.
+
+Note that retention (168 hours) and the comparison windows below (24 and 48 hours) are
+separate. Stale sales make poor comparables, so the published statistics stay narrow, while
+the retained rows in each price file let a consumer recompute over the full week.
 
 Per exact roll, `primary_24h` and `fallback_48h` contain sample count, median,
 12-hour half-life recency-weighted mean, weighted median, min/max, and median
@@ -119,9 +136,30 @@ handled explicitly.
   was degraded. An invalid cache is never committed. An artifact is retained for
   two days when a JSON file exists. Code tests never use a real API key.
 
-The 48-hour limit applies to the current JSON's transactions and commodity
-observations. Git commit history retains older snapshots; this is not a historical
-data deletion policy. The collector cannot guarantee the upstream Gateway's
+## Published files
+
+Consumers read these from GitHub Pages; only the rolling cache and the archive are committed.
+
+| Path | Size | Contents |
+| --- | --- | --- |
+| `index.json` | ~1 KB gz | Freshness, per-item status, commodity prices and best bid/ask |
+| `summary.json` | ~68 KB gz | Every item's roll statistics, no sale rows |
+| `prices/<item>.json` | 8-61 KB gz | One item: roll list, statistics, and compact sale rows |
+| `data/archive/<date>.json` | ~860 KB gz | One completed UTC day of sales, written once |
+
+A client fetches `index.json` and `summary.json` on load - that is every price for every item
+in about 69 KB - and pulls an item's sale rows only when it needs the underlying history.
+Sale rows are `[unit_price, sold_at_epoch_seconds, time_to_sell_seconds, roll_index]` against
+the file's own `rolls` array.
+
+The rolling cache and archive are committed; the served files are rebuilt every run and never
+committed, so republishing them costs no repository growth. Archive files cover only completed
+days - today is still accumulating - so once written a day file does not change again, and
+contributes no further delta. Expect roughly 315 MB of archive per year at current volume.
+
+The 168-hour limit applies to the current JSON's transactions and commodity
+observations. The daily archive retains everything older, and git commit history retains
+older snapshots; this is not a historical data deletion policy. The collector cannot guarantee the upstream Gateway's
 database is complete; `history_complete` means pagination reached the requested
 boundary or the source reported its end of history. Sparse categories may have
 zero trades even when fetched successfully.
