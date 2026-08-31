@@ -5,7 +5,10 @@ on:
   schedule:
     # Every 10 minutes: 6 Pages deployments an hour, inside the ~10/hour soft limit.
     # */5 would be 12/hour and over it, and GitHub drops short-interval schedules first.
-    - cron: '*/10 * * * *'
+    # Offset off the round ten-minute marks on purpose. schedule is best effort and the
+    # queue is deepest at :00 and the other round minutes, where most crontabs fire, so
+    # a schedule sitting there is the first to be delayed or dropped.
+    - cron: '3,13,23,33,43,53 * * * *'
   push:
     branches: [main]
     paths:
