@@ -17,12 +17,24 @@ Supported by [warerastats.io](https://warerastats.io/).
 3. A successful run commits the rolling JSON to `main`. The workflow's job requests
    `contents: write`; repository rules must permit its bot to update `main`.
 
-The workflow uses `*/10 * * * *` in UTC, a manual trigger, one serialized collection
-job, Python 3.12, and no third-party Python dependencies. Ten minutes is six Pages
-deployments an hour, inside the roughly 10/hour soft limit; `*/5` would exceed it, and
-GitHub drops short-interval schedules first under load. GitHub scheduled runs can
-be delayed; this is a requested cadence, not a guaranteed delivery time. GitHub may
-disable public-repository schedules after 60 days without repository activity.
+The workflow uses `3,13,23,33,43,53 * * * *` in UTC, a manual trigger, one serialized
+collection job, Python 3.12, and no third-party Python dependencies. Ten minutes is six
+Pages deployments an hour, inside the roughly 10/hour soft limit; `*/5` would exceed it,
+and GitHub drops short-interval schedules first under load. The three-minute offset is
+deliberate: `schedule` is best effort, and the queue is deepest at `:00` and the other
+round minutes where most crontabs fire, so a schedule sitting on them is the first to be
+delayed or dropped. GitHub scheduled runs can still be delayed by tens of minutes or
+skipped entirely; this is a requested cadence, not a guaranteed delivery time, and the
+collector is built to tolerate that - a late run simply collects a longer span, and the
+six-hourly full rescan recovers anything an overlap missed. GitHub may disable
+public-repository schedules after 60 days without repository activity. Actions minutes
+are free and unmetered on public repositories, so the cadence is bounded by the Pages
+deployment limit and by courtesy to the upstream Gateway, not by a minutes quota.
+
+A brand-new schedule commonly takes far longer than one interval to fire for the first
+time. If it has not started, **Run workflow** under Actions works immediately, and an
+external scheduler calling `workflow_dispatch` uses a separate, more reliable queue than
+`schedule` does.
 
 ## Local usage
 
