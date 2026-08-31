@@ -17,15 +17,19 @@ Supported by [warerastats.io](https://warerastats.io/).
 3. A successful run commits the rolling JSON to `main`. The workflow's job requests
    `contents: write`; repository rules must permit its bot to update `main`.
 
-The workflow uses `7,22,37,52 * * * *` in UTC, a manual trigger, one serialized
-collection job, Python 3.12, and no third-party Python dependencies. Fifteen minutes is
-four Pages deployments an hour, well inside the roughly 10/hour soft limit. Both the
-interval and the offset are deliberate: `schedule` is best effort, GitHub drops
-short-interval schedules first under load, and its queue is deepest at `:00`, `:15`,
-`:30` and `:45` where most crontabs sit. An earlier `*/10`, and then the same cadence
-offset off the round minutes, produced no scheduled run at all across roughly six hours
-on this repository while every push-triggered run started in the second it was created -
-so the interval, not the runner supply, is what is being tuned here. GitHub scheduled runs can still be delayed by tens of minutes or
+Collection is driven by an external scheduler calling `workflow_dispatch`, not by
+`schedule`. Around 38 scheduled firings were expected across three cron expressions -
+`*/10`, the same cadence offset off the round minutes, and `7,22,37,52` - over about eight
+hours, and not one ran, while every push-triggered run started in the same second it was
+created. Runner supply was never the constraint and neither was the interval: GitHub's
+schedule dispatcher was not serving this repository. `workflow_dispatch` is a different
+path that the caller triggers directly, so it does not depend on that dispatcher at all.
+
+`41 * * * *` remains as an hourly fallback. Long intervals are the last to be dropped, so
+if any schedule ever fires here it will be that one, and it keeps collection alive if the
+external scheduler stops. The workflow otherwise uses a manual trigger, one serialized
+collection job, Python 3.12, and no third-party Python dependencies. Four dispatches an
+hour plus the fallback stays well inside the roughly 10/hour Pages soft limit. GitHub scheduled runs can still be delayed by tens of minutes or
 skipped entirely; this is a requested cadence, not a guaranteed delivery time, and the
 collector is built to tolerate that - a late run simply collects a longer span, and the
 six-hourly full rescan recovers anything an overlap missed. GitHub may disable
@@ -33,10 +37,38 @@ public-repository schedules after 60 days without repository activity. Actions m
 are free and unmetered on public repositories, so the cadence is bounded by the Pages
 deployment limit and by courtesy to the upstream Gateway, not by a minutes quota.
 
-A brand-new schedule commonly takes far longer than one interval to fire for the first
-time. If it has not started, **Run workflow** under Actions works immediately, and an
-external scheduler calling `workflow_dispatch` uses a separate, more reliable queue than
-`schedule` does.
+### Driving collection from an external scheduler
+
+Any service that can send an authenticated POST on a timer will do; the steps below use
+[cron-job.org](https://cron-job.org), which is free.
+
+Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+with **Repository access** set to only this repository and one permission, **Actions:
+Read and write**. Nothing else is needed, and no other repository should be selected. Then
+schedule this request every 15 minutes:
+
+```
+POST https://api.github.com/repos/leblinski/-warera-case1-collector/actions/workflows/collect.yml/dispatches
+
+Accept: application/vnd.github+json
+Authorization: Bearer <token>
+X-GitHub-Api-Version: 2022-11-28
+Content-Type: application/json
+
+{"ref": "main"}
+```
+
+A successful dispatch returns **204 No Content** with an empty body. A 401 means the token
+is wrong or expired, a 403 means it lacks Actions write on this repository, and a 404
+usually means the token cannot see the repository at all rather than that the workflow is
+missing.
+
+Two things to know about running it this way. The token expires - fine-grained tokens
+default to 90 days - and when it does, collection stops silently, so set a reminder to
+rotate it. And the freshness of the published `generated_at` is the canary: a consumer
+showing data hours old means dispatches have stopped, whatever the Actions page suggests.
+
+**Run workflow** under Actions remains available at any time and needs no token.
 
 ## Local usage
 
