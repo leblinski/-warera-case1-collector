@@ -588,6 +588,24 @@ def build_index(payload):
                       for code, row in payload["categories"].items()}}
 
 
+def build_commodities(payload):
+    """Full order books for the input commodities, fetched on demand rather than on load.
+
+    A crafting cost is what the book actually charges for the quantity being bought, not the
+    best ask repeated, so a consumer needs the depth to walk it.
+    """
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "status": payload["status"],
+            "commodities": {code: {"item_code": code, "name": row["name"], "status": row["status"],
+                                   "price": row.get("price"),
+                                   "price_fetched_at": row.get("price_fetched_at"),
+                                   "book_fetched_at": row.get("book_fetched_at"),
+                                   "order_book": {key: value
+                                                  for key, value in (row.get("order_book") or {}).items()
+                                                  if key != "raw"}}
+                            for code, row in payload["commodities"].items()}}
+
+
 def build_archive(payload, now):
     """Group retained sales into whole UTC days. Today is still accumulating and is skipped,
     so a day file is written once and then never changes again."""
@@ -609,7 +627,8 @@ def publish(payload, public_dir, archive_dir, now):
     public_dir, archive_dir = Path(public_dir), Path(archive_dir)
     atomic_write(public_dir / "index.json", build_index(payload))
     atomic_write(public_dir / "summary.json", build_summary(payload))
-    written = 2
+    atomic_write(public_dir / "commodities.json", build_commodities(payload))
+    written = 3
     for code, category in payload["categories"].items():
         atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
         written += 1

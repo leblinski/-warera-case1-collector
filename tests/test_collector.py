@@ -351,6 +351,13 @@ class CollectorTests(unittest.TestCase):
             # The on-load bundle answers any price without carrying a single sale row.
             self.assertNotIn('sales', json.dumps(summary))
             self.assertTrue(summary['categories']['sniper']['rolls'])
+            # Full order books ship separately: a crafting cost must walk the book, but the
+            # depth is far too large to carry in the file every visitor loads.
+            books = json.loads((public / 'commodities.json').read_text(encoding='utf-8'))
+            self.assertEqual(set(books['commodities']), set(c.COMMODITIES))
+            self.assertIn('buy_orders', books['commodities']['scraps']['order_book'])
+            self.assertNotIn('raw', books['commodities']['scraps']['order_book'])
+            self.assertNotIn('order_book', json.dumps(summary))
             shard = json.loads((public / 'prices' / 'sniper.json').read_text(encoding='utf-8'))
             price, sold_at, time_to_sell, roll_index = shard['sales'][0]
             self.assertEqual(price, 50)

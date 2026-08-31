@@ -156,6 +156,7 @@ Consumers read these from GitHub Pages; only the rolling cache and the archive a
 | --- | --- | --- |
 | `index.json` | ~1 KB gz | Freshness, per-item status, commodity prices and best bid/ask |
 | `summary.json` | ~68 KB gz | Every item's roll statistics, no sale rows |
+| `commodities.json` | ~23 KB gz | Full scrap/steel/Case I order books, fetched on demand |
 | `prices/<item>.json` | 8-61 KB gz | One item: roll list, statistics, and compact sale rows |
 | `data/archive/<date>.json` | ~860 KB gz | One completed UTC day of sales, written once |
 
