@@ -137,9 +137,17 @@ Public commodity price/order-book calls succeeded. The first authenticated Actio
 run retrieved live equipment sales but exposed slow category-filtered queries and
 a timestamp-precision mismatch in summary validation. The collector now scans the
 shared market stream and uses the serialized timestamp precision throughout.
-All 27 local tests pass, including a regression for that validation failure.
-Check the Actions run and the JSON's health fields for live collection status;
-synthetic test success alone is not evidence of successful live collection.
+The [first successful live run](https://github.com/leblinski/-warera-case1-collector/actions/runs/33374184973)
+collected 43,535 sales across all 36 categories, plus all three commodity prices
+and order books, with zero data-quality issues. Its JSON was committed to `main`.
+The [next successful run](https://github.com/leblinski/-warera-case1-collector/actions/runs/33374990632)
+validated the rolling update: 43,616 retained sales, 208 new IDs, and 127 expired
+IDs removed, using 18 API requests. Both runs completed on 2026-08-31.
+All 28 local tests pass. Validation permits a relative/absolute tolerance of
+1e-12 for derived floating summaries because Windows and Linux can differ by one
+last decimal place. Original transactions, equipment, exact roll values, counts,
+and timestamps remain checked without that floating-summary tolerance.
+Check the latest Actions run and JSON health fields for ongoing collection status.
 
 Sources checked for protocol/schema compatibility:
 
