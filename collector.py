@@ -484,6 +484,15 @@ def atomic_write(path, payload):
             os.unlink(temp_name)
 
 
+def summaries_match(actual, expected):
+    """Allow only tiny platform math differences in derived floating summaries."""
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(summaries_match(actual[k], expected[k]) for k in actual)
+    if isinstance(actual, float) or isinstance(expected, float):
+        return number(actual) is not None and number(expected) is not None and math.isclose(actual, expected, rel_tol=1e-12, abs_tol=1e-12)
+    return actual == expected
+
+
 def validate(payload, require_healthy=False, current_time=None):
     expected = {row["item_code"] for row in categories()}
     if payload.get("schema_version") != SCHEMA_VERSION or set(payload.get("categories", {})) != expected:
@@ -501,7 +510,7 @@ def validate(payload, require_healthy=False, current_time=None):
             seen.add(tx["id"])
             if normalize_transaction(tx["raw"], code) != tx:
                 raise CollectionError("Normalized transaction does not match its raw source")
-        if aggregate(rows, now) != category["rolls"]:
+        if not summaries_match(aggregate(rows, now), category["rolls"]):
             raise CollectionError("Roll summaries do not match retained transactions")
     if set(payload.get("commodities", {})) != set(COMMODITIES):
         raise CollectionError("Missing commodity coverage")

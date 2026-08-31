@@ -3,6 +3,7 @@ import contextlib
 import copy
 import io
 import json
+import math
 import os
 import tempfile
 import unittest
@@ -100,6 +101,19 @@ class CollectorTests(unittest.TestCase):
             output = c.collect(FullClient(), now=now)
         loaded = json.loads(json.dumps(output))
         self.assertEqual(c.validate(loaded, True, now), 36)
+
+    def test_platform_rounding_tolerance_still_rejects_changed_summary(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(FullClient(), now=NOW)
+        loaded = json.loads(json.dumps(output))
+        roll = next(iter(loaded['categories']['pants4']['rolls'].values()))
+        for window in ('primary_24h', 'fallback_48h', 'selected'):
+            value = roll[window]['recency_weighted_price']
+            roll[window]['recency_weighted_price'] = math.nextafter(value, math.inf)
+        self.assertEqual(c.validate(loaded, True, NOW), 36)
+        roll['selected']['recency_weighted_price'] += 0.01
+        with self.assertRaises(c.CollectionError):
+            c.validate(loaded, True, NOW)
 
     def test_shared_market_scan_distributes_and_filters_categories(self):
         client = SequenceClient([page([raw('knife-sale', code='knife'), raw('outside', code='other-case-equipment')], 'next'),
