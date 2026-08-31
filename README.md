@@ -17,13 +17,15 @@ Supported by [warerastats.io](https://warerastats.io/).
 3. A successful run commits the rolling JSON to `main`. The workflow's job requests
    `contents: write`; repository rules must permit its bot to update `main`.
 
-The workflow uses `3,13,23,33,43,53 * * * *` in UTC, a manual trigger, one serialized
-collection job, Python 3.12, and no third-party Python dependencies. Ten minutes is six
-Pages deployments an hour, inside the roughly 10/hour soft limit; `*/5` would exceed it,
-and GitHub drops short-interval schedules first under load. The three-minute offset is
-deliberate: `schedule` is best effort, and the queue is deepest at `:00` and the other
-round minutes where most crontabs fire, so a schedule sitting on them is the first to be
-delayed or dropped. GitHub scheduled runs can still be delayed by tens of minutes or
+The workflow uses `7,22,37,52 * * * *` in UTC, a manual trigger, one serialized
+collection job, Python 3.12, and no third-party Python dependencies. Fifteen minutes is
+four Pages deployments an hour, well inside the roughly 10/hour soft limit. Both the
+interval and the offset are deliberate: `schedule` is best effort, GitHub drops
+short-interval schedules first under load, and its queue is deepest at `:00`, `:15`,
+`:30` and `:45` where most crontabs sit. An earlier `*/10`, and then the same cadence
+offset off the round minutes, produced no scheduled run at all across roughly six hours
+on this repository while every push-triggered run started in the second it was created -
+so the interval, not the runner supply, is what is being tuned here. GitHub scheduled runs can still be delayed by tens of minutes or
 skipped entirely; this is a requested cadence, not a guaranteed delivery time, and the
 collector is built to tolerate that - a late run simply collects a longer span, and the
 six-hourly full rescan recovers anything an overlap missed. GitHub may disable

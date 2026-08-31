@@ -3,12 +3,12 @@ name: Collect WarEra Case I market
 on:
   workflow_dispatch:
   schedule:
-    # Every 10 minutes: 6 Pages deployments an hour, inside the ~10/hour soft limit.
-    # */5 would be 12/hour and over it, and GitHub drops short-interval schedules first.
-    # Offset off the round ten-minute marks on purpose. schedule is best effort and the
-    # queue is deepest at :00 and the other round minutes, where most crontabs fire, so
-    # a schedule sitting there is the first to be delayed or dropped.
-    - cron: '3,13,23,33,43,53 * * * *'
+    # Every 15 minutes, offset off the quarter hours. Two things are being avoided here.
+    # GitHub drops short-interval schedules first under load, and 6 runs an hour did not
+    # fire at all over roughly six hours; 4 an hour asks for less. The queue is also
+    # deepest at :00, :15, :30 and :45 where most crontabs sit, so this stays clear of
+    # them. Four Pages deployments an hour, well inside the ~10/hour soft limit.
+    - cron: '7,22,37,52 * * * *'
   push:
     branches: [main]
     paths:
