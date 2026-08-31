@@ -1,0 +1,73 @@
+name: Collect WarEra Case I market
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - collector.py
+      - config/**
+      - tests/**
+      - .github/workflows/collect.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: warera-case1-collector-main
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test collection and cache safety
+        run: python -m unittest discover -s tests -v
+      - name: Collect transactions and input prices
+        id: collect
+        continue-on-error: true
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+        run: python collector.py --max-seconds 600
+      - name: Validate generated cache
+        id: validate
+        if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
+        run: python collector.py --validate
+      - name: Commit updated rolling cache
+        if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/warera_case1_market.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update rolling WarEra Case I market cache'
+            git push origin HEAD:main
+          fi
+      - name: Retain cache for inspection
+        if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: warera-case1-market-${{ github.run_id }}
+          path: data/warera_case1_market.json
+          if-no-files-found: warn
+          retention-days: 2
+      - name: Require healthy live collection
+        if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
+        env:
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+        run: |
+          if [ "$COLLECT_OUTCOME" != 'success' ]; then
+            echo 'Collection failed or is degraded. Any valid partial cache was preserved.'
+            exit 1
+          fi
+          python collector.py --validate --require-healthy
