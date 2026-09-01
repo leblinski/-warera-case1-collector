@@ -3,12 +3,16 @@ name: Collect WarEra Case I market
 on:
   workflow_dispatch:
   schedule:
-    # Every 15 minutes, offset off the quarter hours. Two things are being avoided here.
-    # GitHub drops short-interval schedules first under load, and 6 runs an hour did not
-    # fire at all over roughly six hours; 4 an hour asks for less. The queue is also
-    # deepest at :00, :15, :30 and :45 where most crontabs sit, so this stays clear of
-    # them. Four Pages deployments an hour, well inside the ~10/hour soft limit.
-    - cron: '7,22,37,52 * * * *'
+    # A fallback only. schedule does fire on this repository, but nowhere near as often as
+    # asked: a 15 minute cron delivered 2 runs in 8 hours against about 32 requested, in
+    # gaps of roughly 2h40m each, and three earlier expressions produced none at all across
+    # the preceding 8 hours. Every push-triggered run started in the second it was created,
+    # so the constraint is the schedule dispatcher rather than runner supply, and asking
+    # more often does not make it deliver more. The cadence now comes from an external
+    # scheduler calling workflow_dispatch instead - see the README. This stays as an hourly
+    # safety net in case that scheduler stops or its token expires; at roughly one delivery
+    # every few hours it is worth about what it costs.
+    - cron: '41 * * * *'
   push:
     branches: [main]
     paths:
