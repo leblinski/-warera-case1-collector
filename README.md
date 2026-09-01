@@ -67,10 +67,23 @@ is wrong or expired, a 403 means it lacks Actions write on this repository, and 
 usually means the token cannot see the repository at all rather than that the workflow is
 missing.
 
-Two things to know about running it this way. The token expires - fine-grained tokens
-default to 90 days - and when it does, collection stops silently, so set a reminder to
-rotate it. And the freshness of the published `generated_at` is the canary: a consumer
-showing data hours old means dispatches have stopped, whatever the Actions page suggests.
+Fine-grained tokens default to a 90 day expiry, and an expiring token stops collection
+silently on a date nobody remembers. The token driving this one was deliberately created
+without an expiry to remove that failure, which trades a scheduled outage for a credential
+that stays valid until it is revoked by hand at
+[personal access tokens](https://github.com/settings/personal-access-tokens). It is worth
+what it costs here: the token carries one permission, Actions write, on one public
+repository, so the most it can do is start collection runs. It cannot read
+`WARERA_API_KEY`, which is not readable through the API at all, and it cannot alter the
+workflow to expose it, which would need contents write.
+
+Collection can still stop without any error appearing: the token revoked, the scheduler's
+job paused, or cron-job.org disabling it after repeated failures. So the freshness of the
+published `generated_at` is the thing to watch, not the Actions page - a consumer showing
+data hours old means dispatches have stopped, whatever the reason. The calculator surfaces
+it as "Prices collected N min ago", and its "gap between sources" line is the second
+signal: it reappears when the collector falls far enough behind that its history no longer
+meets the live sales a browser fetches.
 
 **Run workflow** under Actions remains available at any time and needs no token.
 
