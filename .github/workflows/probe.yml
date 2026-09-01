@@ -1,0 +1,39 @@
+# Answers one question that cannot be answered from a phone: how far back a single
+# filtered market request reaches, and what page size the Gateway honours. Manual only,
+# read-only, and never runs on a schedule - it exists to be run when the answer is needed
+# and to stay out of the way otherwise.
+name: Probe gateway page depth
+
+on:
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: 'Item codes to probe, comma separated'
+        default: 'sniper,boots4,jet'
+      limits:
+        description: 'Page sizes to try, comma separated'
+        default: '100,200,500'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_CODES: ${{ inputs.codes }}
+          PROBE_LIMITS: ${{ inputs.limits }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_gateway.py --codes "$PROBE_CODES" --limits "$PROBE_LIMITS"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
