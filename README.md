@@ -18,16 +18,20 @@ Supported by [warerastats.io](https://warerastats.io/).
    `contents: write`; repository rules must permit its bot to update `main`.
 
 Collection is driven by an external scheduler calling `workflow_dispatch`, not by
-`schedule`. Around 38 scheduled firings were expected across three cron expressions -
-`*/10`, the same cadence offset off the round minutes, and `7,22,37,52` - over about eight
-hours, and not one ran, while every push-triggered run started in the same second it was
-created. Runner supply was never the constraint and neither was the interval: GitHub's
-schedule dispatcher was not serving this repository. `workflow_dispatch` is a different
-path that the caller triggers directly, so it does not depend on that dispatcher at all.
+`schedule`. Three cron expressions - `*/10`, the same cadence offset off the round minutes,
+and `7,22,37,52` - produced no scheduled run at all across about eight hours. The fourth
+did fire, but delivered 2 runs in the following 8 hours against roughly 32 requested, in
+gaps of about 2h40m each: a 6% delivery rate and an effective cadence of nearly three
+hours. Meanwhile every push-triggered run started in the same second it was created.
 
-`41 * * * *` remains as an hourly fallback. Long intervals are the last to be dropped, so
-if any schedule ever fires here it will be that one, and it keeps collection alive if the
-external scheduler stops. The workflow otherwise uses a manual trigger, one serialized
+So `schedule` here is not dead, it is simply unrelated to the interval requested, and
+asking more often does not make it deliver more. Runner supply was never the constraint.
+`workflow_dispatch` is a different path that the caller triggers directly, so it does not
+depend on that dispatcher at all.
+
+`41 * * * *` remains as an hourly fallback, worth about what it costs: at roughly one
+delivery every few hours it will not hold the cadence on its own, but it keeps collection
+alive rather than stopped if the external scheduler fails or its token expires. The workflow otherwise uses a manual trigger, one serialized
 collection job, Python 3.12, and no third-party Python dependencies. Four dispatches an
 hour plus the fallback stays well inside the roughly 10/hour Pages soft limit. GitHub scheduled runs can still be delayed by tens of minutes or
 skipped entirely; this is a requested cadence, not a guaranteed delivery time, and the
