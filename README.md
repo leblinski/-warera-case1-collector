@@ -186,6 +186,28 @@ database is complete; `history_complete` means pagination reached the requested
 boundary or the source reported its end of history. Sparse categories may have
 zero trades even when fetched successfully.
 
+## Measuring how far back one request reaches
+
+The browser calculator reads recent equipment sales with a single filtered request and
+merges them over this collector's published history. That only holds while the newest row
+the collector has and the oldest row the request returns overlap. On a busy item they may
+not: a request returns a fixed number of rows, and a fixed number of rows covers less time
+the faster the item trades. A window neither source saw reads as thin trading rather than
+as missing data, which is the failure worth catching.
+
+`tools/probe_gateway.py` answers the two questions that decide it against the live Gateway
+rather than by arithmetic - what page size the Gateway actually honours, and how many hours
+a page of that size reaches back for the busiest categories. Run it from
+**Actions -> Probe gateway page depth -> Run workflow**; it is manual only, read-only, and
+never runs on a schedule. Locally:
+
+```sh
+python tools/probe_gateway.py --codes sniper,boots4,jet --limits 100,200,500
+```
+
+Its closing line reports the shallowest reach across the items probed. The collector has to
+publish more often than that figure for the two sources to meet.
+
 ## Validation and provenance
 
 This version was reconstructed from the requirements in the referenced conversation.
