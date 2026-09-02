@@ -1,0 +1,39 @@
+# Finds and stores the game art the calculator is missing. Runs on push to its own
+# branch because the point is the files it brings back, not a schedule: it commits
+# whatever it downloads so the branch itself is the delivery.
+name: Scout item icons
+
+on:
+  push:
+    branches: [claude/icon-scout]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Scout
+        run: |
+          {
+            echo '```'
+            python tools/scout_icons.py icons 2>&1
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit anything found
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add -A icons
+          git diff --cached --quiet && { echo 'nothing new'; exit 0; }
+          git commit -m 'Add item art found by the scout'
+          git push
