@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
 COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # How long retained transactions live in the rolling output. The source only exposes a short
 # rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
@@ -712,16 +712,30 @@ def migrate(payload):
 
     Schema 1 stored `raw`, `equipment` and `exact_roll` alongside the fields they duplicated.
     Every primitive field schema 2 needs is already present, so each record re-derives locally.
+
+    Schema 3 keeps sales off long-standing listings out of the comparison windows, so a cache
+    written before it carries roll summaries the current aggregate() would never produce.
+    validate() recomputes those summaries as a tamper check, so without this the collector
+    rejects its own cache on load and cannot run at all. The retained rows are untouched by
+    the change and hold everything needed, so the summaries are rebuilt from them rather than
+    the whole retention window being refetched.
     """
     version = payload.get("schema_version")
     if version == SCHEMA_VERSION:
         return payload
-    if version != 1:
+    if version not in (1, 2):
         raise CollectionError(f"Cannot migrate cache schema version {version!r}")
-    for category in payload.get("categories", {}).values():
-        category["transactions"] = [pack_transaction(tx) for tx in category.get("transactions", [])]
+    if version == 1:
+        for category in payload.get("categories", {}).values():
+            category["transactions"] = [pack_transaction(tx) for tx in category.get("transactions", [])]
+    generated_at = payload.get("generated_at")
+    if generated_at:
+        now = parse_time(generated_at)
+        for code, category in payload.get("categories", {}).items():
+            rows = [unpack_transaction(row, code) for row in category.get("transactions", [])]
+            category["rolls"] = aggregate(rows, now)
     payload["schema_version"] = SCHEMA_VERSION
-    print(f"Migrated cache from schema 1 to {SCHEMA_VERSION}", flush=True)
+    print(f"Migrated cache from schema {version} to {SCHEMA_VERSION}", flush=True)
     return payload
 
 

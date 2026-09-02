@@ -456,6 +456,24 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.migrate({'schema_version': 99})
 
+    def test_schema_2_cache_has_its_summaries_rebuilt_not_trusted(self):
+        # A cache written before the time-on-market filter carries summaries the current
+        # aggregate() would not produce. validate() recomputes them as a tamper check, so
+        # unless the migration rebuilds them the collector rejects its own cache on load.
+        backlog = self.normalized('backlog', hours=1, price=1,
+                                  on_market=timedelta(hours=c.MAX_TIME_ON_MARKET_HOURS + 1))
+        fresh = self.normalized('fresh', hours=1, price=25)
+        legacy = {'schema_version': 2, 'generated_at': c.stamp(NOW), 'categories': {'sniper': {
+            'transactions': [c.pack_transaction(backlog), c.pack_transaction(fresh)],
+            'rolls': {'stale-summary-the-old-code-produced': {}}}}}
+        migrated = c.migrate(legacy)
+        self.assertEqual(migrated['schema_version'], c.SCHEMA_VERSION)
+        rolls = migrated['categories']['sniper']['rolls']
+        self.assertTrue(c.summaries_match(
+            c.aggregate([backlog, fresh], NOW), rolls))
+        self.assertEqual(next(iter(rolls.values()))['selected']['count'], 1)
+        self.assertEqual(next(iter(rolls.values()))['selected']['median'], 25)
+
 
 if __name__ == '__main__':
     unittest.main()
