@@ -456,6 +456,38 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.migrate({'schema_version': 99})
 
+    def test_every_older_schema_migrates_into_a_cache_that_validates(self):
+        # The failure this guards against took the collector down for three hours: a change to
+        # aggregate() left every existing cache failing validate()'s tamper check, so the
+        # collector rejected its own cache on load. Any future change to aggregate() does the
+        # same, so the invariant is checked for every version migrate() claims to accept.
+        with contextlib.redirect_stdout(io.StringIO()):
+            output = c.collect(FullClient(), now=NOW)
+        for version in range(1, c.SCHEMA_VERSION):
+            aged = json.loads(json.dumps(output))
+            aged['schema_version'] = version
+            with contextlib.redirect_stdout(io.StringIO()):
+                migrated = c.migrate(aged)
+            self.assertEqual(migrated['schema_version'], c.SCHEMA_VERSION, f'from schema {version}')
+            self.assertEqual(c.validate(migrated, True, NOW), 36, f'from schema {version}')
+
+    def test_a_roll_silent_in_the_comps_window_still_reports_the_retained_one(self):
+        # A roll is about one percent of its slot, so most are quiet on any given day. Without
+        # the wider window a reader cannot tell "nobody wants this" from "none since Tuesday".
+        rows = [self.normalized('recent', hours=1, price=25),
+                self.normalized('older', hours=c.COMPS_WINDOW_HOURS + 20, price=20,
+                                skills={'attack': 122, 'criticalChance': 17})]
+        rolls = c.aggregate(rows, NOW)
+        quiet = rolls[c.canonical({'skills': {'attack': 122, 'criticalChance': 17}})]
+        self.assertIsNone(quiet['selected']['median'])
+        self.assertEqual(quiet['selected']['count'], 0)
+        self.assertEqual(quiet['retained_window']['median'], 20)
+        self.assertEqual(quiet['retained_window']['count'], 1)
+        self.assertEqual(quiet['retained_window_hours'], c.RETENTION_HOURS)
+        # and a roll that did trade recently is unaffected
+        loud = rolls[c.canonical({'skills': {'attack': 121, 'criticalChance': 17}})]
+        self.assertEqual(loud['selected']['median'], 25)
+
     def test_schema_2_cache_has_its_summaries_rebuilt_not_trusted(self):
         # A cache written before the time-on-market filter carries summaries the current
         # aggregate() would not produce. validate() recomputes them as a tamper check, so
