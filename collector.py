@@ -34,6 +34,14 @@ RETENTION_HOURS = 168
 # available to consumers that want to widen the window themselves.
 COMPS_WINDOW_HOURS = 48
 PRIMARY_HOURS = 24
+# Both windows above filter on when a sale CLOSED. That is not enough on its own: a listing
+# created months ago clears today and lands inside the 24h window carrying the price it was
+# posted at. When the game moved its legal price brackets on 2026-08-29, three months of
+# knife listings pinned at 1.80 kept clearing against a market whose fresh listings were
+# selling at 2.50, and the published median tracked the backlog rather than the market. A
+# sale that sat this long was priced under conditions that no longer hold, so it is not a
+# comparable. Raw sale rows keep everything; only the statistics apply this.
+MAX_TIME_ON_MARKET_HOURS = COMPS_WINDOW_HOURS
 # Every incremental run re-reads this far past its checkpoint to catch delayed ingestion.
 # The upstream gateway scrapes every 5 seconds, so this is ~350x the expected delay;
 # full_rescan_interval_hours is the real backstop.
@@ -418,11 +426,21 @@ def summarize(rows, now):
             "median_time_to_sell_seconds": statistics.median(durations) if durations else None}
 
 
+def stale_listing(tx, max_hours=MAX_TIME_ON_MARKET_HOURS):
+    """A sale off a listing that sat longer than the comps window. Its price was set under
+    conditions the window is meant to exclude, whatever day it happened to clear on. An
+    unknown time on market is not evidence of staleness, so it stays."""
+    seconds = tx["time_to_sell_seconds"]
+    return seconds is not None and seconds > max_hours * 3600
+
+
 def aggregate(transactions, now, min_primary_comps=MIN_PRIMARY_COMPS):
     # Comparison windows are narrower than retention on purpose; stale sales make poor
     # comparables, but the retained rows stay available for consumers wanting a wider view.
     groups = defaultdict(list)
     for tx in transactions:
+        if stale_listing(tx):
+            continue
         if tx["eligible_for_comps"] and now - timedelta(hours=COMPS_WINDOW_HOURS) <= parse_time(tx["sold_at"]) <= now:
             groups[tx["roll_key"]].append(tx)
     rolls = {}
@@ -532,6 +550,7 @@ def collect(client, previous=None, now=None, max_pages=1000):
         "updated_at": stamp(now) if status == "ok" else previous.get("updated_at"),
         "status": status, "source": {"base_url": client.base_url, "attribution": "Supported by warerastats.io", "read_only": True},
         "policy": {"retention_hours": RETENTION_HOURS, "comps_window_hours": COMPS_WINDOW_HOURS,
+                   "max_time_on_market_hours": MAX_TIME_ON_MARKET_HOURS,
                    "primary_hours": PRIMARY_HOURS, "min_primary_comps": MIN_PRIMARY_COMPS,
                    "full_condition_only": True, "recency_half_life_hours": RECENCY_HALF_LIFE_HOURS,
                    "incremental_overlap_hours": OVERLAP_HOURS, "full_rescan_interval_hours": FULL_RESCAN_HOURS,

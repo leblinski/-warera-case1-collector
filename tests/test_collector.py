@@ -20,11 +20,12 @@ RETAINED_PAST = c.RETENTION_HOURS + 1
 CAT = next(row for row in c.categories() if row['item_code'] == 'sniper')
 
 
-def raw(txid='test-1', hours=1, price=50, code='sniper', state=100, skills=None):
+def raw(txid='test-1', hours=1, price=50, code='sniper', state=100, skills=None,
+        on_market=timedelta(minutes=10)):
     sold = NOW - timedelta(hours=hours)
     return {'_id': txid, 'transactionType': 'itemMarket', 'itemCode': code,
             'money': price, 'quantity': 1, 'sellerId': 'fixture-seller', 'buyerId': 'fixture-buyer',
-            'createdAt': c.stamp(sold), 'offerCreatedAt': c.stamp(sold - timedelta(minutes=10)),
+            'createdAt': c.stamp(sold), 'offerCreatedAt': c.stamp(sold - on_market),
             'item': {'_id': 'equipment-' + txid, 'code': code, 'state': state, 'maxState': 100,
                      'skills': skills if skills is not None else {'attack': 121, 'criticalChance': 17}}}
 
@@ -190,6 +191,41 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(roll['selected']['median'], 20)
         self.assertLess(roll['selected']['recency_weighted_price'], 20)
         self.assertEqual(roll['fallback_48h']['count'], 4)
+
+    def test_a_sale_off_a_long_standing_listing_is_not_a_comparable(self):
+        # The listing was posted under price rules that have since moved; that it happened to
+        # clear inside the window says nothing about what the item is worth now.
+        rows = [self.normalized('fresh-a', hours=1, price=25),
+                self.normalized('fresh-b', hours=2, price=25),
+                self.normalized('fresh-c', hours=3, price=25),
+                self.normalized('backlog', hours=1, price=1,
+                                on_market=timedelta(hours=c.MAX_TIME_ON_MARKET_HOURS + 1))]
+        roll = next(iter(c.aggregate(rows, NOW).values()))
+        self.assertEqual(roll['selected']['count'], 3)
+        self.assertEqual(roll['selected']['median'], 25)
+        self.assertEqual(roll['fallback_48h']['count'], 3)
+
+    def test_a_listing_inside_the_window_still_counts_and_unknown_age_is_kept(self):
+        rows = [self.normalized('slow', hours=1, price=10,
+                                on_market=timedelta(hours=c.MAX_TIME_ON_MARKET_HOURS - 1)),
+                self.normalized('quick', hours=1, price=20)]
+        self.assertEqual(next(iter(c.aggregate(rows, NOW).values()))['selected']['count'], 2)
+        unknown = self.normalized('unknown', hours=1, price=30)
+        unknown['time_to_sell_seconds'] = None
+        self.assertFalse(c.stale_listing(unknown))
+
+    def test_raw_sale_rows_keep_the_backlog_the_statistics_drop(self):
+        # Consumers that want the wider view still get every retained row.
+        category = {'item_code': 'sniper', 'name': 'Sniper', 'tier': 'elite', 'rarity': 'epic',
+                    'slot': 'weapon', 'status': 'ok', 'last_success_at': c.stamp(NOW),
+                    'transactions': []}
+        backlog = self.normalized('backlog', hours=1, price=1,
+                                  on_market=timedelta(hours=c.MAX_TIME_ON_MARKET_HOURS + 1))
+        category['transactions'] = [c.pack_transaction(backlog)]
+        category['rolls'] = c.aggregate([backlog], NOW)
+        rows, _ = c.shard_rows('sniper', category)
+        self.assertEqual(category['rolls'], {})
+        self.assertEqual(len(rows), 1)
 
     def test_sparse_24h_uses_48h_and_prunes_old_data(self):
         rows = [self.normalized('a', hours=1, price=10), self.normalized('b', hours=30, price=20),
