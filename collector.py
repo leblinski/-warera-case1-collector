@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
 COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # How long retained transactions live in the rolling output. The source only exposes a short
 # rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
@@ -434,22 +434,48 @@ def stale_listing(tx, max_hours=MAX_TIME_ON_MARKET_HOURS):
     return seconds is not None and seconds > max_hours * 3600
 
 
+def retained_summary(rows, now):
+    """Wide enough to show a roll trades, not to price against, so it carries only what
+    answers that. Recency weighting, spread and the rest are what the narrow windows are for,
+    and repeating them here would cost every reader half again the download for fields the
+    question does not use."""
+    full = summarize(rows, now)
+    return {key: full[key] for key in ("count", "median", "median_time_to_sell_seconds")}
+
+
 def aggregate(transactions, now, min_primary_comps=MIN_PRIMARY_COMPS):
-    # Comparison windows are narrower than retention on purpose; stale sales make poor
-    # comparables, but the retained rows stay available for consumers wanting a wider view.
+    """Roll statistics at three widths: 24h, 48h, and everything retained.
+
+    The comparison windows are narrower than retention on purpose - stale sales make poor
+    comparables. But a roll is roughly one percent of its slot, so at 48h most of them are
+    silent on any given day, and a consumer cannot tell "nobody wants this" from "none traded
+    since Tuesday". The retained window answers that: it is too wide to price against, and
+    exactly wide enough to show the roll does trade.
+
+    It stays out of `selected` deliberately. Pricing against week-old sales would be a
+    silent substitution; reporting them beside the empty window is an informed one.
+    """
     groups = defaultdict(list)
+    wide = defaultdict(list)
     for tx in transactions:
-        if stale_listing(tx):
+        if stale_listing(tx) or not tx["eligible_for_comps"]:
             continue
-        if tx["eligible_for_comps"] and now - timedelta(hours=COMPS_WINDOW_HOURS) <= parse_time(tx["sold_at"]) <= now:
+        sold = parse_time(tx["sold_at"])
+        if not now - timedelta(hours=RETENTION_HOURS) <= sold <= now:
+            continue
+        wide[tx["roll_key"]].append(tx)
+        if sold >= now - timedelta(hours=COMPS_WINDOW_HOURS):
             groups[tx["roll_key"]].append(tx)
     rolls = {}
-    for key, rows in sorted(groups.items()):
+    for key, retained in sorted(wide.items()):
+        rows = groups.get(key, [])
         recent = [row for row in rows if parse_time(row["sold_at"]) >= now - timedelta(hours=PRIMARY_HOURS)]
         primary = summarize(recent, now)
         fallback = summarize(rows, now)
         use_primary = len(recent) >= min_primary_comps
-        rolls[key] = {"exact_roll": roll_of(rows[0]), "primary_24h": primary, "fallback_48h": fallback,
+        rolls[key] = {"exact_roll": roll_of(retained[0]), "primary_24h": primary, "fallback_48h": fallback,
+                      "retained_window": retained_summary(retained, now),
+                      "retained_window_hours": RETENTION_HOURS,
                       "selected_window_hours": PRIMARY_HOURS if use_primary else COMPS_WINDOW_HOURS,
                       "selected": primary if use_primary else fallback,
                       "low_sample": (primary if use_primary else fallback)["count"] < min_primary_comps}
@@ -713,17 +739,18 @@ def migrate(payload):
     Schema 1 stored `raw`, `equipment` and `exact_roll` alongside the fields they duplicated.
     Every primitive field schema 2 needs is already present, so each record re-derives locally.
 
-    Schema 3 keeps sales off long-standing listings out of the comparison windows, so a cache
-    written before it carries roll summaries the current aggregate() would never produce.
-    validate() recomputes those summaries as a tamper check, so without this the collector
-    rejects its own cache on load and cannot run at all. The retained rows are untouched by
-    the change and hold everything needed, so the summaries are rebuilt from them rather than
-    the whole retention window being refetched.
+    Every version since has changed what aggregate() returns - schema 3 dropped sales off
+    long-standing listings, schema 4 added the retained window. validate() recomputes those
+    summaries as a tamper check, so any change to aggregate() leaves older caches failing it,
+    and the collector rejects its own cache on load and cannot run at all. That is not a
+    special case to handle once: it is what every future change to aggregate() will do. So
+    the summaries are always rebuilt from the retained rows, which no such change touches,
+    rather than the retention window being refetched.
     """
     version = payload.get("schema_version")
     if version == SCHEMA_VERSION:
         return payload
-    if version not in (1, 2):
+    if version not in range(1, SCHEMA_VERSION):
         raise CollectionError(f"Cannot migrate cache schema version {version!r}")
     if version == 1:
         for category in payload.get("categories", {}).values():
