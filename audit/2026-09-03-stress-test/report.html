@@ -1,0 +1,298 @@
+<title>Case I Calculator Stress Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@600;700&display=swap">
+<style>
+:root{
+  --ground:#F2F4F3;--panel:#FFFFFF;--panel-2:#E9EDEC;--line:#D3DAD8;--ink:#17242A;--dim:#4F6067;--muted:#7E8F96;
+  --accent:#8A6A1F;--accent-ink:#6E5418;--good:#2F7F70;--good-ink:#1F6A5C;--bad:#B0552F;--bad-ink:#9A4426;--warn:#8C6D12;--warn-ink:#6E5510;
+  --chip-good:rgba(47,127,112,.14);--chip-bad:rgba(176,85,47,.14);--chip-warn:rgba(140,109,18,.16);--chip-neutral:rgba(79,96,103,.14);
+  --grid:#E1E6E5;--axis:#B9C4C2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1A20;--panel:#15252D;--panel-2:#1C3039;--line:#2A4553;--ink:#EAF0F2;--dim:#9DB2BB;--muted:#7E96A1;
+    --accent:#C89B3C;--accent-ink:#E0B85A;--good:#6BB8A8;--good-ink:#8FD2C4;--bad:#D08258;--bad-ink:#E8A27E;--warn:#D4B106;--warn-ink:#E9CB3A;
+    --chip-good:rgba(107,184,168,.16);--chip-bad:rgba(208,130,88,.16);--chip-warn:rgba(212,177,6,.14);--chip-neutral:rgba(157,178,187,.14);
+    --grid:#1F3540;--axis:#3A5666;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1A20;--panel:#15252D;--panel-2:#1C3039;--line:#2A4553;--ink:#EAF0F2;--dim:#9DB2BB;--muted:#7E96A1;
+  --accent:#C89B3C;--accent-ink:#E0B85A;--good:#6BB8A8;--good-ink:#8FD2C4;--bad:#D08258;--bad-ink:#E8A27E;--warn:#D4B106;--warn-ink:#E9CB3A;
+  --chip-good:rgba(107,184,168,.16);--chip-bad:rgba(208,130,88,.16);--chip-warn:rgba(212,177,6,.14);--chip-neutral:rgba(157,178,187,.14);
+  --grid:#1F3540;--axis:#3A5666;
+}
+body{background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15.5px;line-height:1.55;margin:0}
+.wrap{max-width:980px;margin:0 auto;padding:36px 22px 80px}
+h1,h2,h3{font-family:"Saira Condensed","IBM Plex Sans",system-ui,sans-serif;text-wrap:balance;letter-spacing:.01em;margin:0}
+h1{font-size:44px;font-weight:700;line-height:1.05}
+h2{font-size:26px;font-weight:700;margin-top:52px;padding-top:18px;border-top:1px solid var(--line)}
+h3{font-size:19px;font-weight:600;margin-top:26px}
+p{max-width:72ch;margin:12px 0}
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 10px}
+.lede{font-size:18px;color:var(--ink);max-width:70ch}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 22px;margin:26px 0 0;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+.meta div{display:flex;flex-direction:column;gap:2px}
+.meta dt{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.meta dd{margin:0;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:14px;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap;vertical-align:middle}
+.chip.good{background:var(--chip-good);color:var(--good-ink)}
+.chip.bad{background:var(--chip-bad);color:var(--bad-ink)}
+.chip.warn{background:var(--chip-warn);color:var(--warn-ink)}
+.chip.neutral{background:var(--chip-neutral);color:var(--dim)}
+.claims{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:18px}
+.claim{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.claim b{font-family:"Saira Condensed",sans-serif;font-size:18px;font-weight:600}
+.claim p{margin:0;font-size:14px;color:var(--dim)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:14px 0}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num,th.num{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+code,kbd{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.92em;background:var(--panel-2);padding:1px 5px;border-radius:3px}
+pre{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:13px;line-height:1.5;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;max-width:100%}
+.finding{margin:22px 0 0;padding:18px 20px;background:var(--panel);border:1px solid var(--line);border-radius:8px;border-left:4px solid var(--line)}
+.finding.bad{border-left-color:var(--bad)}
+.finding.warn{border-left-color:var(--warn)}
+.finding.good{border-left-color:var(--good)}
+.finding h3{margin:0 0 6px;font-size:20px}
+.finding .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.finding p{margin:8px 0}
+.finding .measure{font-size:14px;color:var(--dim);border-top:1px dashed var(--line);padding-top:8px;margin-top:10px}
+.finding .measure b{color:var(--ink);font-weight:600}
+figure{margin:18px 0;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px 8px}
+figcaption{font-size:13px;color:var(--dim);margin-top:6px}
+.chart{position:relative}
+.chart svg{width:100%;height:auto;display:block}
+.chart .tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;color:var(--ink);white-space:nowrap;transform:translate(-50%,-115%);opacity:0;transition:opacity .08s}
+.chart .tip.on{opacity:1}
+details{margin:10px 0}
+summary{cursor:pointer;color:var(--accent-ink);font-weight:500}
+ul{max-width:76ch;padding-left:22px}li{margin:6px 0}
+.small{font-size:13.5px;color:var(--dim)}
+a{color:var(--accent-ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.chart .tip{transition:none}}
+</style>
+
+<div class="wrap">
+<p class="eyebrow">Adversarial review · WarEra-Selling-Price-Calc + -warera-case1-collector</p>
+<h1>Case I Calculator Stress Test</h1>
+<p class="lede">On the Sort and Cases tabs the calculator tells the truth about what it says it measures: the case edge is real, small, and positive on every one of 241 snapshots since 31 August, and no cheaper estimator beats the median. It is wrong in five places a user acts on, four of them on the Price tab and in the collector rather than in the six claims the brief asked about.</p>
+
+<dl class="meta">
+  <div><dt>Snapshot audited</dt><dd>2026-09-03 15:30 UTC</dd></div>
+  <div><dt>Retained sales</dt><dd>126,800 · 5.6 days</dd></div>
+  <div><dt>Rolls priced</dt><dd>1,040 of 1,810</dd></div>
+  <div><dt>Case edge (page)</dt><dd>3.6781 vs 3.550 · +3.61%</dd></div>
+  <div><dt>Edge, 241 snapshots</dt><dd>+2.64% … +6.38% · median +3.59%</dd></div>
+</dl>
+<p class="small">Verification marks on each finding: <span class="chip neutral">R</span> re-run by me with a fresh script · <span class="chip neutral">I</span> investigator's script, output spot-checked · <span class="chip neutral">C</span> confirmed from the code.</p>
+
+<h2>The six claims</h2>
+<div class="claims">
+  <div class="claim"><b>1 · Case EV about +4.3%</b><span class="chip warn">holds, level uncertain</span><p>+3.61% on this snapshot, +4.2 to +4.6% on the 1 Sep morning the brief was written. Sign robust; level spans +2.0% to +4.2% under defensible choices the page makes silently.</p></div>
+  <div class="claim"><b>2 · Every roll equal weight</b><span class="chip good">holds</span><p>Removing "as traded" was right: it was +9.47%, 71% of the gap from one knife roll. Sale counts are flat only where every roll gets listed, which is what uniform draws look like.</p></div>
+  <div class="claim"><b>3 · Bar as a threshold</b><span class="chip warn">coherent as code, not as rationale</span><p>Monotone in the bar (3.6848 → 3.6781 → 3.3010). Not monotone in the scrap bid: 0.214 → 0.215 drops the gross by 0.027. The comment calls it a cost; a cost model gives +2.5%.</p></div>
+  <div class="claim"><b>4 · The median is the price</b><span class="chip good">holds</span><p>Out of sample no estimator beats the 48h median by more than 0.1 point of next-day error. The split test reproduces: +0.7 to 1.1% for 45 min versus 6 to 10 min.</p></div>
+  <div class="claim"><b>5 · Neighbour fill 97.2%</b><span class="chip warn">reproduces, weaker than it reads</span><p>97.1% on 979 rolls against a 77.5% majority base rate; forward 94.9% vs 96.6% for the roll's own price. The "never the price" rule is already broken for 253 quiet rolls.</p></div>
+  <div class="claim"><b>6 · Thin marker at 5</b><span class="chip bad">wrong, harmless</span><p>Count &lt; 5 flags 30% of rolls at 8% precision against a 5.9% base rate; 50 of 458 flags come from the 24h window winning. A 48h IQR/median &gt; 5% flag is 2.8× more precise.</p></div>
+</div>
+
+<h2>What changes a number a user acts on</h2>
+<p>Ranked by how far the figure on screen is from the truth, times how often someone meets it. Each carries its verification status and what to measure after a fix.</p>
+
+<div class="finding bad">
+  <div class="row"><span class="chip bad">wrong number · Price tab</span><span class="chip neutral">R</span></div>
+  <h3>1. The Trends engine prices the best Common roll at 1.859 with HIGH confidence; it clears at 4.0 to 4.33</h3>
+  <p>Common knife 40/5, the one Common roll worth listing: the roll card says "List at 4.329" and the Trends panel beneath it says "Historical target 1.859 · HIGH 73". Type a floor of 1.800 and the page upgrades that to "History confidently supports 1.859 above the current 1.800 floor", a higher-price opportunity 57% below the clearing price. The mechanism is <code>weaponComparables</code> (line 5834): it takes twelve nearest-score comparables, and for 40/5 eight of them are broken 37–39 rolls at 1.85–2.40, so <code>robustFilter</code>'s ±12% band around their median throws out all four genuine 40/5 sales. Three of 301 weapon rolls are more than 10% off this way (sniper 130/17 by −17%); armour is unaffected because <code>singleModel</code> uses exact rows when three exist.</p>
+  <p class="measure"><b>Fix:</b> in <code>weaponModel</code>, when three or more exact-roll sales exist use <code>robustFilter(exact)</code> alone, as <code>singleModel</code> does; never let lower-attack rolls of a Common or Uncommon weapon in as comparables for the band-maximum attack. <b>Measure:</b> max |hist − exact q55| over band-max weapon rolls should fall from 53.5% to under 2%; knife 40/5 at a 1.80 floor must report a target within 5% of 4.329.</p>
+</div>
+
+<div class="finding bad">
+  <div class="row"><span class="chip bad">wrong number · Price tab</span><span class="chip neutral">R</span></div>
+  <h3>2. The Trends "minimum undercut" ties the rival's price on 1% of floors, 4.8% at 5% tax</h3>
+  <p>The core docket undercuts correctly on every one of 49,999 floors from 0.002 to 50.000. The Trends panel does not: it sets the target to floor − 0.001 and converts it with the non-beat conversion (<code>showFinal</code>, line 6317), which rounds up whenever floor − 0.001 is a displayed value no typed figure can produce. At 1% tax that is 495 floors; a floor of 1.869 yields "type 1.850", which displays at 1.869, a tie, where the docket path gives 1.849. The two headline figures on the same screen disagree on those floors.</p>
+  <p class="measure"><b>Fix:</b> in <code>showFinal</code> and <code>showDismantleInstead</code>, when the target is the minimum undercut, use <code>entryForDisplayed(state.floor, true)</code>; after any non-beat conversion check that the typed figure displays at or below the target and step down 0.001 if not. <b>Measure:</b> <code>verify/undercut.js</code> ties must be 0 at every tax.</p>
+</div>
+
+<div class="finding bad">
+  <div class="row"><span class="chip bad">wrong verdict · Sort, Craft, Cases</span><span class="chip neutral">R</span></div>
+  <h3>3. A missing scrap bid silently makes every roll worth listing</h3>
+  <p><code>craftDismantle</code> returns 0 when <code>commodities.json</code> has no scraps bid or no order book, and nothing downstream distinguishes "no bid" from "scraps are worthless". Served that file, the Sort tab reads "scraps fetch 0.00 · list above 0.10", 180 of 180 seen rolls "sell" (151 at baseline), every Uncommon slot flips from "none" to "every roll", and the Cases tab prints +2.72% with Break 0% on every tier. The Price tab, which reads its bid from <code>index.json</code>, still shows a 1.337 floor beside all this. The same page also quotes three floors for one Common piece at baseline: 1.337 (Price tab, ÷1.01), 1.35 (roll card and Sort), 1.465 (cut card, bar included).</p>
+  <p class="measure"><b>Fix:</b> return null from <code>craftDismantle</code> when there is no bid and have every caller show the "—" and message the Craft tab already shows; read one scrap source everywhere. <b>Measure:</b> re-serve <code>case_d_scraps_nobid</code>: the Cases verdict must be "—" or carry a warning, the Sort header must not print 0.00, and <code>#scrapVerdict</code> must equal the Sort tab's "scraps fetch".</p>
+</div>
+
+<div class="finding bad">
+  <div class="row"><span class="chip bad">wrong number · all tabs</span><span class="chip neutral">R</span></div>
+  <h3>4. Three tax models on one page</h3>
+  <p>The data settles one thing: <code>money</code> is on the seller's typed 3-decimal grid. If it were the tax-inflated displayed price, round3(typed × 1.01) could never produce values on the residue 50 + 101k, yet 900 of 126,800 sales sit exactly there (1.868, 2.474, 2.777). So the transaction feed records what the seller typed. The Price tab's flip maths treats that as what the seller receives (buyer pays typed × 1.01); the Sort, Craft and Cases tabs net median × 0.99 instead; <code>paintScrap</code> divides the scrap floor by 1.01. These cannot all be right. If the seller nets the typed figure the case edge is +4.16% not +3.61%, Epic crafting is +2.6% not +1.6%, and 39 of 1,040 Sort verdicts flip from break to sell. 123 priced rolls sit between the Price-tab floor and the Sort floor: one tab says list, the other says break, for the same piece.</p>
+  <p class="measure"><b>Fix:</b> decide once whether the seller nets the typed figure, route every tab through one <code>netOfSale</code> and one <code>netOfScrap</code>, and say which model the card assumes. <b>Measure:</b> the Price-tab dismantle floor and the Sort "list above" must agree to the grid; the between-floor count must be 0.</p>
+</div>
+
+<div class="finding bad">
+  <div class="row"><span class="chip bad">lost data · collector</span><span class="chip neutral">R</span></div>
+  <h3>5. The backstop scan loses sales after any outage longer than three hours, and a fresh cache can never bootstrap</h3>
+  <p>In full-scan mode <code>collect_market</code> stops as soon as a page is older than now − 3h (line 371), before it checks whether the checkpoint has been reached. After the 229-minute gap on 1 Sep the next run stopped at 3 hours and the checkpoint jumped forward: the rolling cache holds 41, 0, 0, 0, 6 sales in the five 10-minute buckets from 01:50 to 02:40 against 75–150 on either side. The same happened on 2 Sep 04:30 (bucket of 10 between 93 and 61). About 454 sales are gone from the cache and the archive, and every outage over 3 hours will repeat it. The 6-hourly backstop that caused this has recovered nothing in 240 run pairs: only 4 sales ever arrived later than the previous run, all inside the 0.5h overlap.</p>
+  <p>Separately, <code>history_complete</code> was set once, on the first run at 08:42 on 31 Aug when retention was 48 hours, and has been inherited on every run since; the retained window has never been paged to 168 hours (oldest sale 29 Aug 00:31 against a cutoff of 27 Aug 15:30). The stream costs 4 to 19 pages per hour of history, not the README's 62, so a week is 1,800 to 2,700 pages against <code>max_pages</code> 1000 and a 1,200-request time budget. Delete the cache, or switch <code>--base-url</code>, and every run pages to 1000, errors, keeps <code>last_success_at</code> at None, fails <code>--require-healthy</code>, and repeats.</p>
+  <p class="measure"><b>Fix:</b> make the backstop stop also require <code>oldest &lt; overlap_cutoff</code>; on a never-complete cache stop at an initial depth sized to the page budget (about 48h), mark complete, and let retention accumulate forward, recording the depth reached instead of a boolean. <b>Measure:</b> after any inter-run gap over 3h, sales per 10-minute bucket across the gap must not collapse; a scratch run from an empty cache must reach status ok in one run.</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">optimistic · Sort, roll card</span><span class="chip neutral">R</span></div>
+  <h3>6. "Sells in" is the median of sales that cleared inside two days, and "8 minutes" matches no population on the page</h3>
+  <p>The collector drops sales off listings older than 48 hours before it takes the time-to-sell median, so the figure is censored: 311 rolls dropped at least one sale and every one of them has a higher true median (ratio 1.19); on 60 rolls, 28 of them Legendary, the true median is more than double what is shown. The brief's 8 minutes is not what a seller meets: the median over the rolls a case tells you to list is 84 minutes (Basic 103, Legendary 132, Mythic 265), and sales priced above the roll median take four times longer than those at or below it (42 vs 10 minutes overall). The Uncommon tier's 1.3-minute median is bot sniping at scrap value, not liquidity: the top ten buyers take 48% of Uncommon volume, the top one 2,538 pieces at a median 4.000 in 0.4 minutes.</p>
+  <p>The survivorship half of the doubt is real but bounded: among sales at or above the roll median, 4.5 to 8.6% sat over 48 hours in the sellable tiers (7.5 to 14.6% over 24 hours). Valuing that share at scrap instead takes the edge to +2.97% (48h share) or +2.60% (24h share); the edge reaches zero only if 34% of median-priced listings never sell.</p>
+  <p class="measure"><b>Fix:</b> compute <code>median_time_to_sell_seconds</code> over every eligible sale in the window and publish the dropped count; label the cell "median of sales that cleared within 2 days". <b>Measure:</b> published versus uncensored tier medians should differ by ~0 after the change (now 0.12h Basic, 0.23h Legendary, 0.56h Mythic).</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">optimistic · Cases, Craft</span><span class="chip neutral">R</span></div>
+  <h3>7. Unpriced rolls are assumed to price like the priced ones, and the knife is 46% priced</h3>
+  <p><code>craftSlotValue</code> averages only rolls with a selected median. The knife is 30% of Common and Common is 62% of cases, so 18.6% of every case outcome rests on 46 priced rolls, and the 54 unpriced ones are not a random sample: they sit at crit 2 to 4, attack 21 to 38, while the priced mean is pulled up by 40/5 at 4.33. Valuing the missing rolls the way the Sort tab's own fill would, week median where one exists and the nearest worse priced neighbour otherwise, gives a knife of 1.831 instead of 1.898 and a case of 3.6653 (+3.25%); at scrap, 3.6211 (+2.00%). Tank and jet move nothing; their odds are too small.</p>
+  <p class="measure"><b>Fix:</b> give an unpriced roll the same neighbour or week-median value <code>fillQuiet</code> already finds, and print the filled share in the foot. <b>Measure:</b> knife slot value ~1.83 and case gross ~3.665 on this snapshot; the foot should say 98 of 100 filled, not 46 of 100 priced.</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">wrong number · Price tab with API key</span><span class="chip neutral">R</span></div>
+  <h3>8. Half of live sales double-count against the shard</h3>
+  <p>The shard stores each sale's second as <code>int(timestamp)</code>, a floor; <code>saleKey</code> (line 5672) keys live rows with <code>Math.round(ms/1000)</code>. 63,184 of 126,800 sales have milliseconds ≥ 500, so every Gateway page re-adds about 50 of its 100 rows as "+N live", and they are the newest rows, which carry the most recency weight. Only users with an API key see it.</p>
+  <p class="measure"><b>Fix:</b> <code>Math.floor</code> in <code>saleKey</code>. <b>Measure:</b> a live page fully inside the shard's window must add 0 rows.</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">wrong verdict · Price tab</span><span class="chip neutral">R</span></div>
+  <h3>9. A typed 4.329 opens the Uncommon Gun grid for a Common knife</h3>
+  <p>Common and Uncommon overlap from 2.835 to 4.385 and "higher tier wins". 94% of Common knife 40/5 sales sit inside the Uncommon range, so the one Common roll worth pricing lands on the Uncommon rarity, the Gun slot, an attack grid of 51–60, and a 4.010 dismantle floor, unless the user notices the "also legal for Common" note. The <code>RARITY_BANDS</code> fallback is stale too: it puts 8.0 in Uncommon when nothing Uncommon traded above 4.445 and 92.0 in Epic when Epic tops out at 79.5.</p>
+  <p class="measure"><b>Fix:</b> when a price hits both tiers and the slot is the weapon, prefer Common inside the knife 40/5 range or ask; regenerate the fallback bands from observed ranges. <b>Measure:</b> Common sales assigned to Uncommon by price, now 5.8%, should fall to the irreducible overlap.</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">stale data unflagged · data strip</span><span class="chip neutral">I</span></div>
+  <h3>10. The data strip tracks one file while the numbers come from two others</h3>
+  <p><code>paintDataStamp</code> reads <code>index.json</code>'s <code>generated_at</code>; the figures come from <code>summary.json</code> and <code>commodities.json</code>, and <code>collectorFile</code> keeps the old copy when a refresh fails. A refresh where the index updates but the other two 404 prints "Prices collected 1 min ago" over 25-minute-old figures with no failure text. When the index alone fails, the strip says "Collector prices not loaded yet" while every tab quotes full figures and the Price tab silently falls to a hard-coded 0.218 scrap price. The page never reads <code>schema_version</code>: rename <code>selected</code> and it quietly prices every roll from the 48h window instead.</p>
+  <p class="measure"><b>Fix:</b> stamp the oldest of the three files actually used, say when a refresh partially failed, and refuse a schema other than 4. <b>Measure:</b> the harness cases <code>case_q_stale_refresh</code>, <code>case_a_index404</code> and <code>case_i_schema5_chosen</code> must each show a warning instead of a number.</p>
+</div>
+
+<div class="finding warn">
+  <div class="row"><span class="chip warn">inconsistent verdicts · Sort</span><span class="chip neutral">C</span></div>
+  <h3>11. Smaller inconsistencies that show one roll two verdicts</h3>
+  <ul>
+    <li>The weapon heat grid colours a cell by margin over scrap (line 5337) while the list uses the bar: gun 60/10 and rifle 80/14, 87/11, 89/11 are painted green and read "break" when tapped.</li>
+    <li>The "Per 1,000" column counts only priced rolls: Common sums to 520 of 620, and the knife row says 86 when a thousand cases hand out 186 knives.</li>
+    <li>The swing line's "12,100 cases before profit beats the swing" uses the price of one case; 12,100 cases walk the book to 3.590, and the self-consistent figure is about 28,900. The simulator's "Expected" line multiplies the one-case edge by its own n and reads 5% high at 1,000 cases, 42% at 9,999.</li>
+    <li>"sales / hour" on the Price tab is a recency-weighted count over a ±5-stat band, 1.3 to 7.9 times the exact roll's rate for armour and capped at twelve comparables for weapons; it drives the queue-hours and the SAFE / LESS SAFE / RISKY bands.</li>
+    <li>Quick/Patient mode has no control in the HTML and <code>nextCursor</code> is always null, so the 0.70 quantile, the 6-hour queue limit and the "widen to Nh" scan are dead code.</li>
+    <li>A negative tax is accepted: at −5% the Price tab applies it while the other tabs clamp to 0 under a chip that says "Tax −5%".</li>
+    <li>For quiet rolls with a week median the Sort list prints that median as "List at", contradicting the stated rule; the 32 low knife rolls that get a dash instead receive 5.95% of case draws.</li>
+  </ul>
+</div>
+
+<h2>The claims in detail</h2>
+
+<h3>Claim 1 · the case edge</h3>
+<p>The page's arithmetic is exact. A Python re-implementation of <code>craftSlotValue</code>, <code>craftExpected</code>, <code>paintCase</code> and <code>craftWalk</code> reproduces the rendered card to the fourth decimal (gross 3.6781, +3.61%, tier rows 1.58 / 4.06 / 13.47 / 50.81 / 137.77 / 379.83, break 13 / 99 / 64 / 0 / 3 / 9%), and re-deriving every selected median from the shards matched all 1,040. The brief's 3.7114 against 3.558 is the 1 Sep morning: gross 3.71–3.72 at asks of 3.558–3.562, +4.2 to +4.6%.</p>
+<figure>
+  <div class="chart" id="edgeChart"></div>
+  <figcaption>Case edge on every committed collector snapshot, 31 Aug 08:42 to 3 Sep 15:30 UTC (241 runs). The gross holds between 3.66 and 3.72 throughout; the day-to-day movement is the case ask (3.48 to 3.60). Hover for the figures; the table below has the daily summary.</figcaption>
+  <details><summary>Table view</summary>
+  <div class="tablewrap"><table>
+    <tr><th>Day</th><th class="num">Snapshots</th><th class="num">Ask range</th><th class="num">Gross range</th><th class="num">Edge range</th><th class="num">Median edge</th></tr>
+    <tr><td>31 Aug</td><td class="num">19</td><td class="num">3.476–3.512</td><td class="num">3.6648–3.7245</td><td class="num">+4.77% … +6.38%</td><td class="num">+5.48%</td></tr>
+    <tr><td>1 Sep</td><td class="num">83</td><td class="num">3.540–3.600</td><td class="num">3.7003–3.7203</td><td class="num">+2.90% … +4.81%</td><td class="num">+3.47%</td></tr>
+    <tr><td>2 Sep</td><td class="num">95</td><td class="num">3.548–3.597</td><td class="num">3.6889–3.7162</td><td class="num">+3.31% … +4.12%</td><td class="num">+3.59%</td></tr>
+    <tr><td>3 Sep</td><td class="num">67</td><td class="num">3.529–3.583</td><td class="num">3.6769–3.6914</td><td class="num">+2.64% … +4.46%</td><td class="num">+3.53%</td></tr>
+  </table></div></details>
+</figure>
+<p>What the level rests on, in order of weight: the Uncommon tier is 1.2167 of the 3.678 gross and is 99% broken, so a third of the case is 18 scraps at the 0.225 bid (654,018 scraps rest there; the walk moves nothing even at 10,000 cases, but each 0.001 of bid is 0.0065 of gross); the knife coverage above; the tax model; and the price definition. Bracketing the last from the shards: p25 of the 48h window +2.70%, p75 +4.46%, last sale +3.58%, median of sales that cleared within 30 minutes +3.34%, 48h minimum −2.37%. Stacking the two most defensible corrections (knife fill, survivorship at the 48h share) gives about +2.6%; under the seller-nets-typed tax model about +3.2%. So +4% is the top of the plausible range and +2 to +3.5% its centre. The sign never flips: the edge reaches zero only if every median overstates next-day clearing by 9.3%.</p>
+<p>The sanity argument ("3,500 cases within 1% of the ask, nobody takes free money") cannot separate +4% from +9%. The binding constraint is not case depth but Common listing volume: an opener is 10% of Common sales at 233 cases a day and 50% at 1,165, the edge at 233 a day is 30 to 78 gold, and beating the 7.06-per-case swing at two standard errors takes 12,100 cases, 43,000 gold of capital and 52 days at that rate. That is labour, not arbitrage, at either figure. The data cannot check throughput either way: the collector discards <code>case1</code> transactions, so daily case volume is unknown.</p>
+
+<h3>Claim 2 · equal weight per roll</h3>
+<p>Removing the weighting was right and the evidence is stronger than the mechanism argument alone. Sale counts per roll are flat across the band exactly where the Sort tab says every roll sells (Epic boots 1754 / 1816 / 1613 / 1569 / 1693; sniper attack 499–609 per value; tank, Legendary armour flat) and skewed to the top roll exactly where low rolls are told to be broken (knife attack 40 is 600 of 1,712 sales; Basic boots 161 / 162 / 186 / 288 / 728; helmet3 130 rising to 477). The "as traded" figure of +9.47% is 71% knife 40/5, which carried 29% of the knife's weight on 2.2% of its draws. One residual: the Epic sniper's band maximum sells 15% more often than uniform (3.5σ on attack, 5.3σ on crit) with flat Epic armour beside it, unstable day to day (×1.02 to ×1.33). Applied to the knife it would move the gross by +0.003. Only a case-opening log that records the roll before any listing decision can settle whether the RNG favours the band edge; sales never will.</p>
+
+<h3>Claim 3 · the bar</h3>
+<p>As a description of the code the claim is exact: the bar gates, it is never subtracted, the EV is monotone in it, and an absurd bar lands on 3.3010 = 0.225 × Σ odds × yield. Two things are less tidy. The comment at line 4406 justifies the bar as the attention a listing costs, and a cost is paid on the listings that clear the bar too; charging 0.10 on the 0.379 listings per case gives 3.6402 (+2.54%), and the bar of 0.10 is exactly the optimal threshold for a 0.10 fee, so the page reports the fee-free row of a fee model. And the threshold makes the EV discontinuous in the scrap bid: at bar 0.10 a bid rise from 0.214 to 0.215 pushes the Uncommon need across the 4.00 price cluster, break goes from 9% to 93%, and the gross falls 3.6411 → 3.6137; nine such down-steps exist in a 0.001 sweep, none under max(sale − 0.10, scrap). That is the nature of a threshold rather than a bug; the fix, if one is wanted, is to show a second figure net of a user-set listing cost.</p>
+
+<h3>Claim 4 · the median</h3>
+<p>Holds. Rolling-origin test over 8,927 roll-origins and 245,238 scored next-day sales: plain 48h median 2.89% relative error; the collector's selected window 2.84%; its recency-weighted median 2.82% (the only statistically real gain, 0.06 points); trimmed mean, last-3, p25, p75, recency mean and plain mean all worse. The switch to a 24h window at three sales is at the minimum of a 1-to-20 sweep. The split test reproduces at a threshold of seven non-stale sales in 48h: 558 rolls, 43,844 sales, Q3 earns +0.72% by roll median (+1.05% mean) and clears in 45 minutes against 6 to 10; Basic is the exception where Q3 buys +3.6% for nine times the wait. The one caveat the brief should carry: the test conditions on the sale having happened, so it shows the median clears fastest, not that it earns the most; the observable proxy is that 61.6% of next-day sales clear at or above the median estimate against 47.9% for Q3.</p>
+
+<h3>Claim 5 · neighbour fill</h3>
+<p>Reproduces: 97.1% held-one-out over the 979 priced rolls that have a lower neighbour (61 sit at the bottom of their band and get none), knife 100%, rifle 94.7%, confusion 749 / 25 / 3 / 202. But always saying "sell" scores 77.5%, and a per-item majority rule 91.5%; the neighbour earns its keep at Rare (92% vs 58%) and Basic (96% vs 82%), and nowhere else. Scored forward against the next 24 hours it is 94.9% against 96.6% for the roll's own price. On the rolls it actually serves, quiet with no week median, it is 100% on 173 cases, of which 172 are true sells: its break side has never fired in the wild. The "lower bound two thirds of the time" is the strict figure (70%; 79% with ties). The "never the price" half is not what the page does: 253 quiet rolls get the 7-day median printed as "List at", and that price is 86% within 5% of the next day's median, about as good as a marked neighbour floor (75% within 5%, biased low), so the dash on the knife's low rolls is the costlier choice.</p>
+
+<h3>Claim 6 · the thin marker</h3>
+<p>Wrong on both counts, harmless because no verdict or EV depends on it. Subsampling 386 rolls with 30 or more sales, the p90 error of a small-sample median is 5.5% at n=1, 6.2% at n=2, 2.7% at n=3, 2.2% at n=5, 1.4% at n=10: the knee is at three, nothing singles out five, and a Basic roll with 30 sales (p90 13.7%) is less certain than an Elite roll with two (1.5%). Out of sample the count-under-5 flag marks 30% of roll-origins at 8% precision for a next-day miss over 5%, against a 5.9% base rate; only n=1 stands out (7.2% p90). A 48h IQR/median over 5% flags 10% at 22% precision. The count the marker reads is <code>selected.count</code>, so 50 rolls with five or more sales in 48h are flagged thin because the 24h window won with three or four. The min–max range on the Price tab is outlier-driven: 62% of unmarked rolls span more than 10% of the median while only 3% have an IQR over 10%.</p>
+
+<h2>The collector</h2>
+<p>Beyond finding 5, the collector is sound where it claims to be: the 41 tests pass plus 21 extra ones written for this review; the tamper check, migration, atomic writes, redirect refusal and retry rules behave; ids are unique across archive days and every completed day matches the rolling cache. Three more things worth knowing.</p>
+<ul>
+  <li><b>The stale filter</b> (listings over 48h old are not comparables) is doing something different from what it was built for. In steady state 1,197 of the 1,354 sales it drops were priced above the roll's median: it removes over-priced listings that eventually cleared, nudging medians down by a few hundredths of a percent, whereas the bracket move it was written for had stale sales below the market. It also removes 31 to 33% of knife and helmet1 sales, so 32 knife rolls that did sell in the week look "never traded" on the Sort tab. A price-at-listing test would do the job the comment describes.</li>
+  <li><b>Archive day files are not write-once.</b> <code>publish</code> compares the whole record including <code>schema_version</code>, so the two schema bumps rewrote every completed day (about 26 MB of repository each) with zero row changes.</li>
+  <li><b>The cadence is documented three ways</b>: "every 10 minutes" in the README intro, 15 in its scheduler section and the page, "10-minute cadence" in two page comments. Measured: 241 runs, median gap 14.9 minutes.</li>
+</ul>
+
+<h2>Where the page and the collector disagree without saying so</h2>
+<div class="tablewrap"><table>
+<tr><th>Served</th><th>What the user sees</th><th>Flagged?</th></tr>
+<tr><td>scraps best_bid null, or no order book</td><td>Every roll sells; Cases +2.72%, Break 0%; Price tab floor 1.337</td><td>No</td></tr>
+<tr><td>summary.json with <code>selected</code> renamed</td><td>Every roll priced from the 48h window; 470 medians change; case 3.6796</td><td>No</td></tr>
+<tr><td>knife category missing, or all its medians null</td><td>Common 1.58 → 1.44, case +1.23%; roll space 1810 → 1710 in the foot</td><td>Craft tab only</td></tr>
+<tr><td>index.json 404</td><td>"Collector prices not loaded yet" while all tabs quote figures; Price floor from hard-coded 0.218</td><td>Small "fallback figure" note</td></tr>
+<tr><td>Refresh: new index, old summary and books</td><td>"Prices collected 1 min ago" over 25-minute-old figures</td><td>No</td></tr>
+<tr><td>index scraps bid 0.30, commodities 0.225</td><td>Price floor 1.782 "live market" above a roll card saying scraps fetch 1.35</td><td>No</td></tr>
+<tr><td>exact_roll missing on half the knife rolls</td><td>Boots 5 "like 4 · break" with 33 sales; cut card loses a line</td><td>No</td></tr>
+<tr><td>Tax −5</td><td>Price tab applies −5%, other tabs 0%</td><td>Chip says −5%</td></tr>
+<tr><td>Status degraded, 26h old</td><td>Correct strip text; every figure and badge unmarked</td><td>Strip only</td></tr>
+<tr><td>All medians null</td><td>Cases "−100.00%", badge −100%</td><td>Foot only</td></tr>
+<tr><td>commodities 404 · summary 404 · case1 asks empty · Mythic empty</td><td>Honest "—" and messages, except Cases "Reading case prices…" forever on summary 404</td><td>Yes</td></tr>
+</table></div>
+
+<h2>Method and reproduction</h2>
+<p>Both repositories were read end to end. A reference implementation (<code>ev_ref.py</code>) mirrors the page's economics; a Playwright harness (<code>harness.js</code>) serves <code>test60.html</code> over HTTP with every collector URL answered from shards regenerated locally by <code>collector.publish</code> and every other host answering 403 as the proxy does, so the rendered DOM was read for every figure quoted here. Eight investigators each attacked one dimension with their own scripts; every finding above marked R was then re-run independently by me with a fresh script, C means confirmed from the code, I means the investigator's harness output was spot-checked but not re-run. An adversarial refuter pass over all 46 substantive findings was blocked by a session limit and is running now; the report will be updated if any verdict changes.</p>
+<pre>audit/
+  README.md            briefing and established facts
+  ev_ref.py            reference EV: python3 ev_ref.py --tax 1 --bar 0.1
+  harness.js           node harness.js  (Cases / Craft / Sort figures from the rendered page)
+  history_edge.py      edge on every committed snapshot (needs the unshallowed repo)
+  verify/              my re-verification scripts (pricetab.js, undercut.js, edge_series.json)
+  ev-arithmetic/ roll-odds-selection/ estimator-thin/ neighbour-fill/
+  seam-robustness/ collector-correctness/ price-tab-model/ js-numerics-sims/
+                       one directory per investigator, scripts and saved outputs
+  workflow_results.json  every finding with evidence, reproduction, proposed change</pre>
+<p class="small">Snapshot: collector commit 1a55d66, generated 2026-09-03T15:30:50Z; calculator commit fa7b690. Network was locked; no WarEra host was contacted and no API key was used. Nothing under either repository was modified.</p>
+</div>
+
+<script>
+(function(){
+  var data=[["2026-08-31T08:42",3.498,3.6649,4.77],["2026-08-31T08:53",3.476,3.6648,5.43],["2026-08-31T12:41",3.487,3.6676,5.18],["2026-08-31T14:41",3.488,3.6791,5.48],["2026-08-31T18:25",3.504,3.6984,5.55],["2026-08-31T20:19",3.497,3.7201,6.38],["2026-08-31T22:59",3.512,3.7245,6.05],["2026-09-01T01:46",3.54,3.7101,4.81],["2026-09-01T05:35",3.549,3.7131,4.62],["2026-09-01T06:23",3.559,3.7203,4.53],["2026-09-01T06:30",3.558,3.7202,4.56],["2026-09-01T06:45",3.561,3.7203,4.47],["2026-09-01T07:00",3.558,3.7201,4.56],["2026-09-01T07:15",3.562,3.7193,4.42],["2026-09-01T07:30",3.562,3.7117,4.2],["2026-09-01T07:45",3.562,3.712,4.21],["2026-09-01T08:00",3.574,3.7117,3.85],["2026-09-01T08:15",3.577,3.7149,3.85],["2026-09-01T08:30",3.58,3.7085,3.59],["2026-09-01T08:45",3.584,3.7083,3.47],["2026-09-01T09:00",3.585,3.7081,3.43],["2026-09-01T09:15",3.585,3.7081,3.43],["2026-09-01T09:30",3.589,3.7082,3.32],["2026-09-01T09:45",3.579,3.7084,3.61],["2026-09-01T10:00",3.596,3.7135,3.27],["2026-09-01T10:15",3.59,3.7062,3.24],["2026-09-01T10:27",3.598,3.7127,3.19],["2026-09-01T10:30",3.599,3.7124,3.15],["2026-09-01T10:45",3.595,3.7056,3.08],["2026-09-01T11:00",3.598,3.7058,3.0],["2026-09-01T11:15",3.6,3.7052,2.92],["2026-09-01T11:30",3.6,3.7049,2.91],["2026-09-01T11:45",3.599,3.7051,2.95],["2026-09-01T12:00",3.595,3.7045,3.05],["2026-09-01T12:15",3.589,3.7126,3.44],["2026-09-01T12:30",3.593,3.7128,3.33],["2026-09-01T12:45",3.599,3.7126,3.16],["2026-09-01T13:00",3.598,3.7031,2.92],["2026-09-01T13:15",3.586,3.7029,3.26],["2026-09-01T13:30",3.598,3.7023,2.9],["2026-09-01T13:45",3.598,3.7028,2.91],["2026-09-01T14:00",3.597,3.7033,2.95],["2026-09-01T14:15",3.599,3.7033,2.9],["2026-09-01T14:30",3.595,3.7039,3.03],["2026-09-01T14:45",3.594,3.7045,3.07],["2026-09-01T15:00",3.595,3.7037,3.02],["2026-09-01T15:11",3.592,3.7021,3.06],["2026-09-01T15:15",3.594,3.7031,3.03],["2026-09-01T15:30",3.589,3.7019,3.15],["2026-09-01T15:45",3.585,3.7003,3.22],["2026-09-01T16:00",3.592,3.7085,3.24],["2026-09-01T16:15",3.574,3.7086,3.77],["2026-09-01T16:30",3.577,3.7084,3.67],["2026-09-01T16:45",3.57,3.7067,3.83],["2026-09-01T17:00",3.576,3.7068,3.66],["2026-09-01T17:15",3.566,3.7067,3.94],["2026-09-01T17:30",3.572,3.7067,3.77],["2026-09-01T17:45",3.574,3.7068,3.71],["2026-09-01T18:00",3.573,3.7071,3.75],["2026-09-01T18:15",3.57,3.707,3.84],["2026-09-01T18:30",3.574,3.7073,3.73],["2026-09-01T18:45",3.576,3.7072,3.67],["2026-09-01T18:50",3.579,3.7071,3.58],["2026-09-01T19:00",3.586,3.7051,3.32],["2026-09-01T19:15",3.583,3.7055,3.42],["2026-09-01T19:30",3.551,3.7057,4.36],["2026-09-01T19:45",3.57,3.7061,3.81],["2026-09-01T20:00",3.582,3.706,3.46],["2026-09-01T20:15",3.584,3.7053,3.38],["2026-09-01T20:30",3.58,3.7058,3.51],["2026-09-01T20:45",3.575,3.7057,3.66],["2026-09-01T21:00",3.563,3.7054,4.0],["2026-09-01T21:15",3.58,3.7057,3.51],["2026-09-01T21:30",3.585,3.7074,3.42],["2026-09-01T21:45",3.578,3.7076,3.62],["2026-09-01T22:00",3.578,3.7076,3.62],["2026-09-01T22:02",3.579,3.7076,3.59],["2026-09-01T22:15",3.571,3.7076,3.82],["2026-09-01T22:30",3.579,3.7083,3.61],["2026-09-01T22:45",3.585,3.7084,3.44],["2026-09-01T23:00",3.585,3.7083,3.44],["2026-09-01T23:15",3.587,3.7083,3.38],["2026-09-01T23:30",3.58,3.7123,3.69],["2026-09-01T23:45",3.588,3.7123,3.47],["2026-09-02T00:00",3.583,3.7123,3.61],["2026-09-02T00:15",3.57,3.7108,3.94],["2026-09-02T00:30",3.586,3.7109,3.48],["2026-09-02T00:32",3.578,3.7109,3.71],["2026-09-02T00:45",3.577,3.711,3.75],["2026-09-02T01:00",3.587,3.7128,3.51],["2026-09-02T01:15",3.587,3.7109,3.45],["2026-09-02T01:30",3.588,3.7145,3.52],["2026-09-02T01:45",3.589,3.7145,3.5],["2026-09-02T02:00",3.59,3.7144,3.47],["2026-09-02T02:15",3.588,3.7144,3.52],["2026-09-02T02:30",3.59,3.7145,3.47],["2026-09-02T02:45",3.592,3.7144,3.41],["2026-09-02T03:00",3.589,3.7153,3.52],["2026-09-02T03:15",3.595,3.7155,3.35],["2026-09-02T03:30",3.59,3.7161,3.51],["2026-09-02T03:45",3.583,3.716,3.71],["2026-09-02T04:00",3.597,3.716,3.31],["2026-09-02T04:15",3.576,3.7162,3.92],["2026-09-02T04:30",3.592,3.7157,3.44],["2026-09-02T07:51",3.576,3.7137,3.85],["2026-09-02T08:00",3.577,3.7119,3.77],["2026-09-02T08:15",3.563,3.7098,4.12],["2026-09-02T08:30",3.576,3.7113,3.78],["2026-09-02T08:45",3.576,3.7113,3.78],["2026-09-02T09:00",3.574,3.7116,3.85],["2026-09-02T09:15",3.572,3.7114,3.9],["2026-09-02T09:30",3.574,3.7114,3.85],["2026-09-02T09:45",3.579,3.7115,3.7],["2026-09-02T09:54",3.585,3.7114,3.53],["2026-09-02T10:00",3.587,3.7113,3.47],["2026-09-02T10:02",3.586,3.7114,3.5],["2026-09-02T10:15",3.588,3.7125,3.47],["2026-09-02T10:30",3.589,3.7133,3.46],["2026-09-02T10:45",3.589,3.7125,3.44],["2026-09-02T11:00",3.567,3.712,4.07],["2026-09-02T11:15",3.574,3.7119,3.86],["2026-09-02T11:30",3.57,3.7118,3.97],["2026-09-02T11:45",3.568,3.7103,3.99],["2026-09-02T12:00",3.577,3.7102,3.72],["2026-09-02T12:15",3.59,3.7106,3.36],["2026-09-02T12:30",3.589,3.7094,3.36],["2026-09-02T12:45",3.589,3.709,3.34],["2026-09-02T13:00",3.582,3.7092,3.55],["2026-09-02T13:15",3.585,3.7113,3.52],["2026-09-02T13:30",3.581,3.7097,3.59],["2026-09-02T13:45",3.574,3.7095,3.79],["2026-09-02T14:00",3.574,3.7072,3.73],["2026-09-02T14:15",3.572,3.7068,3.77],["2026-09-02T14:30",3.573,3.7011,3.59],["2026-09-02T14:42",3.572,3.7011,3.61],["2026-09-02T14:45",3.573,3.7011,3.58],["2026-09-02T15:00",3.57,3.7009,3.67],["2026-09-02T15:15",3.568,3.699,3.67],["2026-09-02T15:30",3.568,3.6991,3.67],["2026-09-02T15:45",3.575,3.699,3.47],["2026-09-02T16:00",3.574,3.6991,3.5],["2026-09-02T16:15",3.568,3.6988,3.67],["2026-09-02T16:30",3.568,3.6948,3.55],["2026-09-02T16:45",3.567,3.6951,3.59],["2026-09-02T17:00",3.563,3.6951,3.71],["2026-09-02T17:15",3.554,3.694,3.94],["2026-09-02T17:30",3.56,3.6942,3.77],["2026-09-02T17:45",3.56,3.6944,3.77],["2026-09-02T18:00",3.561,3.6942,3.74],["2026-09-02T18:15",3.563,3.6944,3.69],["2026-09-02T18:30",3.557,3.6942,3.86],["2026-09-02T18:45",3.556,3.6936,3.87],["2026-09-02T18:56",3.563,3.6939,3.67],["2026-09-02T19:00",3.562,3.6939,3.7],["2026-09-02T19:15",3.559,3.6929,3.76],["2026-09-02T19:30",3.555,3.6922,3.86],["2026-09-02T19:45",3.564,3.6926,3.61],["2026-09-02T20:00",3.565,3.6925,3.58],["2026-09-02T20:15",3.567,3.6901,3.45],["2026-09-02T20:30",3.568,3.6899,3.42],["2026-09-02T20:45",3.566,3.6898,3.47],["2026-09-02T21:00",3.555,3.6901,3.8],["2026-09-02T21:15",3.557,3.6899,3.74],["2026-09-02T21:30",3.548,3.6892,3.98],["2026-09-02T21:45",3.569,3.689,3.36],["2026-09-02T21:58",3.565,3.689,3.48],["2026-09-02T22:00",3.565,3.689,3.48],["2026-09-02T22:15",3.566,3.6889,3.45],["2026-09-02T22:30",3.55,3.6889,3.91],["2026-09-02T22:45",3.568,3.6889,3.39],["2026-09-02T23:00",3.568,3.6889,3.39],["2026-09-02T23:15",3.564,3.6896,3.52],["2026-09-02T23:30",3.565,3.6895,3.49],["2026-09-02T23:45",3.567,3.6896,3.44],["2026-09-03T00:00",3.569,3.6897,3.38],["2026-09-03T00:15",3.568,3.6897,3.41],["2026-09-03T00:30",3.563,3.6914,3.6],["2026-09-03T00:40",3.564,3.6912,3.57],["2026-09-03T00:45",3.561,3.6913,3.66],["2026-09-03T01:00",3.559,3.6912,3.71],["2026-09-03T01:15",3.561,3.6911,3.65],["2026-09-03T01:30",3.56,3.69,3.65],["2026-09-03T01:45",3.564,3.6899,3.53],["2026-09-03T02:01",3.563,3.6899,3.56],["2026-09-03T02:15",3.549,3.6899,3.97],["2026-09-03T02:30",3.559,3.6901,3.68],["2026-09-03T02:45",3.561,3.6885,3.58],["2026-09-03T03:00",3.548,3.6885,3.96],["2026-09-03T03:15",3.547,3.6874,3.96],["2026-09-03T03:30",3.53,3.6874,4.46],["2026-09-03T03:45",3.546,3.6877,4.0],["2026-09-03T04:00",3.545,3.6877,4.03],["2026-09-03T04:15",3.54,3.6881,4.18],["2026-09-03T04:30",3.545,3.6882,4.04],["2026-09-03T04:45",3.542,3.6882,4.13],["2026-09-03T05:00",3.542,3.6879,4.12],["2026-09-03T05:08",3.529,3.6866,4.46],["2026-09-03T05:15",3.535,3.6863,4.28],["2026-09-03T05:30",3.529,3.6844,4.4],["2026-09-03T05:45",3.544,3.6847,3.97],["2026-09-03T06:00",3.537,3.6847,4.18],["2026-09-03T06:15",3.543,3.6826,3.94],["2026-09-03T06:30",3.548,3.6825,3.79],["2026-09-03T06:45",3.562,3.6819,3.37],["2026-09-03T07:01",3.559,3.6812,3.43],["2026-09-03T07:15",3.558,3.6797,3.42],["2026-09-03T07:31",3.55,3.68,3.66],["2026-09-03T07:45",3.556,3.6803,3.5],["2026-09-03T08:00",3.535,3.6799,4.1],["2026-09-03T08:16",3.54,3.6798,3.95],["2026-09-03T08:30",3.543,3.6797,3.86],["2026-09-03T08:45",3.557,3.6796,3.45],["2026-09-03T09:01",3.559,3.6798,3.39],["2026-09-03T09:15",3.559,3.6797,3.39],["2026-09-03T09:30",3.559,3.6793,3.38],["2026-09-03T09:45",3.557,3.679,3.43],["2026-09-03T10:00",3.56,3.6784,3.33],["2026-09-03T10:05",3.559,3.6786,3.36],["2026-09-03T10:15",3.556,3.6784,3.44],["2026-09-03T10:30",3.547,3.6784,3.7],["2026-09-03T10:45",3.553,3.6776,3.51],["2026-09-03T11:00",3.552,3.6775,3.53],["2026-09-03T11:15",3.55,3.6778,3.6],["2026-09-03T11:30",3.561,3.6772,3.26],["2026-09-03T11:45",3.563,3.6769,3.2],["2026-09-03T12:00",3.564,3.6775,3.18],["2026-09-03T12:15",3.558,3.6771,3.35],["2026-09-03T12:30",3.567,3.6771,3.09],["2026-09-03T12:45",3.569,3.6769,3.02],["2026-09-03T13:00",3.568,3.6769,3.05],["2026-09-03T13:15",3.569,3.6778,3.05],["2026-09-03T13:30",3.574,3.678,2.91],["2026-09-03T13:45",3.578,3.6777,2.79],["2026-09-03T14:01",3.583,3.6777,2.64],["2026-09-03T14:15",3.569,3.677,3.03],["2026-09-03T14:30",3.56,3.6803,3.38],["2026-09-03T14:43",3.569,3.6796,3.1],["2026-09-03T14:45",3.567,3.6795,3.15],["2026-09-03T15:01",3.564,3.6795,3.24],["2026-09-03T15:15",3.555,3.6783,3.47],["2026-09-03T15:30",3.55,3.6781,3.61]];
+  var box=document.getElementById('edgeChart'); if(!box||!data.length)return;
+  var W=900,H=300,L=52,R=16,T=18,B=44,IW=W-L-R,IH=H-T-B;
+  var t0=Date.parse(data[0][0]+':00Z'),t1=Date.parse(data[data.length-1][0]+':00Z');
+  var yMin=0,yMax=7;
+  var x=function(t){return L+(t-t0)/(t1-t0)*IW},y=function(v){return T+(yMax-v)/(yMax-yMin)*IH};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Case edge per snapshot, 31 August to 3 September">';
+  for(var g=0;g<=7;g++){var yy=y(g);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--grid)" stroke-width="1"/>';
+    s+='<text x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">+'+g+'%</text>'}
+  var days=['2026-08-31','2026-09-01','2026-09-02','2026-09-03'],labels=['31 Aug','1 Sep','2 Sep','3 Sep'];
+  days.forEach(function(d,i){var t=Date.parse(d+'T00:00:00Z');if(t<t0)t=t0;var xx=x(t);
+    s+='<line x1="'+xx+'" x2="'+xx+'" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--grid)" stroke-width="1"/>';
+    s+='<text x="'+(xx+4)+'" y="'+(H-B+16)+'" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">'+labels[i]+'</text>'});
+  s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--axis)" stroke-width="1"/>';
+  var pts=data.map(function(d){return x(Date.parse(d[0]+':00Z')).toFixed(1)+','+y(d[3]).toFixed(1)});
+  s+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>';
+  var last=data[data.length-1],first=data[0];
+  s+='<circle cx="'+x(Date.parse(last[0]+':00Z'))+'" cy="'+y(last[3])+'" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>';
+  s+='<text x="'+(x(Date.parse(last[0]+':00Z'))-10)+'" y="'+(y(last[3])-16)+'" text-anchor="end" font-size="12" fill="var(--ink)" font-family="IBM Plex Mono,monospace">+'+last[3].toFixed(2)+'% now</text>';
+  s+='<text x="'+(x(t0)+10)+'" y="'+(y(first[3])+22)+'" font-size="12" fill="var(--ink)" font-family="IBM Plex Mono,monospace">+'+first[3].toFixed(2)+'% first run</text>';
+  s+='<line id="edgeHover" x1="0" x2="0" y1="'+T+'" y2="'+(H-B)+'" stroke="var(--axis)" stroke-width="1" opacity="0"/>';
+  s+='<rect x="'+L+'" y="'+T+'" width="'+IW+'" height="'+IH+'" fill="transparent" id="edgeHit"/></svg><div class="tip" id="edgeTip"></div>';
+  box.innerHTML=s;
+  var svg=box.querySelector('svg'),hit=document.getElementById('edgeHit'),hov=document.getElementById('edgeHover'),tip=document.getElementById('edgeTip');
+  function show(ev){var r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)/r.width*W;var t=t0+(px-L)/IW*(t1-t0);
+    var best=0,bd=Infinity;for(var i=0;i<data.length;i++){var d=Math.abs(Date.parse(data[i][0]+':00Z')-t);if(d<bd){bd=d;best=i}}
+    var d=data[best],xx=x(Date.parse(d[0]+':00Z'));hov.setAttribute('x1',xx);hov.setAttribute('x2',xx);hov.setAttribute('opacity','1');
+    tip.textContent=d[0].replace('T',' ')+' UTC · ask '+d[1].toFixed(3)+' · gross '+d[2].toFixed(4)+' · +'+d[3].toFixed(2)+'%';
+    tip.style.left=(xx/W*100)+'%';tip.style.top=(y(d[3])/H*100)+'%';tip.classList.add('on')}
+  hit.addEventListener('mousemove',show);hit.addEventListener('touchmove',function(e){show(e.touches[0])},{passive:true});
+  hit.addEventListener('mouseleave',function(){hov.setAttribute('opacity','0');tip.classList.remove('on')});
+})();
+</script>

@@ -1,0 +1,65 @@
+code roll | page velocity | exact sales/h (window) | band(|d|<=5 or all comps) sales/h | coverage h | n_exact
+boots1   {"dodge": 5}                                  |    7.48 |    3.79 |   12.14 |   4.0 | 15
+boots2   {"dodge": 10}                                 |   21.28 |   12.43 |   32.64 |   3.9 | 48
+boots3   {"dodge": 15}                                 |   23.35 |   11.84 |   40.04 |   6.0 | 71
+boots4   {"dodge": 22}                                 |   67.98 |   30.56 |  112.61 |   8.0 | 244
+boots5   {"dodge": 31}                                 |    4.24 |    1.78 |    9.51 |  11.3 | 20
+boots6   {"dodge": 57}                                 |    0.43 |    0.09 |    1.32 |  23.5 | 2
+chest1   {"armor": 5}                                  |    8.07 |    4.01 |   12.54 |   4.0 | 16
+chest2   {"armor": 10}                                 |   23.87 |   13.92 |   37.38 |   3.9 | 54
+chest3   {"armor": 15}                                 |   25.40 |   14.68 |   44.37 |   6.0 | 88
+chest4   {"armor": 22}                                 |   29.71 |   13.68 |   59.17 |   7.9 | 108
+chest5   {"armor": 43}                                 |    2.61 |    1.07 |    5.79 |  11.2 | 12
+chest6   {"armor": 64}                                 |    0.26 |    0.10 |    0.81 |  20.9 | 2
+gloves1  {"precision": 5}                              |    5.49 |    3.29 |    8.35 |   4.0 | 13
+gloves2  {"precision": 10}                             |   19.12 |   10.92 |   30.48 |   3.9 | 43
+gloves3  {"precision": 15}                             |   32.23 |   17.59 |   53.93 |   6.0 | 105
+gloves4  {"precision": 25}                             |   39.33 |   16.18 |   85.94 |   8.0 | 129
+gloves5  {"precision": 40}                             |    3.08 |    1.60 |    6.04 |  11.3 | 18
+gloves6  {"precision": 60}                             |    0.25 |    0.13 |    0.61 |  22.9 | 3
+gun      {"attack": 60, "criticalChance": 10}          |    1.97 |    1.25 |   71.51 |   4.0 | 5
+helmet1  {"criticalDamages": 15}                       |    1.93 |    1.50 |    2.41 |   3.3 | 5
+helmet2  {"criticalDamages": 30}                       |    9.74 |    5.81 |   16.39 |   3.8 | 22
+helmet3  {"criticalDamages": 50}                       |   10.98 |    4.69 |   22.76 |   6.0 | 28
+helmet4  {"criticalDamages": 90}                       |   11.41 |    5.76 |   23.90 |   8.0 | 46
+helmet5  {"criticalDamages": 110}                      |    2.44 |    1.44 |    4.78 |  11.1 | 16
+helmet6  {"criticalDamages": 150}                      |    0.14 |    0.04 |    0.29 |  23.8 | 1
+jet      {"attack": 252, "criticalChance": 46}         |    0.14 |    0.06 |    3.15 |  17.8 | 1
+knife    {"attack": 40, "criticalChance": 5}           |    0.83 |    1.06 |   14.09 |   3.8 | 4
+pants1   {"armor": 5}                                  |    5.33 |    3.03 |    8.59 |   4.0 | 12
+pants2   {"armor": 10}                                 |   21.60 |   12.74 |   34.84 |   3.8 | 49
+pants3   {"armor": 15}                                 |   30.79 |   16.26 |   51.97 |   6.0 | 97
+pants4   {"armor": 23}                                 |   27.38 |    8.51 |   62.47 |   8.0 | 68
+pants5   {"armor": 50}                                 |    2.12 |    0.71 |    5.26 |  11.2 | 8
+pants6   {"armor": 60}                                 |    0.19 |    0.04 |    0.71 |  23.8 | 1
+rifle    {"attack": 90, "criticalChance": 14}          |    1.82 |    3.18 |   75.38 |   6.0 | 19
+sniper   {"attack": 123, "criticalChance": 19}         |    1.68 |    2.38 |  177.89 |   8.0 | 19
+tank     {"attack": 150, "criticalChance": 29}         |    0.39 |    0.17 |   25.14 |  11.9 | 2
+
+velocity / true exact sales-per-hour: median 1.96 p10 1.43 p90 3.09
+velocity / band sales-per-hour:       median 0.49 p10 0.04 p90 0.64
+weapons only, velocity / exact:        [1.57, 2.45, 0.78, 0.57, 0.71, 2.31]
+
+armour rolls n_exact>=5: 186; velocity/(exact per h): median 3.09 p10 1.90 p90 4.59 min 1.28 max 7.92
+  tier 1: n=13 median 2.13 p10 1.69 p90 3.34
+  tier 2: n=32 median 3.18 p10 1.72 p90 4.53
+  tier 3: n=38 median 3.13 p10 2.19 p90 5.08
+  tier 4: n=50 median 3.45 p10 2.22 p90 4.58
+  tier 5: n=49 median 3.03 p10 1.96 p90 4.69
+  tier 6: n=4 median 1.79 p10 1.50 p90 1.88
+
+weapon velocity hard cap = 12*1.12/coverage:
+  knife: coverage 3.76h -> cap 3.57/h ; actual item sales/h in window 14.09
+  gun: coverage 3.99h -> cap 3.37/h ; actual item sales/h in window 71.51
+  rifle: coverage 5.97h -> cap 2.25/h ; actual item sales/h in window 75.38
+  sniper: coverage 7.99h -> cap 1.68/h ; actual item sales/h in window 177.89
+  tank: coverage 11.89h -> cap 1.13/h ; actual item sales/h in window 25.14
+  jet: coverage 17.78h -> cap 0.76/h ; actual item sales/h in window 3.15
+
+opportunityDepthBands:
+  boots4 {'dodge': 25} floor 60.0: higher=True hist=66.599 velocity=50.04/h cycle=0.25h (durations n=12) -> SAFE 0-12, LESS SAFE 13-37, RISKY 38+
+     true exact-roll rate 20.29/h, exact median sold-in 0.12h -> exact sales per median sold-in 5.1; queue hours for 12 blockers: page 0.24h vs exact-rate 0.59h
+  tank {'attack': 141, 'criticalChance': 34} floor 140.0: higher=True hist=145.0 velocity=0.63/h cycle=6.27h (durations n=11) -> SAFE 0-3, LESS SAFE 4-11, RISKY 12+
+     true exact-roll rate 0.50/h, exact median sold-in 16.26h -> exact sales per median sold-in 8.2; queue hours for 12 blockers: page 19.12h vs exact-rate 23.78h
+  knife {'attack': 40, 'criticalChance': 5} floor 1.8: higher=True hist=1.859 velocity=0.83/h cycle=1.47h (durations n=8) -> SAFE 0-0, LESS SAFE 1-3, RISKY 4+
+     true exact-roll rate 1.06/h, exact median sold-in 0.38h -> exact sales per median sold-in 0.4; queue hours for 12 blockers: page 14.53h vs exact-rate 11.28h

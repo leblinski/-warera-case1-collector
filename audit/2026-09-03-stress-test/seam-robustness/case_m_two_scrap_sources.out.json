@@ -1,0 +1,67 @@
+{
+ "dataStamp": "Prices collected 4 min ago. Published every 15 minutes.",
+ "price": {
+  "taxChip": "Tax 1%",
+  "taxIn": "1",
+  "figure": "1.385",
+  "docketHint": "Displayed market price 1.400 · tap to copy",
+  "docketLabel": "TYPE THIS TO UNDERCUT THEM",
+  "flipFigure": "—",
+  "flipDetail": "Enter a price to see where flipping starts.",
+  "scrapDetail": "Enter a market price to compare listing versus dismantling.",
+  "scrapNote": "live market",
+  "scrapPrice": "0.3",
+  "scrapVerdict": "1.782",
+  "scrapRows": "Common 1.782 Uncommon 5.347 Rare 16.040 Epic 48.119 Legendary 144.356 Mythic 433.069",
+  "quickScrap": "1.782",
+  "cutCard": "Common: break anything selling under 1.465. 64 of 81 rolls clear the bar. Cut lines: Chest 5 and up · Gloves 5 and up · Boots 5 and up.",
+  "cutCardHidden": false,
+  "rollFacts": "LIST AT 1.300 1.048–1.449 SELLS IN <1m SALES 33 last 48h OVER SCRAPS −0.063 scraps fetch 1.35",
+  "rollNbrs": "EITHER SIDE 1 1.300 <1m 2 1.300 <1m 3 1.300 <1m 4 1.394 43m 5 1.467 18m"
+ },
+ "cases": {
+  "verdict": "+0.128",
+  "detail": "+3.61% per case. A case costs 3.55000; the average case holds 3.6781 after 1% tax. Break even at a case price of 3.6781 (+3.61% from what you would pay now).",
+  "rows": "TIER ODDS WORTH BREAK ADDS Common 62.00% 1.58 13% 0.9799 Uncommon 30.00% 4.06 99% 1.2167 Rare 7.10% 13.47 64% 0.9565 Epic 0.85% 50.81 0% 0.4319 Legendary 0.04% 137.77 3% 0.0551 Mythic 0.01% 379.83 9% 0.0380",
+  "foot": "Odds: the game’s own. Values: collected sale medians, 45,060 sales across 1040 of 1810 rolls (57%). Break: how often that tier is worth dismantling rather than listing. Each piece counts at whichever is worth more, under the same bar the Sort tab uses, so this assumes you sort every piece rather than listing all of them. Selling what you open moves these prices, and the more you open at once the more it moves them.",
+  "swing": "One case swings 7.06 either way against an edge of 0.128 — about 12,100 cases before profit reliably beats the swing. Below that a losing run is normal, not evidence the edge is wrong.",
+  "tab": "+3.6%"
+ },
+ "craft": {
+  "verdict": "−1.450",
+  "detail": "−47.85% per craft. 6 scraps + 1 steel cost 3.03 at 0.22600 and 1.6750; the average piece sells for 1.581 after 1% tax. Free scraps would still lose money at this tier.",
+  "rows": "TIER COST SELLS FOR PROFIT BREAK EVEN Common 3.03 1.58 −47.9% — Uncommon 7.42 4.06 −45.3% 0.0392 Rare 18.90 13.47 −28.7% 0.1254 Epic 50.01 50.81 +1.6% 0.2309 Legendary 136.64 137.77 +0.8% 0.2283 Mythic 383.11 379.83 −0.9% 0.2237",
+  "foot": "13% of this tier’s rolls are worth more dismantled than listed and are valued that way. 2,481 sales across 81 of 135 possible rolls (60%). Slots weighted the way the game states them, 30% weapon and 14% each armour piece; every weapon roll on the same odds, which is what a craft hands you. Untraded rolls are assumed to price like the ones that did trade.",
+  "note": "Cheapest sell orders lifted in order, on the collector’s books. An API key in settings reads them live instead.",
+  "scrapIn": "0.22600",
+  "steelIn": "1.6750",
+  "books": "SCRAPS 0.225 / 0.226 BUY ORDERS 0.225 654,018 0.224 12,590 0.223 6,108 0.222 51,264 0.221 11,467 SELL ORDERS 0.226 101,222 0.227 26,100 0.228 8,812 0.229 33,438 0.230 24,719 Your order lifts 6 scraps from 1 price level. STEEL 1.669 / 1.675 BUY ORDERS 1.669 2,435 1.668 501 1.667 1,000 1.666 3,475 1.665 487 SELL ORDERS 1.675 572 1.676 580 1.677 4,642 1.678 713 1.679 4,066 Your order lifts 1 steel from 1 price level."
+ },
+ "sort": {
+  "tier1": {
+   "head": "COMMON scraps fetch 1.35 · list above 1.46",
+   "rows": "COMMON scraps fetch 1.35 · list above 1.46 SLOT SELL PER 1,000 GOLD Knife every roll 86 47 Helmet every roll 87 36 Chest 5 and up 17 1.8 Gloves 5 and up 17 1.9 Pants none — — Boots 5 and up 17 1.8 break the rest 295 —",
+   "detail": "ROLL LIST AT SELLS IN VS BREAKING IT 1 1.300 <1m -0.063 break 2 1.300 <1m -0.063 break 3 1.300 <1m -0.063 break 4 1.394 43m +0.030 under bar 5 1.467 18m +0.102 sell"
+  },
+  "tier2": {
+   "head": "UNCOMMON scraps fetch 4.05 · list above 4.19",
+   "rows": "UNCOMMON scraps fetch 4.05 · list above 4.19 SLOT SELL PER 1,000 GOLD Gun none — — Helmet 30 and up 2.8 0.3 Chest 10 and up 8.4 1.4 Gloves none — — Pants none — — Boots none — — break the rest 289 —",
+   "detail": "ROLL LIST AT SELLS IN VS BREAKING IT 6 4.000 <1m -0.090 break 7 4.000 <1m -0.090 break 8 4.000 <1m -0.090 break 9 4.000 <1m -0.090 break 10 4.095 5m +0.004 under bar"
+  },
+  "tier6": {
+   "head": "MYTHIC scraps fetch 328.05 · list above 331.46",
+   "rows": "MYTHIC scraps fetch 328.05 · list above 331.46 SLOT SELL PER 1,000 GOLD Jet every roll 1 in 242,424 0.4 Helmet 144 and up 1 in 164,835 0.4 Chest 66 and up 1 in 267,857 0.1 Gloves every roll 1 in 71,429 0.5 Pants 67 and up 1 in 267,857 0.1 Boots every roll 1 in 71,429 1.0 break the rest 1 in 42,857 —",
+   "detail": "ROLL LIST AT SELLS IN VS BREAKING IT 51 377.750 3.8h +45.923 sell 52 379.208 8.0h +47.366 sell 53 380.000 2.2h +48.150 sell 54 385.000 10h +53.100 sell 55 387.000 3.2h +55.080 sell 56 397.500 79m +65.475 sell 57 405.000 2.3h +72.900 sell 58 409.995 4.9h +77.845 sell 59 430.000 76m +97.650 sell 60 485.000 87m +152.100 sell"
+  },
+  "gate": "A roll needs 0.1 over scrap. That is 0.100 (7.4%) on a Common and 0.10 (0.03%) on a Mythic.",
+  "foot": "Cut lines move with the scrap price, so they are computed fresh, not written down. 151 of 180 rolls with sale history clear the bar. Right-hand figure is how many of that slot’s seen rolls do. Open a slot and “list at” is the median of that roll’s own recent sales, dimmed where fewer than 5 of them set it.",
+  "detail": "A roll only earns a listing if it beats what its own scraps fetch. Below the cut line, breaking it is worth more than selling it."
+ },
+ "_requests": [
+  "index.json",
+  "summary.json",
+  "commodities.json",
+  "prices/boots1.json"
+ ],
+ "_errors": []
+}

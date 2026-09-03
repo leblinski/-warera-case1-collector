@@ -1,0 +1,13 @@
+n=     1 unit 3.55000 (thin=False) edge/case +0.1281 -> (2sd/edge)^2 = 12141
+n=   100 unit 3.55000 (thin=False) edge/case +0.1281 -> (2sd/edge)^2 = 12141
+n=  1000 unit 3.55630 (thin=False) edge/case +0.1218 -> (2sd/edge)^2 = 13430
+n=  4766 unit 3.57529 (thin=False) edge/case +0.1028 -> (2sd/edge)^2 = 18849
+n= 12100 unit 3.58966 (thin=True) edge/case +0.0884 -> (2sd/edge)^2 = 25473
+n= 12500 unit 3.58996 (thin=True) edge/case +0.0881 -> (2sd/edge)^2 = 25646
+n= 24000 unit 3.59429 (thin=True) edge/case +0.0838 -> (2sd/edge)^2 = 28366
+n= 50000 unit 3.59674 (thin=True) edge/case +0.0814 -> (2sd/edge)^2 = 30100
+self-consistent n = 28916 (unit 3.59509, edge 0.0830) -- floor, since only 100 asks are visible
+knife    daily sales 305; 12,100 cases over 7 days lists 322/day = 105% of daily volume
+helmet1  daily sales 82; 12,100 cases over 7 days lists 150/day = 184% of daily volume
+rifle    daily sales 1364; 12,100 cases over 7 days lists 12/day = 1% of daily volume
+sniper   daily sales 2837; 12,100 cases over 7 days lists 4/day = 0% of daily volume

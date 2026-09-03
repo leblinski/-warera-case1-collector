@@ -1,0 +1,67 @@
+WEAPON_CRIT_WEIGHT in page = 4.15 attack-points per crit point; weaponCritAdjustment: -2 at band min, +3 at band max, linear -1.2..+1.2 between
+
+== knife (tier 1) attack 21-40 crit 1-5; sales=1712 rolls seen=100
+  all 168h sales, linear: n=1712 a=-0.217 b_attack=0.0483 c_crit=0.2569 -> crit/attack=5.32  R2=0.399
+  48h sales, linear: n=555 a=-0.261 b_attack=0.0518 c_crit=0.2501 -> crit/attack=4.83  R2=0.372
+  per-roll medians (weight=count), linear: n=100 a=-0.315 b_attack=0.0507 c_crit=0.2665 -> crit/attack=5.26  R2=0.874
+  per-roll medians + min/max crit dummies: n=100 a=-0.233 b_attack=0.0544 c_crit=0.1153 -> crit/attack=2.12  R2=0.891 d_min=+0.252 d_max=+0.727 (in price units; in attack units: +4.64 / +13.37)
+  interior rolls only (no band edges), medians: n=54 a=1.548 b_attack=0.0028 c_crit=0.0638 -> crit/attack=23.00  R2=0.995
+  log(price) per-roll medians: n=100 a=-0.204 b_attack=0.0194 c_crit=0.0973 -> crit/attack=5.03  R2=0.878
+  score-vs-median pairwise order agreement (rolls n>=5): 1826/2396 = 0.76
+  median price at attack=40: 1.880 vs other attacks: 1.801
+  median price at crit=5: 1.852 vs other crits: 1.800
+
+== gun (tier 2) attack 51-60 crit 6-10; sales=7943 rolls seen=50
+  all 168h sales, linear: n=7943 a=2.932 b_attack=0.0137 c_crit=0.0237 -> crit/attack=1.73  R2=0.034
+  48h sales, linear: n=3027 a=3.282 b_attack=0.0078 c_crit=0.0217 -> crit/attack=2.80  R2=0.019
+  per-roll medians (weight=count), linear: n=50 a=3.352 b_attack=0.0094 c_crit=0.0151 -> crit/attack=1.60  R2=0.988
+  per-roll medians + min/max crit dummies: n=50 a=3.448 b_attack=0.0091 c_crit=0.0039 -> crit/attack=0.43  R2=0.989 d_min=-0.000 d_max=+0.052 (in price units; in attack units: -0.05 / +5.76)
+  interior rolls only (no band edges), medians: n=24 a=3.849 b_attack=0.0017 c_crit=0.0051 -> crit/attack=2.91  R2=0.990
+  log(price) per-roll medians: n=50 a=1.227 b_attack=0.0023 c_crit=0.0037 -> crit/attack=1.59  R2=0.994
+  score-vs-median pairwise order agreement (rolls n>=5): 747/1024 = 0.73
+  median price at attack=60: 4.000 vs other attacks: 3.990
+  median price at crit=10: 4.000 vs other crits: 3.990
+
+== rifle (tier 3) attack 71-90 crit 11-15; sales=7668 rolls seen=100
+  all 168h sales, linear: n=7668 a=-22.776 b_attack=0.2969 c_crit=0.9139 -> crit/attack=3.08  R2=0.510
+  48h sales, linear: n=2720 a=-21.140 b_attack=0.2897 c_crit=0.8357 -> crit/attack=2.88  R2=0.507
+  per-roll medians (weight=count), linear: n=100 a=-26.504 b_attack=0.3257 c_crit=1.0352 -> crit/attack=3.18  R2=0.891
+  per-roll medians + min/max crit dummies: n=100 a=-27.861 b_attack=0.3280 c_crit=1.0936 -> crit/attack=3.33  R2=0.897 d_min=+1.285 d_max=+0.675 (in price units; in attack units: +3.92 / +2.06)
+  interior rolls only (no band edges), medians: n=54 a=-13.353 b_attack=0.1847 c_crit=0.8593 -> crit/attack=4.65  R2=0.942
+  log(price) per-roll medians: n=100 a=0.006 b_attack=0.0210 c_crit=0.0667 -> crit/attack=3.17  R2=0.978
+  score-vs-median pairwise order agreement (rolls n>=5): 3629/4030 = 0.90
+  median price at attack=90: 16.500 vs other attacks: 12.000
+  median price at crit=15: 13.350 vs other crits: 12.000
+
+== sniper (tier 4) attack 101-130 crit 16-20; sales=15948 rolls seen=150
+  all 168h sales, linear: n=15948 a=-120.215 b_attack=0.7920 c_crit=4.2155 -> crit/attack=5.32  R2=0.840
+  48h sales, linear: n=5875 a=-116.731 b_attack=0.7710 c_crit=4.1605 -> crit/attack=5.40  R2=0.832
+  per-roll medians (weight=count), linear: n=150 a=-123.035 b_attack=0.8073 c_crit=4.2883 -> crit/attack=5.31  R2=0.902
+  per-roll medians + min/max crit dummies: n=150 a=-124.863 b_attack=0.8062 c_crit=4.3309 -> crit/attack=5.37  R2=0.919 d_min=+3.088 d_max=+2.724 (in price units; in attack units: +3.83 / +3.38)
+  interior rolls only (no band edges), medians: n=84 a=-126.277 b_attack=0.8144 c_crit=4.3283 -> crit/attack=5.31  R2=0.945
+  log(price) per-roll medians: n=150 a=0.365 b_attack=0.0163 c_crit=0.0881 -> crit/attack=5.40  R2=0.973
+  score-vs-median pairwise order agreement (rolls n>=5): 10664/11158 = 0.96
+  median price at attack=130: 64.689 vs other attacks: 45.499
+  median price at crit=20: 54.992 vs other crits: 41.810
+
+== tank (tier 5) attack 141-170 crit 26-35; sales=2919 rolls seen=300
+  all 168h sales, linear: n=2919 a=-201.035 b_attack=1.3609 c_crit=4.5488 -> crit/attack=3.34  R2=0.718
+  48h sales, linear: n=1027 a=-194.541 b_attack=1.3186 c_crit=4.5756 -> crit/attack=3.47  R2=0.736
+  per-roll medians (weight=count), linear: n=300 a=-217.670 b_attack=1.4286 c_crit=4.7772 -> crit/attack=3.34  R2=0.925
+  per-roll medians + min/max crit dummies: n=300 a=-209.084 b_attack=1.4194 c_crit=4.4690 -> crit/attack=3.15  R2=0.939 d_min=+8.042 d_max=+13.494 (in price units; in attack units: +5.67 / +9.51)
+  interior rolls only (no band edges), medians: n=224 a=-185.404 b_attack=1.2674 c_crit=4.4350 -> crit/attack=3.50  R2=0.959
+  log(price) per-roll medians: n=300 a=2.695 b_attack=0.0089 c_crit=0.0303 -> crit/attack=3.41  R2=0.997
+  score-vs-median pairwise order agreement (rolls n>=5): 35274/37849 = 0.93
+  median price at attack=170: 179.327 vs other attacks: 140.000
+  median price at crit=35: 170.250 vs other crits: 139.123
+
+== jet (tier 6) attack 221-300 crit 41-50; sales=480 rolls seen=348
+  all 168h sales, linear: n=480 a=-557.927 b_attack=1.9540 c_crit=10.5519 -> crit/attack=5.40  R2=0.543
+  48h sales, linear: n=142 a=-652.096 b_attack=2.0687 c_crit=11.9691 -> crit/attack=5.79  R2=0.537
+  per-roll medians (weight=count), linear: n=348 a=-585.536 b_attack=2.0229 c_crit=10.7870 -> crit/attack=5.33  R2=0.825
+  per-roll medians + min/max crit dummies: n=348 a=-549.325 b_attack=2.0380 c_crit=9.8003 -> crit/attack=4.81  R2=0.833 d_min=+14.395 d_max=+33.354 (in price units; in attack units: +7.06 / +16.37)
+  interior rolls only (no band edges), medians: n=273 a=-543.055 b_attack=1.8877 c_crit=10.4535 -> crit/attack=5.54  R2=0.866
+  log(price) per-roll medians: n=348 a=3.951 b_attack=0.0042 c_crit=0.0222 -> crit/attack=5.28  R2=0.995
+  score-vs-median pairwise order agreement (rolls n>=5): 0/0 = 0.00
+  median price at attack=300: 623.750 vs other attacks: 400.000
+  median price at crit=50: 467.000 vs other crits: 397.000

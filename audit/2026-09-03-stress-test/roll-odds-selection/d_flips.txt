@@ -1,0 +1,49 @@
+items with roll space >=50: ['gun', 'jet', 'knife', 'rifle', 'sniper', 'tank']
+loose flips (all items, first-come pairing): 8672 of 126798 retained eligible sales (6.8%)
+
+tier   item       sales  flips  share  median resale/purchase price ratio | resale vs roll-median (nonflip) ratio | median hold h
+basic  knife       1712     59   3.4%  1.083 | 1.019 (first sales 1.000) | 3.0h
+reinf  gun         7943    260   3.3%  1.051 | 1.012 (first sales 1.000) | 1.9h
+advan  rifle       7668    707   9.2%  1.086 | 1.010 (first sales 1.000) | 3.0h
+elite  sniper     15948    717   4.5%  1.045 | 1.000 (first sales 1.000) | 2.5h
+legen  tank        2919    175   6.0%  1.046 | 1.003 (first sales 1.000) | 5.7h
+mythi  jet          480     32   6.7%  1.030 | 1.027 (first sales 1.000) | 4.6h
+
+loose flip share by tier (all items):
+  basic        7245 sales    325 flips    4.5%
+  reinforced  22804 sales   1237 flips    5.4%
+  advanced    30420 sales   3536 flips   11.6%
+  elite       55797 sales   3118 flips    5.6%
+  legendary    9302 sales    391 flips    4.2%
+  mythic       1230 sales     65 flips    5.3%
+
+replication of selected.median_time_to_sell_seconds: 1040 rolls, 0 mismatches
+
+tier          rolls  page(m) noflip(m) | sale-wtd   noflip
+basic            81     81.6     83.1 |     35.6     35.7
+reinforced       85      0.5      0.5 |      0.6      0.6
+advanced        140     17.6     15.1 |     16.1     14.9
+elite           200     40.9     39.0 |     21.7     21.7
+legendary       354    118.6    121.0 |     76.8     75.5
+mythic          180    213.3    168.4 |    169.1    166.7
+median tts: flips 27.7 min, non-flips 19.6 min
+
+survivorship (sales at/above roll selected median, all retained incl. stale): share tts>24h, >48h, >7d; and below-median for contrast
+  basic      n=  4403  >=median: >24h 8.7% >48h 5.6% >7d 0.5% | <median (n=2544): >24h 12.0% >48h 8.6% | listed>=48h ago (n=2944): >48h 8.3%
+  reinforced n= 10938  >=median: >24h 3.1% >48h 1.6% >7d 0.5% | <median (n=11866): >24h 0.4% >48h 0.2% | listed>=48h ago (n=6104): >48h 2.9%
+  advanced   n= 10113  >=median: >24h 12.7% >48h 8.6% >7d 4.8% | <median (n=20307): >24h 2.9% >48h 1.9% | listed>=48h ago (n=5246): >48h 16.5%
+  elite      n= 23851  >=median: >24h 7.5% >48h 4.5% >7d 1.7% | <median (n=31946): >24h 3.3% >48h 1.6% | listed>=48h ago (n=13977): >48h 7.7%
+  legendary  n=  4194  >=median: >24h 13.2% >48h 7.2% >7d 1.4% | <median (n=4994): >24h 4.6% >48h 1.9% | listed>=48h ago (n=2709): >48h 11.1%
+  mythic     n=   536  >=median: >24h 14.6% >48h 5.8% >7d 0.7% | <median (n=343): >24h 8.7% >48h 2.0% | listed>=48h ago (n=307): >48h 10.1%
+
+haircut sensitivity (case gross, edge vs cost 3.550; base 3.6781):
+  u=tier share >24h (>=median)     gross 3.6423  edge +0.0923  pct +2.60%
+  u=tier share >48h (>=median)     gross 3.6554  edge +0.1054  pct +2.97%
+  u=2x share >48h                  gross 3.6328  edge +0.0828  pct +2.33%
+  u=3x share >48h                  gross 3.6101  edge +0.0601  pct +1.69%
+  u=5% flat                        gross 3.6592  edge +0.1092  pct +3.08%
+  u=10% flat                       gross 3.6404  edge +0.0904  pct +2.55%
+  u=20% flat                       gross 3.6027  edge +0.0527  pct +1.48%
+  u=30% flat                       gross 3.5650  edge +0.0150  pct +0.42%
+  u=50% flat                       gross 3.4896  edge -0.0604  pct -1.70%
+  break-even flat u = 34.0%

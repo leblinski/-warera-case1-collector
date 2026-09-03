@@ -1,0 +1,42 @@
+median over priced rolls of selected.median_time_to_sell_seconds: 59.4 min (n=1040 rolls); count-weighted 14.9 min
+median over rolls of retained_window.median_time_to_sell_seconds: 77.4 min (n=1295)
+sale-weighted median tts, all comps-eligible non-stale retained sales: 18.1 min (n=122550)
+  48h window: 16.6 min (n=45060); 24h window: 15.8 min (n=22666)
+
+per tier: median-of-roll-medians (selected) | retained | sale-wtd all | sales <= roll median | sales > roll median | sell-verdict rolls only
+  basic      rolls 81.6 | ret 255.8 | sales 47.3 | <=med 16.5 (n=2751) | >med 93.5 (n=3731) | sell-verdict rolls 103.3 (n=64)
+  reinforced rolls 0.5 | ret 0.6 | sales 1.2 | <=med 0.5 (n=16625) | >med 38.0 (n=5983) | sell-verdict rolls 44.1 (n=2)
+  advanced   rolls 17.6 | ret 17.6 | sales 18.4 | <=med 11.6 (n=20868) | >med 55.3 (n=8302) | sell-verdict rolls 40.5 (n=55)
+  elite      rolls 40.9 | ret 50.9 | sales 21.1 | <=med 16.8 (n=31887) | >med 28.8 (n=22323) | sell-verdict rolls 40.9 (n=200)
+  legendary  rolls 118.6 | ret 105.5 | sales 69.7 | <=med 50.8 (n=5374) | >med 110.3 (n=3419) | sell-verdict rolls 132.3 (n=334)
+  mythic     rolls 213.3 | ret 230.4 | sales 165.4 | <=med 101.2 (n=513) | >med 309.3 (n=328) | sell-verdict rolls 264.6 (n=151)
+overall: sales <= roll median 10.3 min (n=78018); > roll median 42.2 min (n=44086)
+
+candidate populations (median minutes):
+  rolls_sel_reinforced               0.5
+  sales_reinforced                   1.2
+  sales_le_med                       10.3
+  case_draw_weighted_roll_median     11.3
+  sales_24h                          15.8
+  sales_48h                          16.6
+  rolls_sel_advanced                 17.6
+  sales_all                          18.1
+  sales_advanced                     18.4
+  sales_elite                        21.1
+  sellrolls_advanced                 40.5
+  rolls_sel_elite                    40.9
+  sellrolls_elite                    40.9
+  sales_gt_med                       42.2
+  sellrolls_reinforced               44.1
+  sales_basic                        47.3
+  rolls_selected                     59.4
+  sales_legendary                    69.7
+  rolls_retained                     77.4
+  rolls_sel_basic                    81.6
+  sell_verdict_rolls_all             83.6
+  sellrolls_basic                    103.3
+  rolls_sel_legendary                118.6
+  sellrolls_legendary                132.3
+  sales_mythic                       165.4
+  rolls_sel_mythic                   213.3
+  sellrolls_mythic                   264.6

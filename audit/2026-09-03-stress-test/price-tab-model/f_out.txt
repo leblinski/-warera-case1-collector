@@ -1,0 +1,8 @@
+retained sales 126800; sold_at with ms >= 500: 63184 = 49.83% (these live rows fail saleKey dedupe against their shard copy)
+ms decile histogram (0-99,100-199,...): [12734, 12613, 12695, 12799, 12775, 12759, 12535, 12647, 12616, 12627]
+per-item share range: 0.43283582089552236 - 0.6103896103896104
+knife: of the newest 100 snapshot sales, 56 would be re-added as "live" duplicates by mergeSales (double-counted in the model)
+boots4: of the newest 100 snapshot sales, 46 would be re-added as "live" duplicates by mergeSales (double-counted in the model)
+tank: of the newest 100 snapshot sales, 54 would be re-added as "live" duplicates by mergeSales (double-counted in the model)
+
+Note: unit_price in the shard is money/quantity; every retained sale has quantity 1 (README), so the money component of the key matches.

@@ -1,0 +1,95 @@
+rolls with >=30 non-stale sales in 48h: 386 sales 40733
+
+== subsample median relative error vs full 48h median (pooled over rolls x draws) ==
+ n | med|err|%  p75%  p90%  p95% | share|err|>5%  >10% | per-roll median of med|err| (median across rolls) | IQR/med of the rolls (median) %
+ 1 |   0.93   2.16   5.51  12.50 |  11.5%   6.1% |   0.97 |   2.2
+ 2 |   0.81   1.98   6.22  11.74 |  12.0%   6.3% |   0.80 |   2.2
+ 3 |   0.59   1.32   2.74   5.00 |   5.1%   2.2% |   0.50 |   2.2
+ 4 |   0.53   1.23   2.56   4.75 |   4.8%   2.0% |   0.54 |   2.2
+ 5 |   0.41   1.00   2.18   3.40 |   3.0%   1.1% |   0.35 |   2.2
+ 6 |   0.41   0.95   1.95   3.12 |   2.5%   1.0% |   0.40 |   2.2
+ 7 |   0.29   0.85   1.78   2.64 |   2.1%   0.7% |   0.25 |   2.2
+ 8 |   0.34   0.80   1.63   2.52 |   1.7%   0.7% |   0.31 |   2.2
+ 9 |   0.25   0.75   1.54   2.50 |   1.5%   0.6% |   0.20 |   2.2
+10 |   0.27   0.71   1.43   2.22 |   1.3%   0.5% |   0.25 |   2.2
+11 |   0.20   0.71   1.37   2.16 |   1.2%   0.4% |   0.18 |   2.2
+12 |   0.24   0.63   1.26   1.94 |   1.0%   0.4% |   0.21 |   2.2
+
+marginal improvement in p90 error going n -> n+1:
+   1-> 2  p90 5.51 -> 6.22  (drop -0.71 pts, -13%)   median 0.93 -> 0.81
+   2-> 3  p90 6.22 -> 2.74  (drop 3.48 pts, 56%)   median 0.81 -> 0.59
+   3-> 4  p90 2.74 -> 2.56  (drop 0.17 pts, 6%)   median 0.59 -> 0.53
+   4-> 5  p90 2.56 -> 2.18  (drop 0.38 pts, 15%)   median 0.53 -> 0.41
+   5-> 6  p90 2.18 -> 1.95  (drop 0.24 pts, 11%)   median 0.41 -> 0.41
+   6-> 7  p90 1.95 -> 1.78  (drop 0.17 pts, 9%)   median 0.41 -> 0.29
+   7-> 8  p90 1.78 -> 1.63  (drop 0.15 pts, 8%)   median 0.29 -> 0.34
+   8-> 9  p90 1.63 -> 1.54  (drop 0.09 pts, 5%)   median 0.34 -> 0.25
+   9->10  p90 1.54 -> 1.43  (drop 0.11 pts, 7%)   median 0.25 -> 0.27
+  10->11  p90 1.43 -> 1.37  (drop 0.05 pts, 4%)   median 0.27 -> 0.20
+  11->12  p90 1.37 -> 1.26  (drop 0.12 pts, 8%)   median 0.20 -> 0.24
+
+== p90 rel error by tier (n=2,3,5,8) ==
+  basic      rolls  25  p90: n2 12.77  n3 15.38  n5 13.67  n8  8.33
+  reinforced rolls  85  p90: n2 11.88  n3  3.33  n5  2.50  n8  1.75
+  advanced   rolls  68  p90: n2  8.30  n3  3.70  n5  2.78  n8  2.04
+  elite      rolls 178  p90: n2  2.32  n3  1.78  n5  1.46  n8  1.10
+  legendary  rolls  30  p90: n2  3.14  n3  2.27  n5  1.77  n8  1.42
+
+== published summary: thin marker vs windows ==
+rolls with a selected.median: 1040  quiet (retained only): 255
+marked thin (selected.count<5): 458  of which selected window is 24h: 86
+marked thin but fallback_48h.count >= 5: 50
+    ('boots6', '{"skills":{"dodge":60}}', 24, 4, 10)
+    ('chest6', '{"skills":{"armor":66}}', 24, 3, 6)
+    ('gloves6', '{"skills":{"precision":57}}', 24, 3, 8)
+    ('gloves6', '{"skills":{"precision":58}}', 24, 4, 7)
+    ('gloves6', '{"skills":{"precision":59}}', 24, 3, 5)
+    ('gloves6', '{"skills":{"precision":60}}', 24, 3, 5)
+    ('helmet1', '{"skills":{"criticalDamages":14}}', 24, 3, 5)
+    ('helmet1', '{"skills":{"criticalDamages":2}}', 24, 3, 5)
+    ('helmet1', '{"skills":{"criticalDamages":5}}', 24, 4, 7)
+    ('helmet1', '{"skills":{"criticalDamages":6}}', 24, 3, 5)
+    ('helmet6', '{"skills":{"criticalDamages":149}}', 24, 3, 5)
+    ('knife', '{"skills":{"attack":23,"criticalChance":1}}', 24, 3, 5)
+    ('knife', '{"skills":{"attack":26,"criticalChance":1}}', 24, 3, 8)
+    ('pants6', '{"skills":{"armor":64}}', 24, 4, 5)
+    ('rifle', '{"skills":{"attack":71,"criticalChance":14}}', 24, 4, 9)
+    ('rifle', '{"skills":{"attack":76,"criticalChance":14}}', 24, 3, 14)
+    ('rifle', '{"skills":{"attack":87,"criticalChance":11}}', 24, 4, 21)
+    ('tank', '{"skills":{"attack":142,"criticalChance":26}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":142,"criticalChance":32}}', 24, 3, 6)
+    ('tank', '{"skills":{"attack":143,"criticalChance":26}}', 24, 3, 6)
+    ('tank', '{"skills":{"attack":143,"criticalChance":27}}', 24, 4, 8)
+    ('tank', '{"skills":{"attack":143,"criticalChance":29}}', 24, 3, 7)
+    ('tank', '{"skills":{"attack":144,"criticalChance":34}}', 24, 3, 6)
+    ('tank', '{"skills":{"attack":145,"criticalChance":34}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":147,"criticalChance":31}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":148,"criticalChance":27}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":148,"criticalChance":32}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":149,"criticalChance":27}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":149,"criticalChance":32}}', 24, 3, 6)
+    ('tank', '{"skills":{"attack":150,"criticalChance":30}}', 24, 4, 7)
+    ('tank', '{"skills":{"attack":151,"criticalChance":30}}', 24, 4, 7)
+    ('tank', '{"skills":{"attack":151,"criticalChance":31}}', 24, 3, 7)
+    ('tank', '{"skills":{"attack":151,"criticalChance":35}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":152,"criticalChance":27}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":152,"criticalChance":30}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":155,"criticalChance":27}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":155,"criticalChance":33}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":155,"criticalChance":35}}', 24, 3, 6)
+    ('tank', '{"skills":{"attack":156,"criticalChance":30}}', 24, 3, 7)
+    ('tank', '{"skills":{"attack":157,"criticalChance":32}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":157,"criticalChance":35}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":158,"criticalChance":26}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":161,"criticalChance":33}}', 24, 4, 8)
+    ('tank', '{"skills":{"attack":162,"criticalChance":27}}', 24, 4, 7)
+    ('tank', '{"skills":{"attack":163,"criticalChance":35}}', 24, 3, 7)
+    ('tank', '{"skills":{"attack":166,"criticalChance":28}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":168,"criticalChance":27}}', 24, 4, 6)
+    ('tank', '{"skills":{"attack":168,"criticalChance":34}}', 24, 3, 5)
+    ('tank', '{"skills":{"attack":169,"criticalChance":34}}', 24, 4, 5)
+    ('tank', '{"skills":{"attack":170,"criticalChance":35}}', 24, 3, 6)
+unmarked (count>=5): 582  with 48h (max-min)/median > 10%: 361  (62%)
+unmarked 48h range/median: median 15.9%  p25 6.4%  p75 27.9%  >20%: 241  >30%: 106
+rolls with >=5 non-stale 48h sales (recomputed): 632 ; IQR/median > 10%: 18 (3%), median IQR/med 1.7%
+selected.count distribution among priced rolls: {'10-29': 286, '30+': 167, '3-4': 188, '5-9': 129, '1': 184, '2': 86}

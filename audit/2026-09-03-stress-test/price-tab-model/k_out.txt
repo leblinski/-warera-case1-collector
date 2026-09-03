@@ -1,0 +1,16 @@
+target score 63.75
+  rank 0 d=0.00 age=0.11h price=4.0 roll={'attack': 40, 'criticalChance': 5} kept=False
+  rank 0 d=0.00 age=0.25h price=3.8 roll={'attack': 40, 'criticalChance': 5} kept=False
+  rank 0 d=0.00 age=1.95h price=4.0 roll={'attack': 40, 'criticalChance': 5} kept=False
+  rank 0 d=0.00 age=2.87h price=4.2 roll={'attack': 40, 'criticalChance': 5} kept=False
+  rank 0 d=1.00 age=0.58h price=1.857 roll={'attack': 39, 'criticalChance': 5} kept=True
+  rank 0 d=1.00 age=3.14h price=2.399 roll={'attack': 39, 'criticalChance': 5} kept=True
+  rank 0 d=1.00 age=3.52h price=1.857 roll={'attack': 39, 'criticalChance': 5} kept=True
+  rank 0 d=2.00 age=2.29h price=1.98 roll={'attack': 38, 'criticalChance': 5} kept=True
+  rank 0 d=2.00 age=3.33h price=1.999 roll={'attack': 38, 'criticalChance': 5} kept=True
+  rank 0 d=3.00 age=0.26h price=1.853 roll={'attack': 37, 'criticalChance': 5} kept=True
+  rank 0 d=3.00 age=1.58h price=1.859 roll={'attack': 37, 'criticalChance': 5} kept=True
+  rank 0 d=3.00 age=1.58h price=1.859 roll={'attack': 37, 'criticalChance': 5} kept=True
+median of 12 = 1.9895, MAD(log)=0.0700, threshold=0.2450 -> keeps only |log(p/med)|<=0.245: prices within 1.557..2.542
+exact 40/5 sales in window: [(0.11, 4.0), (0.25, 3.8), (1.95, 4.0), (2.87, 4.2)]
+selected.median (24h) for 40/5 = 4.3294999999999995

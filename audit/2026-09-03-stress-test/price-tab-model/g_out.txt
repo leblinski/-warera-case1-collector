@@ -1,0 +1,84 @@
+observed ranges (48h fallback min/max across all rolls of the tier):
+  1 Common         1.022 -     4.385   min from ('boots1', '{"skills":{"dodge":1}}')  max from ('knife', '{"skills":{"attack":40,"criticalChance":5}}')   | RARITY_BANDS upper edge 2.485
+  2 Uncommon       2.835 -     4.445   min from ('gun', '{"skills":{"attack":51,"criticalChance":6}}')  max from ('chest2', '{"skills":{"armor":10}}')   | RARITY_BANDS upper edge 8.069
+  3 Rare           9.400 -    23.999   min from ('gloves3', '{"skills":{"precision":11}}')  max from ('helmet3', '{"skills":{"criticalDamages":50}}')   | RARITY_BANDS upper edge 27.346
+  4 Epic          33.500 -    79.531   min from ('pants4', '{"skills":{"armor":22}}')  max from ('sniper', '{"skills":{"attack":130,"criticalChance":20}}')   | RARITY_BANDS upper edge 92.08
+  5 Legendary    100.000 -   249.900   min from ('helmet5', '{"skills":{"criticalDamages":91}}')  max from ('tank', '{"skills":{"attack":170,"criticalChance":35}}')   | RARITY_BANDS upper edge 268.43
+  6 Mythic       310.000 -   726.733   min from ('helmet6', '{"skills":{"criticalDamages":136}}')  max from ('jet', '{"skills":{"attack":297,"criticalChance":50}}')   | RARITY_BANDS upper edge inf
+overlaps between consecutive tiers:
+  Common/Uncommon: overlap 2.835 - 4.385
+  Uncommon/Rare: gap 4.445 - 9.400
+  Rare/Epic: gap 23.999 - 33.500
+  Epic/Legendary: gap 79.531 - 100.000
+  Legendary/Mythic: gap 249.900 - 310.000
+non-adjacent overlaps:
+
+sales of tier t whose own price the page assigns to another tier ("higher tier wins"):
+  Common    : wrong 418/7245 = 5.8%   ambiguous(>1 hit) 418/7245 = 5.8%   | RARITY_BANDS fallback wrong 558/7245 = 7.7%
+  Uncommon  : wrong 36/22806 = 0.2%   ambiguous(>1 hit) 22563/22806 = 98.9%   | RARITY_BANDS fallback wrong 0/22806 = 0.0%
+  Rare      : wrong 0/30420 = 0.0%   ambiguous(>1 hit) 0/30420 = 0.0%   | RARITY_BANDS fallback wrong 0/30420 = 0.0%
+  Epic      : wrong 1/55797 = 0.0%   ambiguous(>1 hit) 0/55797 = 0.0%   | RARITY_BANDS fallback wrong 1/55797 = 0.0%
+  Legendary : wrong 1/9302 = 0.0%   ambiguous(>1 hit) 0/9302 = 0.0%   | RARITY_BANDS fallback wrong 1/9302 = 0.0%
+  Mythic    : wrong 0/1230 = 0.0%   ambiguous(>1 hit) 0/1230 = 0.0%   | RARITY_BANDS fallback wrong 0/1230 = 0.0%
+
+typed price -> hits (page picks the last = highest):
+     1.860: hits ['Common'] -> page uses Common; RARITY_BANDS fallback -> Common
+     4.050: hits ['Common', 'Uncommon'] -> page uses Uncommon; RARITY_BANDS fallback -> Uncommon
+     4.200: hits ['Common', 'Uncommon'] -> page uses Uncommon; RARITY_BANDS fallback -> Uncommon
+     4.329: hits ['Common', 'Uncommon'] -> page uses Uncommon; RARITY_BANDS fallback -> Uncommon
+     4.385: hits ['Common', 'Uncommon'] -> page uses Uncommon; RARITY_BANDS fallback -> Uncommon
+     8.000: hits ['Rare'] -> page uses Rare; RARITY_BANDS fallback -> Uncommon
+    13.000: hits ['Rare'] -> page uses Rare; RARITY_BANDS fallback -> Rare
+    27.000: hits ['Rare'] -> page uses Rare; RARITY_BANDS fallback -> Rare
+    40.000: hits ['Epic'] -> page uses Epic; RARITY_BANDS fallback -> Epic
+    66.599: hits ['Epic'] -> page uses Epic; RARITY_BANDS fallback -> Epic
+    92.000: hits ['Legendary'] -> page uses Legendary; RARITY_BANDS fallback -> Epic
+   145.000: hits ['Legendary'] -> page uses Legendary; RARITY_BANDS fallback -> Legendary
+   268.000: hits ['Legendary'] -> page uses Legendary; RARITY_BANDS fallback -> Legendary
+   400.000: hits ['Mythic'] -> page uses Mythic; RARITY_BANDS fallback -> Mythic
+
+sales within +-1% of 4.329 in the 7-day shards, per tier / item:
+  chest2   (uncommon): 139
+  gun      (uncommon): 77
+  helmet2  (uncommon): 210
+  knife    (common): 132
+  pants2   (uncommon): 43
+
+Common knife 40/5: 314 sales in 7d; 295 (93.9%) priced inside the Uncommon range -> page infers Uncommon (Gun) unless the user pins Common
+per-item observed ranges (48h):
+  boots1       1.022 -     1.500
+  boots2       2.835 -     4.198
+  boots3       9.500 -    17.000
+  boots4      41.200 -    69.579
+  boots5     138.000 -   203.000
+  boots6     352.000 -   485.000
+  chest1       1.036 -     1.609
+  chest2       2.840 -     4.445
+  chest3      10.000 -    19.000
+  chest4      34.500 -    71.000
+  chest5     104.000 -   153.000
+  chest6     310.000 -   414.980
+  gloves1      1.036 -     1.500
+  gloves2      2.841 -     4.198
+  gloves3      9.400 -    17.990
+  gloves4     39.500 -    66.000
+  gloves5    115.500 -   197.000
+  gloves6    338.000 -   417.900
+  gun          2.835 -     4.400
+  helmet1      1.645 -     1.933
+  helmet2      2.841 -     4.300
+  helmet3     10.240 -    23.999
+  helmet4     38.220 -    73.990
+  helmet5    100.000 -   146.000
+  helmet6    310.000 -   593.000
+  jet        335.000 -   726.733
+  knife        1.771 -     4.385
+  pants1       1.191 -     1.551
+  pants2       2.841 -     4.399
+  pants3       9.478 -    17.499
+  pants4      33.500 -    62.998
+  pants5     100.000 -   141.500
+  pants6     315.000 -   482.990
+  rifle        9.900 -    23.302
+  sniper      33.900 -    79.531
+  tank       125.000 -   249.900

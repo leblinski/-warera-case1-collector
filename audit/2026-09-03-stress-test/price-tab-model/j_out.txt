@@ -1,0 +1,4 @@
+snapshot transactions 126800: state<max_state or missing 0 (0.00%), quantity!=1 0, no skills 0
+items with the most ineligible rows among their newest 100 (what one Gateway page returns): []
+per-item ineligible share, top 6: [(0.0, 'tank'), (0.0, 'sniper'), (0.0, 'rifle'), (0.0, 'pants6'), (0.0, 'pants5'), (0.0, 'pants4')]
+robustFilter: filtered median vs raw median over 389 rolls: mean +0.103% p10 +0.000% p90 +0.125% max +4.93% min -0.37%; rolls changed: 77

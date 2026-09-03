@@ -1,0 +1,89 @@
+CARD gross 3.6781 unit 3.55000 edge 0.1281 sd(between) 7.0572
+sum SLOT_W = 1.0, sum CASE_TIER_ODDS = 0.9999999999999998
+
+(a) per-tier: card net (renormalised over slots with data) vs simulator expectation
+tier  card_net   sim_exact  sim_MC(1e6)   MC_se    diff(exact-card)  slots_without_data
+1      1.5806     1.5806      1.5805    0.0003     +0.0000          -  (unpriced draws 0.00%)
+2      4.0556     4.0556      4.0556    0.0000     +0.0000          -  (unpriced draws 0.00%)
+3     13.4718    13.4718     13.4708    0.0021     +0.0000          -  (unpriced draws 0.00%)
+4     50.8090    50.8090     50.8070    0.0082     +0.0000          -  (unpriced draws 0.00%)
+5    137.7747   137.7747    137.7831    0.0250     +0.0000          -  (unpriced draws 0.00%)
+6    379.8272   379.8272    380.0232    0.0588     +0.0000          -  (unpriced draws 0.00%)
+case gross: card 3.6781  simulator long-run 3.6781  diff +0.00000 (0.000% of gross; 0.00% of edge 0.1281)
+simOpenOne MC 1e6: mean 3.6971 (se 0.0074), sd 7.439  [3.8s]
+
+(b) variance
+  tier 1 within-tier sd 0.330 (net 1.581)
+  tier 2 within-tier sd 0.029 (net 4.056)
+  tier 3 within-tier sd 2.124 (net 13.472)
+  tier 4 within-tier sd 8.227 (net 50.809)
+  tier 5 within-tier sd 24.992 (net 137.775)
+  tier 6 within-tier sd 58.605 (net 379.827)
+between-tier sd 7.0572 (page)   full sd 7.1666   within share of variance 3.0%
+cases (2sd/edge)^2: page 12141 -> shown 12100 ; full 12521 -> shown 12500
+  batches of 12100 (page sd): P(profit>0) = 97.7% over 300 batches; median profit 1616.3, p10 543.7  [13s]
+  batches of 12500 (full sd): P(profit>0) = 98.3% over 300 batches; median profit 1611.5, p10 603.6  [14s]
+normal-approx at n=(2sd/edge)^2: P(profit>0)=Phi(2)=97.7%%; at n with edge=1 SE: 84.1%%
+
+(c) order books
+case1 sell book: 100 orders, 4766 cases, best 3.550 deepest 3.599
+  n=    1 unit 3.55000 thin=False  card-style edge*n (caseCount=1)    +0.128  vs gross*n-walk(n)    +0.128  gap   +0.000
+  n=   10 unit 3.55000 thin=False  card-style edge*n (caseCount=1)    +1.281  vs gross*n-walk(n)    +1.281  gap   -0.000
+  n=  100 unit 3.55000 thin=False  card-style edge*n (caseCount=1)   +12.809  vs gross*n-walk(n)   +12.809  gap   -0.000
+  n= 1000 unit 3.55630 thin=False  card-style edge*n (caseCount=1)  +128.094  vs gross*n-walk(n)  +121.795  gap   +6.299
+  n= 4766 unit 3.57529 thin=False  card-style edge*n (caseCount=1)  +610.496  vs gross*n-walk(n)  +489.972  gap +120.524
+  n= 9999 unit 3.58770 thin=True  card-style edge*n (caseCount=1) +1280.811  vs gross*n-walk(n)  +903.870  gap +376.941
+  distinct ask levels 40; top5 [(3.55, 187), (3.555, 464), (3.556, 87), (3.557, 8), (3.558, 20)]
+scraps bid book: best 0.225 with 654018 resting at best, 800854 in 100 visible bids; scraps dumped per case (broken only) 8.25, per 100 cases 825, if everything broken 1467/100 cases
+daily sale volume per item (retained window) vs pieces 100 cases/day would add to listings:
+  knife    sales   1712 over 5.62 d =   304.8/day; 100 cases/day yield  18.60 pieces,  18.60 listed =    6.1% of daily volume
+  helmet1  sales    459 over 5.61 d =    81.8/day; 100 cases/day yield   8.68 pieces,   8.68 listed =   10.6% of daily volume
+  chest1   sales   1390 over 5.61 d =   247.6/day; 100 cases/day yield   8.68 pieces,   1.74 listed =    0.7% of daily volume
+  gloves1  sales   1415 over 5.61 d =   252.0/day; 100 cases/day yield   8.68 pieces,   1.74 listed =    0.7% of daily volume
+  pants1   sales    744 over 5.61 d =   132.6/day; 100 cases/day yield   8.68 pieces,   0.00 listed =    0.0% of daily volume
+  boots1   sales   1525 over 5.62 d =   271.5/day; 100 cases/day yield   8.68 pieces,   1.74 listed =    0.6% of daily volume
+  gun      sales   7943 over 5.62 d =  1412.3/day; 100 cases/day yield   9.00 pieces,   0.00 listed =    0.0% of daily volume
+  helmet2  sales   2992 over 5.60 d =   533.9/day; 100 cases/day yield   4.20 pieces,   0.28 listed =    0.1% of daily volume
+  chest2   sales   3058 over 5.62 d =   544.1/day; 100 cases/day yield   4.20 pieces,   0.84 listed =    0.2% of daily volume
+  gloves2  sales   2856 over 5.60 d =   509.9/day; 100 cases/day yield   4.20 pieces,   0.00 listed =    0.0% of daily volume
+  pants2   sales   3039 over 5.61 d =   541.8/day; 100 cases/day yield   4.20 pieces,   0.00 listed =    0.0% of daily volume
+  boots2   sales   2918 over 5.61 d =   519.9/day; 100 cases/day yield   4.20 pieces,   0.00 listed =    0.0% of daily volume
+  rifle    sales   7668 over 5.62 d =  1364.2/day; 100 cases/day yield   2.13 pieces,   0.70 listed =    0.1% of daily volume
+  helmet3  sales   4717 over 5.62 d =   838.8/day; 100 cases/day yield   0.99 pieces,   0.55 listed =    0.1% of daily volume
+  chest3   sales   4589 over 5.62 d =   816.0/day; 100 cases/day yield   0.99 pieces,   0.80 listed =    0.1% of daily volume
+  gloves3  sales   4515 over 5.62 d =   803.1/day; 100 cases/day yield   0.99 pieces,   0.40 listed =    0.0% of daily volume
+  pants3   sales   4758 over 5.62 d =   846.5/day; 100 cases/day yield   0.99 pieces,   0.60 listed =    0.1% of daily volume
+  boots3   sales   4173 over 5.62 d =   742.2/day; 100 cases/day yield   0.99 pieces,   0.40 listed =    0.1% of daily volume
+  sniper   sales  15948 over 5.62 d =  2836.8/day; 100 cases/day yield   0.26 pieces,   0.26 listed =    0.0% of daily volume
+  helmet4  sales   7676 over 5.62 d =  1365.8/day; 100 cases/day yield   0.12 pieces,   0.12 listed =    0.0% of daily volume
+  chest4   sales   7927 over 5.62 d =  1410.5/day; 100 cases/day yield   0.12 pieces,   0.12 listed =    0.0% of daily volume
+  gloves4  sales   7930 over 5.62 d =  1410.7/day; 100 cases/day yield   0.12 pieces,   0.12 listed =    0.0% of daily volume
+  pants4   sales   7871 over 5.62 d =  1400.2/day; 100 cases/day yield   0.12 pieces,   0.12 listed =    0.0% of daily volume
+  boots4   sales   8445 over 5.62 d =  1503.3/day; 100 cases/day yield   0.12 pieces,   0.12 listed =    0.0% of daily volume
+  tank     sales   2919 over 5.62 d =   519.8/day; 100 cases/day yield   0.01 pieces,   0.01 listed =    0.0% of daily volume
+  helmet5  sales   1089 over 5.57 d =   195.5/day; 100 cases/day yield   0.01 pieces,   0.00 listed =    0.0% of daily volume
+  chest5   sales   1062 over 5.61 d =   189.3/day; 100 cases/day yield   0.01 pieces,   0.00 listed =    0.0% of daily volume
+  gloves5  sales   1372 over 5.61 d =   244.8/day; 100 cases/day yield   0.01 pieces,   0.01 listed =    0.0% of daily volume
+  pants5   sales   1118 over 5.62 d =   199.0/day; 100 cases/day yield   0.01 pieces,   0.00 listed =    0.0% of daily volume
+  boots5   sales   1742 over 5.59 d =   311.6/day; 100 cases/day yield   0.01 pieces,   0.01 listed =    0.0% of daily volume
+  jet      sales    480 over 5.61 d =    85.6/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  helmet6  sales    157 over 5.33 d =    29.4/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  chest6   sales    154 over 5.53 d =    27.8/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  gloves6  sales    134 over 5.59 d =    24.0/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  pants6   sales    135 over 5.20 d =    26.0/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  boots6   sales    170 over 5.58 d =    30.5/day; 100 cases/day yield   0.00 pieces,   0.00 listed =    0.0% of daily volume
+  sample transaction keys: ['id', 'sold_at', 'seller_id', 'buyer_id', 'offer_created_at', 'money', 'quantity', 'skills', 'state', 'max_state']
+
+(e) Per 1,000 column: shown total (keep+drop over priced rolls) vs tier odds x 1000
+  tier 1: shown 519.560 of 620.000 per 1,000 cases; vanished 100.440 -> weapon 46/100 (100.44)
+  tier 2: shown 300.000 of 300.000 per 1,000 cases; vanished 0.000 -> none
+  tier 3: shown 71.000 of 71.000 per 1,000 cases; vanished 0.000 -> none
+  tier 4: shown 8.500 of 8.500 per 1,000 cases; vanished -0.000 -> none
+  tier 5: shown 0.394 of 0.400 per 1,000 cases; vanished 0.006 -> weapon 284/300 (0.01)
+  tier 6: shown 0.069 of 0.100 per 1,000 cases; vanished 0.031 -> weapon 110/800 (0.03), helmet 21/30 (0.00), chest 14/15 (0.00)
+  Uncommon helmet: each=0.0028 per case -> 1 roll kept = 2.8 per 1,000
+  Uncommon chest: each=0.0084 per case -> 1 roll kept = 8.4 per 1,000
+  Uncommon rest = 300 - 2.8 - 8.4 = 288.8
+
+(f) float accumulation: naive sum vs fsum over every priced roll best-value
+  n=1040 naive 134562.525525000033667 fsum 134562.525525000004563 rel diff 2.16e-16

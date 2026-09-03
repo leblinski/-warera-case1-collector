@@ -1,0 +1,39 @@
+tax 1.0 taxMul 0.99 bar 0.3
+
+=== weapon cut lines: as coded vs quiet-skipped vs neighbour-included ===
+knife   priced  46 wide-only  22 from-only  30 none   2 | priced sell 46/46
+   page  every roll (short-circuit r.sell===r.known)
+   skip  crit 1+ all
+   from  crit 1+ all
+gun     priced  50 wide-only   0 from-only   0 none   0 | priced sell 0/50
+   page  none (short-circuit r.sell===0)
+   skip  crit 
+   from  crit 
+rifle   priced 100 wide-only   0 from-only   0 none   0 | priced sell 29/100
+   page  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+   skip  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+   from  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+sniper  priced 150 wide-only   0 from-only   0 none   0 | priced sell 136/150
+   page  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 106
+   skip  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 106
+   from  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 106
+tank    priced 284 wide-only  16 from-only   0 none   0 | priced sell 284/284
+   page  every roll (short-circuit r.sell===r.known)
+   skip  crit 26+ all
+   from  crit 26+ all
+jet     priced 110 wide-only 205 from-only 465 none  20 | priced sell 110/110
+   page  every roll (short-circuit r.sell===r.known)
+   skip  crit 41+ all
+   from  crit 41+ all
+
+heat cells whose green/break class (margin>=0 vs scrap) contradicts the list verdict (net>need): 22
+   [('gun', '60/10', 4.185, 0.093), ('rifle', '80/14', 12.299, 0.026), ('rifle', '81/14', 12.5, 0.225), ('rifle', '82/14', 12.53, 0.255), ('rifle', '84/13', 12.544, 0.269), ('rifle', '87/11', 12.284, 0.011), ('rifle', '88/12', 12.385, 0.111), ('rifle', '89/11', 12.325, 0.052), ('sniper', '101/16', 37.0, 0.18), ('sniper', '101/18', 37.099, 0.278), ('sniper', '102/16', 36.977, 0.158), ('sniper', '102/17', 36.999, 0.18), ('sniper', '103/16', 36.969, 0.149), ('sniper', '103/17', 37.0, 0.18), ('sniper', '103/18', 36.984, 0.164), ('sniper', '104/16', 37.0, 0.18), ('sniper', '104/17', 37.0, 0.18), ('sniper', '105/16', 37.0, 0.18), ('sniper', '105/17', 37.1, 0.279), ('sniper', '106/17', 37.0, 0.18), ('sniper', '106/18', 36.996, 0.176), ('sniper', '107/17', 37.0, 0.18)]
+wide-only weapon cells 243 ; heat class (0.99 hard-coded, vs scrap) contradicts x.sell (taxMul, vs need): 0
+   []
+
+=== armour cut lines: as coded (skip quiet) vs neighbour/wide included ===
+(armour bands with no line above: quiet rolls never change the cut)
+
+=== strict lower-bound share, and per-item majority baseline (held-one-out, fillQuiet) ===
+neighbours n=979  true>=nb 79.0%  true>nb (strict) 70.0%  neighbours that were wide-only 108
+per-item majority baseline: 945/1040 = 90.9%

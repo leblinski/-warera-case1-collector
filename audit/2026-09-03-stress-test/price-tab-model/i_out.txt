@@ -1,0 +1,15 @@
+knife {'attack': 40, 'criticalChance': 5} floor 4.2: live rows 100, "+55 live" shown (all duplicates; the snapshot has no sale newer than the shard)
+   without live: rows 53 exact 4 hist 1.859 direct 4.199 score 73 velocity 0.83 higher False strategy minimum-undercut
+   with live:    rows 81 exact 4 hist 1.857 direct 4.199 score 73 velocity 0.96 higher False strategy minimum-undercut
+boots4 {'dodge': 25} floor 60.0: live rows 100, "+45 live" shown (all duplicates; the snapshot has no sale newer than the shard)
+   without live: rows 899 exact 162 hist 66.599 direct 59.999 score 74 velocity 50.04 higher True strategy minimum-undercut
+   with live:    rows 944 exact 165 hist 66.599 direct 59.999 score 74 velocity 52.33 higher True strategy minimum-undercut
+tank {'attack': 141, 'criticalChance': 34} floor 150.0: live rows 100, "+54 live" shown (all duplicates; the snapshot has no sale newer than the shard)
+   without live: rows 299 exact 6 hist 145.0 direct 145.0 score 87 velocity 0.63 higher False strategy rare-stale-history
+   with live:    rows 353 exact 6 hist 145.0 direct 145.0 score 87 velocity 0.63 higher False strategy rare-stale-history
+sniper {'attack': 130, 'criticalChance': 20} floor 60.0: live rows 100, "+53 live" shown (all duplicates; the snapshot has no sale newer than the shard)
+   without live: rows 1421 exact 8 hist 78.99 direct 59.999 score 87 velocity 1.24 higher True strategy minimum-undercut
+   with live:    rows 1474 exact 8 hist 78.99 direct 59.999 score 87 velocity 1.24 higher True strategy minimum-undercut
+gloves4 {'precision': 25} floor 50.0: live rows 100, "+54 live" shown (all duplicates; the snapshot has no sale newer than the shard)
+   without live: rows 685 exact 129 hist 63.98 direct 49.999 score 74 velocity 39.33 higher True strategy minimum-undercut
+   with live:    rows 739 exact 141 hist 64.0 direct 49.999 score 74 velocity 42.96 higher True strategy minimum-undercut

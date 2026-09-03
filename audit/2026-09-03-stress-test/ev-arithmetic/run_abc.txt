@@ -1,0 +1,152 @@
+=================== tax_model
+== Case card under alternative tax models (bar 0.10) ==
+ bar 0.1
+page: equipment nets median*(1-1%), scraps net bid         gross 3.6781 edge +0.1281 pct +3.61%  broken/tier 13% 99% 64% 0% 3% 9%
+seller nets typed (Price-tab model): tax=0, scraps net bid gross 3.6978 edge +0.1478 pct +4.16%  broken/tier 13% 96% 58% 0% 1% 5%
+tax on both sides: equipment*(0.99), scraps bid*0.99       gross 3.6608 edge +0.1108 pct +3.12%  broken/tier 13% 96% 58% 0% 1% 5%
+Price-tab paintScrap model: equipment typed(tax0), scraps bid/1.01 gross 3.6822 edge +0.1322 pct +3.72%  broken/tier 13% 96% 36% 0% 0% 1%
+ bar 0.0
+page: equipment nets median*(1-1%), scraps net bid         gross 3.6848 edge +0.1348 pct +3.80%  broken/tier 5% 95% 59% 0% 3% 9%
+seller nets typed (Price-tab model): tax=0, scraps net bid gross 3.7074 edge +0.1574 pct +4.43%  broken/tier 4% 95% 43% 0% 1% 5%
+tax on both sides: equipment*(0.99), scraps bid*0.99       gross 3.6703 edge +0.1203 pct +3.39%  broken/tier 4% 95% 43% 0% 1% 5%
+Price-tab paintScrap model: equipment typed(tax0), scraps bid/1.01 gross 3.6947 edge +0.1447 pct +4.07%  broken/tier 4% 93% 20% 0% 0% 1%
+
+== Craft rows (profit % on walked scrap+steel cost) ==
+ page tax1    -47.9% -45.3% -28.7% +1.6% +0.8% -0.9%
+ typed tax0   -47.5% -45.3% -28.2% +2.6% +1.8% -0.0%
+ both taxed   -48.1% -45.8% -28.9% +1.6% +0.8% -1.0%
+
+== Sort verdicts that flip between tax=1 and tax=0 (median*0.99 <= need < median) ==
+ bar 0.10
+  tier 1: 0 of 81 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 2: 2 of 85 priced rolls flip break->sell; 1.02 listings per 100 cases; gold at stake 0.117/100 cases  e.g. weapon 60/10 med 4.185; pants 10 med 4.160
+  tier 3: 10 of 140 priced rolls flip break->sell; 1.16 listings per 100 cases; gold at stake 0.183/100 cases  e.g. weapon 80/14 med 12.299; weapon 87/11 med 12.284; weapon 89/11 med 12.325; helmet 33 med 12.268
+  tier 4: 0 of 200 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 5: 14 of 354 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.003/100 cases  e.g. helmet 95 med 109.990; helmet 97 med 110.000; helmet 98 med 110.000; helmet 100 med 110.000
+  tier 6: 13 of 180 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.001/100 cases  e.g. helmet 123 med 330.000; helmet 128 med 330.000; helmet 130 med 329.250; helmet 132 med 330.000
+  total 39 rolls, 2.18 listings/100 cases, 0.304 gold/100 cases
+ bar 0.00
+  tier 1: 1 of 81 priced rolls flip break->sell; 1.74 listings per 100 cases; gold at stake 0.017/100 cases  e.g. pants 1 med 1.360
+  tier 2: 0 of 85 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 3: 24 of 140 priced rolls flip break->sell; 1.42 listings per 100 cases; gold at stake 0.077/100 cases  e.g. weapon 71/14 med 12.194; weapon 74/15 med 12.170; weapon 76/15 med 12.179; weapon 77/15 med 12.200
+  tier 4: 0 of 200 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 5: 13 of 354 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.002/100 cases  e.g. helmet 95 med 109.990; helmet 97 med 110.000; helmet 98 med 110.000; helmet 100 med 110.000
+  tier 6: 13 of 180 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.001/100 cases  e.g. helmet 123 med 330.000; helmet 128 med 330.000; helmet 130 med 329.250; helmet 132 med 330.000
+  total 51 rolls, 3.16 listings/100 cases, 0.098 gold/100 cases
+
+== Dismantle floor: Price tab (paintScrap) vs Sort tab (craftDismantle/sortNeed), tax 1%, bid 0.225 ==
+ tier  S=yield*bid  Price"listed"=S/1.01  Price"typed"=S/1.01^2  Sort floor(median terms, bar0)=S/0.99  Sort floor bar0.10=(S+0.10)/0.99
+  1     1.3500       1.3366                1.3234                1.3636                    1.4646
+  2     4.0500       4.0099                3.9702                4.0909                    4.1919
+  3    12.1500      12.0297               11.9106               12.2727                   12.3737
+  4    36.4500      36.0891               35.7318               36.8182                   36.9192
+  5   109.3500     108.2673              107.1954              110.4545                  110.5556
+  6   328.0500     324.8020              321.5861              331.3636                  331.4646
+
+ rolls whose median lies between the Price-tab floor (S/1.01) and the Sort-tab floor ((S+bar)/0.99): Price says list, Sort says break
+  bar 0.00: t1 1/81 t2 2/85 t3 52/140 t4 0/200 t5 19/354 t6 25/180  total 99
+  bar 0.10: t1 11/81 t2 6/85 t3 61/140 t4 0/200 t5 20/354 t6 25/180  total 123
+=================== coverage
+baseline gross 3.6781 edge +0.1281 pct +3.61%
+
+== remove one slot (all tiers): page renormalises the remaining slot weights ==
+  drop weapon  gross 3.6127 (-0.0654) pct +1.77%
+  drop helmet  gross 3.6570 (-0.0211) pct +3.01%
+  drop chest   gross 3.6984 (+0.0203) pct +4.18%
+  drop gloves  gross 3.6917 (+0.0136) pct +3.99%
+  drop pants   gross 3.7067 (+0.0286) pct +4.41%
+  drop boots   gross 3.6899 (+0.0118) pct +3.94%
+
+== remove one tier: page adds nothing for it (treated as worthless) ==
+  drop tier 1 gross 2.6982 (-0.9799) pct -24.00%   [tier adds 0.9799]
+  drop tier 2 gross 2.4614 (-1.2167) pct -30.66%   [tier adds 1.2167]
+  drop tier 3 gross 2.7216 (-0.9565) pct -23.34%   [tier adds 0.9565]
+  drop tier 4 gross 3.2462 (-0.4319) pct -8.56%   [tier adds 0.4319]
+  drop tier 5 gross 3.6230 (-0.0551) pct +2.06%   [tier adds 0.0551]
+  drop tier 6 gross 3.6401 (-0.0380) pct +2.54%   [tier adds 0.0380]
+
+== remove one slot within one tier (renormalised): the 8 biggest moves ==
+  drop knife    gross 3.5937 (-0.0844) pct +1.23%
+  drop pants1   gross 3.7014 (+0.0233) pct +4.26%
+  drop boots1   gross 3.6993 (+0.0212) pct +4.21%
+  drop chest1   gross 3.6993 (+0.0212) pct +4.21%
+  drop gloves1  gross 3.6992 (+0.0211) pct +4.20%
+  drop helmet1  gross 3.6601 (-0.0180) pct +3.10%
+  drop sniper   gross 3.6921 (+0.0140) pct +4.00%
+  drop boots4   gross 3.6678 (-0.0103) pct +3.32%
+
+== knife (tier 1 weapon, 30% of 62% = 18.6% of outcomes): priced vs unpriced rolls ==
+ priced 46/100; of priced 46 sell, 0 break; mean price 1.9175; page slot value (renormalised) 1.8983
+ priced rolls by crit band: {'1': 18, '2': 6, '3': 8, '4': 3, '5': 11}  attack range of priced: 21-40; median attack 32
+ unpriced 54: wide(retained 7d) 22, neighbour 30, none 2
+ unpriced by crit band: {'1': 2, '2': 14, '3': 12, '4': 17, '5': 9}  attack range 21-38
+ fillQuiet verdicts on unpriced: sell 52, break 0, none 2
+ wide-priced unpriced rolls: mean retained median 1.7811 (n=22) vs priced mean 1.9175
+ priced rolls: sell/break by crit band: {'1': '18/0', '2': '6/0', '3': '8/0', '4': '3/0', '5': '11/0'}
+ priced rolls attack<30: 20 sell 0 break; attack>=30: 26 sell 0 break
+
+ knife slot value: renormalised (page) 1.8983 over 46 | fillQuiet neighbour price 1.8306 over 98 | unpriced = scrap 1.6022 over 100
+  case gross with knife=fill: 3.6655 (-0.0126) pct +3.25%
+  case gross with knife=dis: 3.6230 (-0.0551) pct +2.06%
+
+== every slot with unpriced rolls: value under renorm / fill / scrap, and case gross impact ==
+  knife    covered  46/100 renorm 1.8983 fill 1.8306 (case -0.0126) scrap-for-unpriced 1.6022 (case -0.0551)
+  tank     covered 284/300 renorm 148.1389 fill 147.9336 (case -0.0000) scrap-for-unpriced 146.0702 (case -0.0002)
+  jet      covered 110/800 renorm 421.7394 fill 421.8364 (case +0.0000) scrap-for-unpriced 340.9323 (case -0.0024)
+  helmet6  covered  21/ 30 renorm 369.8971 fill 357.5692 (case -0.0002) scrap-for-unpriced 357.3430 (case -0.0002)
+  chest6   covered  14/ 15 renorm 335.8700 fill 336.5786 (case +0.0000) scrap-for-unpriced 335.3486 (case -0.0000)
+ case gross if every unpriced roll were filled: 3.6653 (-0.0128, pct +3.25%); if every unpriced roll were scrap: 3.6202 (-0.0579, pct +1.98%)
+=================== scrap_side
+scrap best bid 0.225; depth at best 654018; within 1% (>=0.22275) 672716; within 2% 735447; total shown (100 rows) 800854; lowest shown 0.220
+ bid levels: 0.225:654018 0.224:12590 0.223:6108 0.222:51264 0.221:11467 0.220:65407
+case best ask 3.550; depth at best 187; within 1% 3591; total shown 4766; highest shown 3.599
+case best bid 3.545; bid depth at best 278; within 1% 6728; total shown 28658
+
+scraps per case: dismantle everything 14.671; at the page break shares 8.253 (t1 13% t2 99% t3 64% t4 0% t5 3% t6 9%)
+   100 cases, break-share    825 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+   100 cases, all           1467 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+  1000 cases, break-share   8253 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+  1000 cases, all          14671 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+  3500 cases, break-share  28886 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+  3500 cases, all          51349 scraps -> walked avg bid 0.22500 (vs 0.225, +0.000%), unfilled 0
+ 10000 cases, break-share  82531 scraps -> walked avg bid 0.22500 (vs 0.225, -0.000%), unfilled 0
+ 10000 cases, all         146712 scraps -> walked avg bid 0.22500 (vs 0.225, -0.000%), unfilled 0
+
+sensitivity to scrap bid (tax 1, bar 0.10, case cost 3.550):
+  bid 0.150 gross 3.6467 edge +0.0967 pct +2.72%
+  bid 0.180 gross 3.6457 edge +0.0957 pct +2.70%
+  bid 0.200 gross 3.6420 edge +0.0920 pct +2.59%
+  bid 0.210 gross 3.6467 edge +0.0967 pct +2.72%
+  bid 0.220 gross 3.6415 edge +0.0915 pct +2.58%
+  bid 0.224 gross 3.6696 edge +0.1196 pct +3.37%
+  bid 0.225 gross 3.6781 edge +0.1281 pct +3.61%
+  bid 0.226 gross 3.6834 edge +0.1334 pct +3.76%
+  bid 0.230 gross 3.7193 edge +0.1693 pct +4.77%
+  bid 0.240 gross 3.8195 edge +0.2695 pct +7.59%
+  bid 0.250 gross 3.9223 edge +0.3723 pct +10.49%
+  bid 0.300 gross 4.4773 edge +0.9273 pct +26.12%
+ d(gross)/d(bid) at 0.225 (central, h=0.0005): 6.538 gold per 1.0 of bid = 0.0065 per 0.001
+ pure-scrap slope Σ odds*yield = 14.671; effective slope/pure = 0.45
+ zero-edge scrap bid: 0.10000 (55.56% below 0.225); edge at 0.215: +0.0637
+
+sensitivity to case ask: n=1 edge falls 1:1 with the ask. Walked unit cost by n:
+  n     1 unit 3.55000 thin False  edge +0.1281 pct +3.61%
+  n   100 unit 3.55000 thin False  edge +0.1281 pct +3.61%
+  n   187 unit 3.55000 thin False  edge +0.1281 pct +3.61%
+  n   500 unit 3.55313 thin False  edge +0.1250 pct +3.52%
+  n  1000 unit 3.55630 thin False  edge +0.1218 pct +3.42%
+  n  3500 unit 3.56907 thin False  edge +0.1090 pct +3.05%
+  n 10000 unit 3.58770 thin True  edge +0.0904 pct +2.52%
+ zero-edge case ask = gross = 3.6781 (+3.61% above best ask)
+
+== fine sweep of scrap bid 0.195..0.235 step 0.001: is gross monotone? ==
+ non-monotone steps (bid, gross before, gross after): ['0.198 3.6474->3.6407', '0.208 3.6463->3.6452', '0.211 3.6467->3.6458', '0.212 3.6458->3.6448', '0.213 3.6448->3.6424', '0.214 3.6424->3.6411', '0.215 3.6411->3.6137']
+ same sweep with bar 0 (pure threshold at dis):
+ non-monotone steps: []
+ bid 0.00 gross 3.6467 edge +0.0967 broken 0% 0% 0% 0% 0% 0%
+ bid 0.05 gross 3.6467 edge +0.0967 broken 0% 0% 0% 0% 0% 0%
+ bid 0.10 gross 3.6467 edge +0.0967 broken 0% 0% 0% 0% 0% 0%
+ bid 0.15 gross 3.6467 edge +0.0967 broken 0% 0% 0% 0% 0% 0%
+ => no scrap bid in [0,0.225] zeroes the edge because the model holds equipment prices fixed while scrap falls;
+    Uncommon (30%% of cases) clears at scrap value (README), so its price would fall with the bid. Bounds on d(gross)/d(bid):
+    page (equipment exogenous) 6.54; pure scrap Σodds*yield 14.67; scrap-bound share only Σodds*yield*broken 8.25

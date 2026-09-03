@@ -1,0 +1,50 @@
+[
+ {
+  "name": "knife 40/5 floor 1.800 (dumped listing) quick",
+  "price": "1.800",
+  "tier": 1,
+  "slot": "weapon",
+  "rolls": {
+   "attack": 40,
+   "criticalChance": 5
+  }
+ },
+ {
+  "name": "boots4 25 floor 60 (below median) oppCount 5",
+  "price": "60.000",
+  "tier": 4,
+  "slot": "boots",
+  "rolls": {
+   "dodge": 25
+  },
+  "oppCount": 5
+ },
+ {
+  "name": "boots4 25 floor 60 oppCount 13",
+  "price": "60.000",
+  "tier": 4,
+  "slot": "boots",
+  "rolls": {
+   "dodge": 25
+  },
+  "oppCount": 13
+ },
+ {
+  "name": "tank 141/34 floor 140 (below hist)",
+  "price": "140.000",
+  "tier": 5,
+  "slot": "weapon",
+  "rolls": {
+   "attack": 141,
+   "criticalChance": 34
+  },
+  "oppCount": 2
+ },
+ {
+  "name": "typed 4.329, no pin, weapon slot",
+  "price": "4.329",
+  "tier": null,
+  "slot": "weapon",
+  "rolls": {}
+ }
+]

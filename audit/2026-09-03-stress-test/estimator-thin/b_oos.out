@@ -1,0 +1,213 @@
+now 1788449450 first sale 1787963495 origins 11 step h 6
+roll-origins with >=1 future sale: 9872  with n48>=1: 8927  distinct rolls: 1153
+
+== (b) all roll-origins with >=1 sale in the 48h before T  (roll-origins=8927, rolls=965, future sales=245238) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.89    1.90   +0.68    61.6   0.608 |  +0.00 [+0.00, +0.00]
+selected      2.84    1.85   +0.76    60.0   0.592 |  -0.05 [-0.07, -0.02]
+rwmed         2.82    1.83   +0.75    60.5   0.598 |  -0.06 [-0.10, -0.03]
+rwmean        3.08    2.02   -0.07    67.8   0.665 |  +0.19 [+0.15, +0.24]
+trim20        2.93    1.94   +0.50    62.1   0.611 |  +0.04 [+0.02, +0.06]
+last3         3.08    1.86   +0.51    57.6   0.565 |  +0.19 [+0.13, +0.27]
+q25           3.36    2.30   -0.81    74.8   0.729 |  +0.47 [+0.40, +0.54]
+q75           3.00    1.84   +1.65    47.9   0.475 |  +0.11 [+0.05, +0.19]
+ret7          2.96    1.93   +0.57    64.0   0.631 |  +0.07 [+0.04, +0.10]
+wmean_all     3.15    2.10   -0.12    68.7   0.673 |  +0.27 [+0.23, +0.30]
+
+== (b) n48 >= 5  (roll-origins=6714, rolls=729, future sales=240495) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.02    2.08   +0.95    60.6   0.599 |  +0.00 [+0.00, +0.00]
+selected      2.96    2.01   +1.06    58.4   0.578 |  -0.06 [-0.09, -0.02]
+rwmed         2.91    1.97   +1.03    59.4   0.588 |  -0.11 [-0.14, -0.07]
+rwmean        3.24    2.25   +0.01    68.7   0.674 |  +0.22 [+0.17, +0.27]
+trim20        3.04    2.10   +0.78    60.7   0.598 |  +0.02 [+0.01, +0.05]
+last3         3.27    2.05   +0.71    55.2   0.542 |  +0.25 [+0.16, +0.34]
+q25           3.53    2.50   -0.80    76.2   0.742 |  +0.51 [+0.44, +0.59]
+q75           3.20    2.07   +2.08    44.3   0.441 |  +0.18 [+0.11, +0.27]
+ret7          3.08    2.09   +0.83    63.0   0.622 |  +0.07 [+0.03, +0.10]
+wmean_all     3.34    2.35   -0.05    69.5   0.681 |  +0.32 [+0.27, +0.38]
+
+== (b) n48 >= 30  (roll-origins=4142, rolls=429, future sales=217559) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.36    2.47   +1.25    59.6   0.589 |  +0.00 [+0.00, +0.00]
+selected      3.29    2.36   +1.42    57.5   0.569 |  -0.06 [-0.10, -0.02]
+rwmed         3.25    2.32   +1.37    58.7   0.581 |  -0.10 [-0.14, -0.07]
+rwmean        3.67    2.70   +0.04    70.2   0.687 |  +0.31 [+0.24, +0.39]
+trim20        3.39    2.47   +1.02    60.6   0.598 |  +0.04 [+0.02, +0.06]
+last3         3.79    2.47   +0.80    54.3   0.530 |  +0.44 [+0.31, +0.57]
+q25           3.97    3.07   -0.76    76.8   0.746 |  +0.61 [+0.52, +0.70]
+q75           3.52    2.51   +2.44    42.5   0.422 |  +0.17 [+0.09, +0.26]
+ret7          3.45    2.53   +1.12    61.2   0.604 |  +0.09 [+0.06, +0.12]
+wmean_all     3.77    2.85   -0.04    70.8   0.692 |  +0.42 [+0.35, +0.48]
+
+== (b) future sales >= 5 (scoring less noisy)  (roll-origins=5895, rolls=617, future sales=239309) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.09    2.21   +1.08    59.8   0.591 |  +0.00 [+0.00, +0.00]
+selected      3.03    2.11   +1.21    57.6   0.571 |  -0.06 [-0.10, -0.03]
+rwmed         2.98    2.07   +1.17    58.9   0.584 |  -0.11 [-0.15, -0.08]
+rwmean        3.33    2.39   +0.07    68.6   0.673 |  +0.24 [+0.18, +0.29]
+trim20        3.11    2.21   +0.90    59.9   0.591 |  +0.03 [+0.01, +0.04]
+last3         3.40    2.17   +0.78    54.6   0.535 |  +0.31 [+0.21, +0.39]
+q25           3.60    2.63   -0.72    76.0   0.740 |  +0.51 [+0.44, +0.59]
+q75           3.29    2.21   +2.23    43.1   0.429 |  +0.20 [+0.13, +0.30]
+ret7          3.15    2.20   +0.94    62.2   0.614 |  +0.06 [+0.02, +0.10]
+wmean_all     3.43    2.50   +0.02    69.2   0.678 |  +0.34 [+0.30, +0.39]
+
+== (b) tier basic  (roll-origins=461, rolls=60, future sales=12989) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         7.00    6.66   +4.33    47.5   0.469 |  +0.00 [+0.00, +0.00]
+selected      6.89    5.99   +3.80    48.5   0.477 |  -0.11 [-0.45, +0.18]
+rwmed         6.72    5.78   +3.81    49.9   0.492 |  -0.28 [-0.63, +0.07]
+rwmean        6.73    6.41   +2.98    47.7   0.466 |  -0.27 [-0.63, +0.06]
+trim20        7.02    6.91   +4.06    45.4   0.447 |  +0.01 [-0.18, +0.20]
+last3         7.04    5.46   +2.37    52.1   0.503 |  +0.04 [-0.67, +0.71]
+ret7          7.53    7.22   +5.16    45.4   0.450 |  +0.53 [+0.23, +0.87]
+
+== (b) tier reinforced  (roll-origins=935, rolls=85, future sales=45835) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.86    3.62   +2.54    64.2   0.639 |  +0.00 [+0.00, +0.00]
+selected      3.86    3.62   +2.58    64.1   0.638 |  +0.00 [-0.01, +0.02]
+rwmed         3.86    3.61   +2.60    63.9   0.636 |  +0.00 [-0.01, +0.02]
+rwmean        4.92    4.73   -0.05    78.2   0.758 |  +1.06 [+0.97, +1.14]
+trim20        4.00    3.79   +2.05    65.4   0.648 |  +0.14 [+0.12, +0.17]
+last3         4.94    4.11   +1.21    60.9   0.592 |  +1.08 [+0.89, +1.26]
+ret7          3.88    3.62   +2.52    63.9   0.635 |  +0.02 [+0.01, +0.03]
+
+== (b) tier advanced  (roll-origins=1540, rolls=140, future sales=59072) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.36    2.22   +0.86    68.5   0.677 |  +0.00 [+0.00, +0.00]
+selected      3.40    2.21   +1.13    63.1   0.624 |  +0.04 [-0.02, +0.11]
+rwmed         3.33    2.17   +1.08    65.2   0.645 |  -0.03 [-0.07, +0.00]
+rwmean        3.78    2.62   -0.21    72.8   0.712 |  +0.42 [+0.33, +0.52]
+trim20        3.42    2.27   +0.65    66.8   0.659 |  +0.06 [+0.02, +0.09]
+last3         4.02    2.37   +0.63    58.9   0.575 |  +0.66 [+0.48, +0.85]
+ret7          3.41    2.20   +0.55    72.2   0.712 |  +0.05 [+0.01, +0.09]
+
+== (b) tier elite  (roll-origins=2200, rolls=200, future sales=108542) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.13    1.57   +0.39    55.4   0.547 |  +0.00 [+0.00, +0.00]
+selected      2.01    1.48   +0.52    54.3   0.538 |  -0.12 [-0.16, -0.07]
+rwmed         1.97    1.45   +0.49    55.7   0.551 |  -0.15 [-0.19, -0.12]
+rwmean        2.15    1.65   -0.14    69.1   0.681 |  +0.02 [-0.04, +0.08]
+trim20        2.12    1.57   +0.34    56.9   0.562 |  -0.01 [-0.03, +0.00]
+last3         2.09    1.53   +0.53    51.3   0.507 |  -0.03 [-0.13, +0.07]
+ret7          2.20    1.63   +0.18    58.2   0.574 |  +0.08 [+0.04, +0.11]
+
+== (b) tier legendary  (roll-origins=3111, rolls=359, future sales=17435) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.31    1.53   -0.08    64.3   0.633 |  +0.00 [+0.00, +0.00]
+selected      2.26    1.50   -0.01    62.7   0.618 |  -0.05 [-0.08, -0.01]
+rwmed         2.31    1.46   -0.02    61.9   0.609 |  -0.00 [-0.07, +0.07]
+rwmean        2.34    1.55   -0.29    64.9   0.638 |  +0.03 [-0.01, +0.09]
+trim20        2.36    1.60   -0.24    64.7   0.636 |  +0.05 [+0.02, +0.09]
+last3         2.23    1.45   +0.11    60.4   0.595 |  -0.08 [-0.13, -0.03]
+ret7          2.33    1.63   -0.24    67.6   0.665 |  +0.02 [-0.04, +0.08]
+
+== (b) tier mythic  (roll-origins=680, rolls=121, future sales=1365) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.79    1.31   -0.27    60.1   0.587 |  +0.00 [+0.00, +0.00]
+selected      2.78    1.31   -0.32    60.7   0.592 |  -0.01 [-0.03, +0.01]
+rwmed         2.72    1.28   -0.23    62.3   0.609 |  -0.07 [-0.21, +0.06]
+rwmean        2.86    1.37   -0.55    65.3   0.636 |  +0.07 [-0.01, +0.17]
+trim20        2.85    1.39   -0.42    62.7   0.611 |  +0.06 [-0.00, +0.15]
+last3         2.76    1.27   -0.31    61.2   0.597 |  -0.04 [-0.08, +0.01]
+ret7          2.85    1.48   -0.21    61.1   0.597 |  +0.06 [-0.04, +0.15]
+
+== (c) n24 >= 3: 24h median vs 48h median  (roll-origins=6623, rolls=772, future sales=240105) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.97    2.07   +0.97    60.6   0.599 |  +0.00 [+0.00, +0.00]
+med24         2.91    2.00   +1.08    58.3   0.577 |  -0.06 [-0.09, -0.03]
+selected      2.91    2.00   +1.08    58.3   0.577 |  -0.06 [-0.10, -0.03]
+rwmed         2.87    1.96   +1.04    59.5   0.589 |  -0.10 [-0.13, -0.07]
+last3         3.23    2.03   +0.72    55.3   0.542 |  +0.26 [+0.17, +0.36]
+
+== (c) n24 in [3,4]  (roll-origins=755, rolls=276, future sales=2283) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.16    1.36   +0.28    63.8   0.630 |  +0.00 [+0.00, +0.00]
+med24         2.05    1.23   +0.19    61.2   0.604 |  -0.10 [-0.23, +0.01]
+rwmed         2.06    1.34   +0.19    61.5   0.608 |  -0.10 [-0.23, +0.01]
+
+== (c) n24 in [5,9]  (roll-origins=793, rolls=247, future sales=7873) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.42    1.58   +0.52    63.6   0.628 |  +0.00 [+0.00, +0.00]
+med24         2.41    1.61   +0.56    60.3   0.596 |  -0.01 [-0.15, +0.16]
+rwmed         2.32    1.55   +0.48    61.6   0.609 |  -0.10 [-0.21, +0.04]
+
+== (c) n24 in [10,29]  (roll-origins=3206, rolls=414, future sales=60731) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.96    2.03   +1.07    59.4   0.587 |  +0.00 [+0.00, +0.00]
+med24         2.91    1.93   +1.22    57.1   0.566 |  -0.05 [-0.10, -0.01]
+rwmed         2.87    1.91   +1.18    58.4   0.579 |  -0.09 [-0.13, -0.05]
+
+== (c) n24 in [30,inf]  (roll-origins=1869, rolls=271, future sales=169218) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.55    2.77   +1.26    60.1   0.594 |  +0.00 [+0.00, +0.00]
+med24         3.46    2.68   +1.42    58.5   0.578 |  -0.09 [-0.14, -0.03]
+rwmed         3.42    2.63   +1.39    59.4   0.588 |  -0.13 [-0.18, -0.08]
+
+== (c) switch threshold sweep: relMAE% of "24h median if n24>=k else 48h median" over all pop ==
+  k=1         relMAE 2.866%  sold 59.9%
+  k=2         relMAE 2.853%  sold 60.2%
+  k=3         relMAE 2.842%  sold 60.0%
+  k=5         relMAE 2.851%  sold 60.2%
+  k=8         relMAE 2.849%  sold 60.4%
+  k=10        relMAE 2.852%  sold 60.5%
+  k=15        relMAE 2.862%  sold 60.9%
+  k=20        relMAE 2.870%  sold 61.1%
+  k=never     relMAE 2.888%  sold 61.6%
+
+== (d) plain med48 error by n48 bucket (is the thin cut at 5 where the error changes?) ==
+bucket      roll-origins  relMAE%  medAE%  p90AE%  |bias|>10%% share  sold%
+1  -1           473     3.13    1.58    7.19     5.9%    63.4
+2  -2           597     2.36    1.58    4.09     1.7%    63.9
+3  -3           622     2.36    1.36    4.77     2.4%    63.2
+4  -4           521     2.23    1.51    4.38     2.3%    69.1
+5  -5           369     2.27    1.37    5.29     2.2%    62.4
+6  -7           430     2.34    1.38    4.15     2.6%    68.5
+8  -9           133     3.20    2.08    7.83     3.0%    62.1
+10 -14          251     2.46    1.50    5.49     4.0%    62.9
+15 -29         1389     2.50    1.79    4.82     1.8%    60.2
+30 -59         2485     3.19    2.24    6.73     2.0%    59.7
+60 -inf        1657     3.61    2.74    7.11     2.0%    59.3
+
+== (e) thin: n48 in 1..4 -> 48h median vs 7-day retained median  (roll-origins=2213, rolls=423, future sales=4743) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.49    1.48   -0.14    64.8   0.636 |  +0.00 [+0.00, +0.00]
+selected      2.49    1.48   -0.13    64.7   0.635 |  -0.01 [-0.02, +0.00]
+ret7          2.57    1.63   -0.20    67.3   0.660 |  +0.08 [-0.00, +0.15]
+last3         2.49    1.45   -0.11    64.7   0.636 |  +0.00 [-0.02, +0.03]
+rwmed         2.56    1.43   -0.11    63.9   0.627 |  +0.06 [-0.03, +0.17]
+
+== (e) n48 == 1  (roll-origins=473, rolls=210, future sales=965) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         3.13    1.58   -0.51    63.4   0.617 |  +0.00 [+0.00, +0.00]
+ret7          3.20    1.77   -0.64    65.6   0.637 |  +0.07 [-0.06, +0.19]
+
+== (e) n48 == 2  (roll-origins=597, rolls=237, future sales=1256) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.36    1.58   -0.45    63.9   0.627 |  +0.00 [+0.00, +0.00]
+ret7          2.34    1.59   -0.49    67.7   0.665 |  -0.02 [-0.17, +0.10]
+
+== (e) n48 == 3  (roll-origins=622, rolls=238, future sales=1387) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.36    1.36   +0.39    63.2   0.624 |  +0.00 [+0.00, +0.00]
+ret7          2.50    1.59   +0.33    64.6   0.637 |  +0.14 [+0.03, +0.26]
+
+== (e) n48 == 4  (roll-origins=521, rolls=202, future sales=1135) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.23    1.51   -0.07    69.1   0.681 |  +0.00 [+0.00, +0.00]
+ret7          2.34    1.63   -0.12    71.4   0.704 |  +0.12 [+0.01, +0.25]
+
+== (e) thin AND n7 >= n48+3 (retained adds >=3 older sales)  (roll-origins=625, rolls=197, future sales=1387) ==
+estimator  relMAE%  medAE%   bias%   sold%     rev | dRelMAE vs med48 [95% cluster-boot CI]
+med48         2.21    1.45   +0.34    59.8   0.590 |  +0.00 [+0.00, +0.00]
+ret7          2.55    1.84   +0.06    66.1   0.650 |  +0.34 [+0.17, +0.52]
+
+== (e) policy comparison over ALL pop: relMAE% ==
+  med48 always                   relMAE 2.888%  bias +0.683%  sold 61.6%
+  selected (page)                relMAE 2.842%  bias +0.763%  sold 60.0%
+  ret7 if n48<5 else selected    relMAE 2.863%  bias +0.746%  sold 60.6%
+  ret7 if n48<3 else selected    relMAE 2.844%  bias +0.754%  sold 60.3%
+  ret7 always                    relMAE 2.957%  bias +0.572%  sold 64.0%
+
+(e) quiet roll-origins (no 48h sale, retained exists): 210 ; ret7 relMAE 3.19% medAE 2.42% bias -0.81% sold 70.2%

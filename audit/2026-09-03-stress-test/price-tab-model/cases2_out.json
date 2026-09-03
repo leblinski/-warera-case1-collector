@@ -1,0 +1,179 @@
+{
+ "now": "2026-09-03T15:30:50.113Z",
+ "results": [
+  {
+   "name": "knife 40/5 floor 1.800 (dumped listing) quick",
+   "inferredTierFromPrice": [
+    "1"
+   ],
+   "alsoLegal": [],
+   "rarityNote": "",
+   "salesHead": "COMMON KNIFE · ATTACK 40 · CRIT % 5",
+   "salesStatus": "Recent window · 53 sales over 3.8h · collected just now.",
+   "resultText": "Common Knife · attack 40 · crit % 5 History confidently supports 1.859 above the current 1.800 floor. Quick sale remains 1.799. Use the live-depth bar to judge whether the higher price is safe, less safe, or risky.",
+   "miniTarget": "1.859",
+   "miniVelocity": "0.83",
+   "miniCoverage": "4h",
+   "trendMiniKicker": "HIGHER-PRICE OPPORTUNITY",
+   "trendMiniPrice": "1.859",
+   "trendMiniReason": "Quick sale 1.799 · higher historical target available if live depth is acceptable.",
+   "confidence": "HIGH 73",
+   "floorSignal": "FLOOR AGE NOT SUPPLIED",
+   "docketLabel": "QUICK-SALE MINIMUM UNDERCUT",
+   "docketHint": "Market target 1.799 · Higher historical opportunity 1.859 is shown in Trends with a live-depth risk bar.",
+   "figure": "1.781",
+   "trendHeroPrice": "1.799",
+   "trendHeroType": "Type 1.781",
+   "trendHeroKicker": "MARKET TARGET",
+   "scrapVerdict": "1.337",
+   "rollFacts": "LIST AT 4.329 1.860–4.385 SELLS IN 41m SALES 48 last 48h OVER SCRAPS +2.936 scraps fetch 1.35",
+   "opp": {
+    "range": "1.800 floor → 1.859 opportunity",
+    "profit": "+0.060 vs quick sale 1.799",
+    "safe": "0",
+    "caution": "1–3",
+    "risk": "4+",
+    "velocity": "Comparable velocity 0.83/h · normal sold-in ~1.5h."
+   },
+   "debug": "itemCode: knife roll: attack 40 · crit % 5 current floor: 1.800 dismantle floor: 1.337 cheapest listing age: — mode: quick higher-stat cheaper flag: no scan: fast target coverage: 4h hours covered: 3.76 retained rows in file: 1712 rows used in window: 53 window widened for sparse data: no collector generated: 2026-09-03T15:30:50.113Z (just now) served from memory: no confidence: High 73/100 velocity: 0.83/h floor exposure: not supplied floor signal: floor age not supplied historical target: 1.859 higher-price branch: YES strategy: minimum-undercut downward gate: blocked downward gate reason: Common–Epic: stay at the live floor direct price: 1.799 live rows returned: 0 · gap between sources: none live sales merged: 0 (no API key) duration: 1 ms",
+   "errors": []
+  },
+  {
+   "name": "boots4 25 floor 60 (below median) oppCount 5",
+   "inferredTierFromPrice": [
+    "4"
+   ],
+   "alsoLegal": [],
+   "rarityNote": "",
+   "salesHead": "EPIC BOOTS · DODGE 25",
+   "salesStatus": "Recent window · 899 sales over 8.0h · collected just now.",
+   "resultText": "Epic Boots · dodge 25 History confidently supports 66.599 above the current 60.000 floor. Quick sale remains 59.999. Use the live-depth bar to judge whether the higher price is safe, less safe, or risky.",
+   "miniTarget": "66.599",
+   "miniVelocity": "50.04",
+   "miniCoverage": "8h",
+   "trendMiniKicker": "HIGHER-PRICE OPPORTUNITY",
+   "trendMiniPrice": "66.599",
+   "trendMiniReason": "Quick sale 59.999 · higher historical target available if live depth is acceptable.",
+   "confidence": "HIGH 74",
+   "floorSignal": "FLOOR AGE NOT SUPPLIED",
+   "docketLabel": "QUICK-SALE MINIMUM UNDERCUT",
+   "docketHint": "Market target 59.999 · Higher historical opportunity 66.599 is shown in Trends with a live-depth risk bar.",
+   "figure": "59.405",
+   "trendHeroPrice": "59.999",
+   "trendHeroType": "Type 59.405",
+   "trendHeroKicker": "MARKET TARGET",
+   "scrapVerdict": "36.089",
+   "rollFacts": "LIST AT 66.599 42.579–68.390 SELLS IN 7m SALES 294 last 48h OVER SCRAPS +29.483 scraps fetch 36.45",
+   "opp": {
+    "range": "60.000 floor → 66.599 opportunity",
+    "profit": "+6.600 vs quick sale 59.999",
+    "safe": "0–12",
+    "caution": "13–37",
+    "risk": "38+",
+    "velocity": "Comparable velocity 50.04/h · normal sold-in ~15m.",
+    "withCount": {
+     "text": "5 listings between · SAFE · Competition is within about one normal comparable-sale cycle.",
+     "velocity": "Comparable velocity 50.04/h · ~7m expected clearance · 0.5 cycles · normal sold-in ~15m."
+    }
+   },
+   "debug": "itemCode: boots4 roll: dodge 25 current floor: 60.000 dismantle floor: 36.089 cheapest listing age: — mode: quick higher-stat cheaper flag: no scan: fast target coverage: 8h hours covered: 7.98 retained rows in file: 8445 rows used in window: 899 window widened for sparse data: no collector generated: 2026-09-03T15:30:50.113Z (just now) served from memory: no confidence: High 74/100 velocity: 50.04/h floor exposure: not supplied floor signal: floor age not supplied historical target: 66.599 higher-price branch: YES strategy: minimum-undercut downward gate: blocked downward gate reason: Common–Epic: stay at the live floor direct price: 59.999 exact sales: 159 nearest-worse sales: 125 better sales: 0 better cheap pattern: 0 @ — better pressure active: no live rows returned: 0 · gap between sources: none live sales merged: 0 (no API key) duration: 4 ms",
+   "errors": []
+  },
+  {
+   "name": "boots4 25 floor 60 oppCount 13",
+   "inferredTierFromPrice": [
+    "4"
+   ],
+   "alsoLegal": [],
+   "rarityNote": "",
+   "salesHead": "EPIC BOOTS · DODGE 25",
+   "salesStatus": "Recent window · 899 sales over 8.0h · collected just now.",
+   "resultText": "Epic Boots · dodge 25 History confidently supports 66.599 above the current 60.000 floor. Quick sale remains 59.999. Use the live-depth bar to judge whether the higher price is safe, less safe, or risky.",
+   "miniTarget": "66.599",
+   "miniVelocity": "50.04",
+   "miniCoverage": "8h",
+   "trendMiniKicker": "HIGHER-PRICE OPPORTUNITY",
+   "trendMiniPrice": "66.599",
+   "trendMiniReason": "Quick sale 59.999 · higher historical target available if live depth is acceptable.",
+   "confidence": "HIGH 74",
+   "floorSignal": "FLOOR AGE NOT SUPPLIED",
+   "docketLabel": "QUICK-SALE MINIMUM UNDERCUT",
+   "docketHint": "Market target 59.999 · Higher historical opportunity 66.599 is shown in Trends with a live-depth risk bar.",
+   "figure": "59.405",
+   "trendHeroPrice": "59.999",
+   "trendHeroType": "Type 59.405",
+   "trendHeroKicker": "MARKET TARGET",
+   "scrapVerdict": "36.089",
+   "rollFacts": "LIST AT 66.599 42.579–68.390 SELLS IN 7m SALES 294 last 48h OVER SCRAPS +29.483 scraps fetch 36.45",
+   "opp": {
+    "range": "60.000 floor → 66.599 opportunity",
+    "profit": "+6.600 vs quick sale 59.999",
+    "safe": "0–12",
+    "caution": "13–37",
+    "risk": "38+",
+    "velocity": "Comparable velocity 50.04/h · normal sold-in ~15m.",
+    "withCount": {
+     "text": "13 listings between · LESS SAFE · This likely needs roughly one to three normal comparable-sale cycles to clear.",
+     "velocity": "Comparable velocity 50.04/h · ~17m expected clearance · 1.1 cycles · normal sold-in ~15m."
+    }
+   },
+   "debug": "itemCode: boots4 roll: dodge 25 current floor: 60.000 dismantle floor: 36.089 cheapest listing age: — mode: quick higher-stat cheaper flag: no scan: fast target coverage: 8h hours covered: 7.98 retained rows in file: 8445 rows used in window: 899 window widened for sparse data: no collector generated: 2026-09-03T15:30:50.113Z (just now) served from memory: no confidence: High 74/100 velocity: 50.04/h floor exposure: not supplied floor signal: floor age not supplied historical target: 66.599 higher-price branch: YES strategy: minimum-undercut downward gate: blocked downward gate reason: Common–Epic: stay at the live floor direct price: 59.999 exact sales: 159 nearest-worse sales: 125 better sales: 0 better cheap pattern: 0 @ — better pressure active: no live rows returned: 0 · gap between sources: none live sales merged: 0 (no API key) duration: 4 ms",
+   "errors": []
+  },
+  {
+   "name": "tank 141/34 floor 140 (below hist)",
+   "inferredTierFromPrice": [
+    "5"
+   ],
+   "alsoLegal": [],
+   "rarityNote": "",
+   "salesHead": "LEGENDARY TANK · ATTACK 141 · CRIT % 34",
+   "salesStatus": "Recent window · 299 sales over 11.9h · collected just now.",
+   "resultText": "Legendary Tank · attack 141 · crit % 34 History confidently supports 145.000 above the current 140.000 floor. Quick sale remains 139.999. Use the live-depth bar to judge whether the higher price is safe, less safe, or risky.",
+   "miniTarget": "145.000",
+   "miniVelocity": "0.63",
+   "miniCoverage": "12h",
+   "trendMiniKicker": "HIGHER-PRICE OPPORTUNITY",
+   "trendMiniPrice": "145.000",
+   "trendMiniReason": "Quick sale 139.999 · higher historical target available if live depth is acceptable.",
+   "confidence": "HIGH 87",
+   "floorSignal": "FLOOR AGE NOT SUPPLIED",
+   "docketLabel": "QUICK-SALE MINIMUM UNDERCUT",
+   "docketHint": "Market target 139.999 · Higher historical opportunity 145.000 is shown in Trends with a live-depth risk bar.",
+   "figure": "138.613",
+   "trendHeroPrice": "139.999",
+   "trendHeroType": "Type 138.613",
+   "trendHeroKicker": "MARKET TARGET",
+   "scrapVerdict": "108.267",
+   "rollFacts": "LIST AT 144.490 141.500–146.500 SELLS IN 12h SALES 9 last 48h OVER SCRAPS +33.695 scraps fetch 109.35",
+   "opp": {
+    "range": "140.000 floor → 145.000 opportunity",
+    "profit": "+5.001 vs quick sale 139.999",
+    "safe": "0–3",
+    "caution": "4–11",
+    "risk": "12+",
+    "velocity": "Comparable velocity 0.63/h · normal sold-in ~6.3h.",
+    "withCount": {
+     "text": "2 listings between · SAFE · Competition is within about one normal comparable-sale cycle.",
+     "velocity": "Comparable velocity 0.63/h · ~4.8h expected clearance · 0.8 cycles · normal sold-in ~6.3h."
+    }
+   },
+   "debug": "itemCode: tank roll: attack 141 · crit % 34 current floor: 140.000 dismantle floor: 108.267 cheapest listing age: — mode: quick higher-stat cheaper flag: no scan: fast target coverage: 12h hours covered: 11.89 retained rows in file: 2919 rows used in window: 299 window widened for sparse data: no collector generated: 2026-09-03T15:30:50.113Z (just now) served from memory: no confidence: High 87/100 velocity: 0.63/h floor exposure: not supplied floor signal: floor age not supplied historical target: 145.000 higher-price branch: YES strategy: minimum-undercut downward gate: blocked downward gate reason: Floor age was not supplied; lower repricing stays advisory direct price: 139.999 live rows returned: 0 · gap between sources: none live sales merged: 0 (no API key) duration: 2 ms",
+   "errors": []
+  },
+  {
+   "name": "typed 4.329, no pin, weapon slot",
+   "inferredTierFromPrice": [
+    "2"
+   ],
+   "alsoLegal": [
+    "1"
+   ],
+   "rarityNote": "This price is also legal for Common — tap it if that is what you are holding.",
+   "salesHead": "UNCOMMON GUN · CHOOSE ROLL",
+   "rollGrid": "ATTACK 51 52 53 54 55 56 57 58 59 60 CRIT % 6 7 8 9 10",
+   "scrapVerdict": "4.010",
+   "figure": "4.285"
+  }
+ ]
+}

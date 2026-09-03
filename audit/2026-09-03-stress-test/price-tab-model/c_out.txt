@@ -1,0 +1,34 @@
+
+=== fast window: rolls(n>=5 exact)=389 sales=8327 dropped=216 (2.59%) rolls_with_drop=126 (32.4%) floor_0.12_binding=381 (97.9%)
+ dropped below median: 214  above median: 2
+ rolls where the newest sale is dropped: 12; where the newest 3 are ALL dropped: 0
+ per tier dropped/sales: {1: '17/165 (10.30%)', 2: '67/872 (7.68%)', 3: '62/1706 (3.63%)', 4: '62/4957 (1.25%)', 5: '7/604 (1.16%)', 6: '1/23 (4.35%)'}
+ bracket moves (median of newest 3 beyond threshold from roll median): 8
+    ('boots4', {'dodge': 24}, 62.5995, 55.0, 132, 1)
+    ('chest2', {'armor': 7}, 4.0, 3.0, 18, 1)
+    ('gun', {'attack': 51, 'criticalChance': 6}, 3.85, 3.0, 6, 1)
+    ('gun', {'attack': 54, 'criticalChance': 8}, 3.95, 2.91, 9, 1)
+    ('gun', {'attack': 55, 'criticalChance': 8}, 3.9, 3.0, 6, 1)
+    ('gun', {'attack': 55, 'criticalChance': 7}, 3.95, 3.0, 8, 1)
+    ('pants2', {'armor': 6}, 4.0, 2.841, 15, 1)
+    ('rifle', {'attack': 90, 'criticalChance': 14}, 22.2, 17.9, 19, 1)
+
+=== full 168h: rolls(n>=5 exact)=841 sales=49914 dropped=1263 (2.53%) rolls_with_drop=331 (39.4%) floor_0.12_binding=818 (97.3%)
+ dropped below median: 1235  above median: 28
+ rolls where the newest sale is dropped: 33; where the newest 3 are ALL dropped: 0
+ per tier dropped/sales: {1: '104/1152 (9.03%)', 2: '310/4316 (7.18%)', 3: '439/8671 (5.06%)', 4: '317/27273 (1.16%)', 5: '87/7787 (1.12%)', 6: '6/715 (0.84%)'}
+ bracket moves (median of newest 3 beyond threshold from roll median): 14
+    ('boots4', {'dodge': 24}, 62.36, 55.0, 839, 1)
+    ('chest2', {'armor': 7}, 4.0, 3.0, 77, 1)
+    ('gun', {'attack': 53, 'criticalChance': 9}, 4.0, 2.99, 29, 1)
+    ('gun', {'attack': 51, 'criticalChance': 6}, 4.0, 3.0, 27, 1)
+    ('gun', {'attack': 54, 'criticalChance': 8}, 4.0, 2.91, 36, 1)
+    ('gun', {'attack': 55, 'criticalChance': 8}, 3.95, 3.0, 19, 1)
+    ('gun', {'attack': 55, 'criticalChance': 7}, 4.0, 3.0, 21, 1)
+    ('gun', {'attack': 57, 'criticalChance': 7}, 4.0, 3.5, 27, 1)
+    ('gun', {'attack': 59, 'criticalChance': 7}, 3.9850000000000003, 3.0, 18, 1)
+    ('knife', {'attack': 39, 'criticalChance': 5}, 2.4, 1.857, 22, 1)
+    ('pants1', {'armor': 4}, 1.404, 1.22, 29, 1)
+    ('pants2', {'armor': 6}, 4.0, 2.841, 85, 1)
+
+=== filter floor: exp(0.12)-1 = 12.75% ; exp(-0.12)-1 = -11.31%

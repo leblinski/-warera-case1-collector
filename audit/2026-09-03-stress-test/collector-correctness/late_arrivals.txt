@@ -1,0 +1,4 @@
+total new ids across consecutive runs 86919
+late relative to previous generated_at: {'>3h': 4403, '<=0.5h': 4}
+runs with late sales beyond the 0.5h overlap:
+   ('2026-08-31T14:41:16.043Z', '2026-08-31T18:25:18.573Z', None, True, {'>3h': 4403}, ('6a9228676c6a25596970b2fb', 'gun', '2026-08-29T00:31:35.360Z', 62.16130083333333))

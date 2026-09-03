@@ -1,0 +1,49 @@
+baseline gross 3.6781 edge +0.1281 pct +3.61%
+
+== remove one slot (all tiers): page renormalises the remaining slot weights ==
+  drop weapon  gross 3.6127 (-0.0654) pct +1.77%
+  drop helmet  gross 3.6570 (-0.0211) pct +3.01%
+  drop chest   gross 3.6984 (+0.0203) pct +4.18%
+  drop gloves  gross 3.6917 (+0.0136) pct +3.99%
+  drop pants   gross 3.7067 (+0.0286) pct +4.41%
+  drop boots   gross 3.6899 (+0.0118) pct +3.94%
+
+== remove one tier: page adds nothing for it (treated as worthless) ==
+  drop tier 1 gross 2.6982 (-0.9799) pct -24.00%   [tier adds 0.9799]
+  drop tier 2 gross 2.4614 (-1.2167) pct -30.66%   [tier adds 1.2167]
+  drop tier 3 gross 2.7216 (-0.9565) pct -23.34%   [tier adds 0.9565]
+  drop tier 4 gross 3.2462 (-0.4319) pct -8.56%   [tier adds 0.4319]
+  drop tier 5 gross 3.6230 (-0.0551) pct +2.06%   [tier adds 0.0551]
+  drop tier 6 gross 3.6401 (-0.0380) pct +2.54%   [tier adds 0.0380]
+
+== remove one slot within one tier (renormalised): the 8 biggest moves ==
+  drop knife    gross 3.5937 (-0.0844) pct +1.23%
+  drop pants1   gross 3.7014 (+0.0233) pct +4.26%
+  drop boots1   gross 3.6993 (+0.0212) pct +4.21%
+  drop chest1   gross 3.6993 (+0.0212) pct +4.21%
+  drop gloves1  gross 3.6992 (+0.0211) pct +4.20%
+  drop helmet1  gross 3.6601 (-0.0180) pct +3.10%
+  drop sniper   gross 3.6921 (+0.0140) pct +4.00%
+  drop boots4   gross 3.6678 (-0.0103) pct +3.32%
+
+== knife (tier 1 weapon, 30% of 62% = 18.6% of outcomes): priced vs unpriced rolls ==
+ priced 46/100; of priced 46 sell, 0 break; mean price 1.9175; page slot value (renormalised) 1.8983
+ priced rolls by crit band: {'1': 18, '2': 6, '3': 8, '4': 3, '5': 11}  attack range of priced: 21-40; median attack 32
+ unpriced 54: wide(retained 7d) 22, neighbour 30, none 2
+ unpriced by crit band: {'1': 2, '2': 14, '3': 12, '4': 17, '5': 9}  attack range 21-38
+ fillQuiet verdicts on unpriced: sell 52, break 0, none 2
+ wide-priced unpriced rolls: mean retained median 1.7811 (n=22) vs priced mean 1.9175
+ priced rolls: sell/break by crit band: {'1': '18/0', '2': '6/0', '3': '8/0', '4': '3/0', '5': '11/0'}
+ priced rolls attack<30: 20 sell 0 break; attack>=30: 26 sell 0 break
+
+ knife slot value: renormalised (page) 1.8983 over 46 | fillQuiet neighbour price 1.8306 over 98 | unpriced = scrap 1.6022 over 100
+  case gross with knife=fill: 3.6655 (-0.0126) pct +3.25%
+  case gross with knife=dis: 3.6230 (-0.0551) pct +2.06%
+
+== every slot with unpriced rolls: value under renorm / fill / scrap, and case gross impact ==
+  knife    covered  46/100 renorm 1.8983 fill 1.8306 (case -0.0126) scrap-for-unpriced 1.6022 (case -0.0551)
+  tank     covered 284/300 renorm 148.1389 fill 147.9336 (case -0.0000) scrap-for-unpriced 146.0702 (case -0.0002)
+  jet      covered 110/800 renorm 421.7394 fill 421.8364 (case +0.0000) scrap-for-unpriced 340.9323 (case -0.0024)
+  helmet6  covered  21/ 30 renorm 369.8971 fill 357.5692 (case -0.0002) scrap-for-unpriced 357.3430 (case -0.0002)
+  chest6   covered  14/ 15 renorm 335.8700 fill 336.5786 (case +0.0000) scrap-for-unpriced 335.3486 (case -0.0000)
+ case gross if every unpriced roll were filled: 3.6653 (-0.0128, pct +3.25%); if every unpriced roll were scrap: 3.6202 (-0.0579, pct +1.98%)

@@ -1,0 +1,84 @@
+=== hist vs q55 of the exact roll alone (same window, same weights):
+ weapon: n=301 median=+0.00% p10=-0.12% p90=+0.60% min=-53.5% max=+33.3% |err|>5%: 4  |err|>10%: 3  |err|>25%: 2
+ armour: n=226 median=+0.00% p10=+0.00% p90=+0.00% min=+0.0% max=+0.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+=== hist vs collector selected.median (what the Sort tab / rollFacts "LIST AT" shows):
+ boots1  : n=5 median=+0.00% p10=-1.15% p90=+2.27% min=-1.9% max=+3.5% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ boots2  : n=5 median=+0.00% p10=+0.00% p90=+0.35% min=+0.0% max=+0.5% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ boots3  : n=5 median=+0.80% p10=+0.62% p90=+1.71% min=+0.6% max=+2.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ boots4  : n=5 median=+0.03% p10=-0.01% p90=+4.22% min=-0.0% max=+5.0% |err|>5%: 1  |err|>10%: 0  |err|>25%: 0
+ boots5  : n=10 median=+0.30% p10=-0.08% p90=+1.29% min=-0.2% max=+2.3% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ boots6  : n=7 median=+0.00% p10=+0.00% p90=+0.08% min=+0.0% max=+0.2% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ chest1  : n=5 median=-4.35% p10=-10.05% p90=+0.41% min=-13.7% max=+0.7% |err|>5%: 1  |err|>10%: 1  |err|>25%: 0
+ chest2  : n=5 median=+0.00% p10=+0.00% p90=+1.45% min=+0.0% max=+1.9% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ chest3  : n=5 median=+0.50% p10=+0.16% p90=+1.51% min=+0.0% max=+2.1% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ chest4  : n=10 median=+0.13% p10=-0.05% p90=+1.20% min=-0.1% max=+1.3% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ chest5  : n=15 median=+0.00% p10=-0.11% p90=+1.13% min=-0.9% max=+1.5% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ chest6  : n=3 median=+0.00% p10=+0.00% p90=+0.00% min=+0.0% max=+0.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ gloves1 : n=4 median=+0.00% p10=-0.14% p90=+4.31% min=-0.2% max=+6.2% |err|>5%: 1  |err|>10%: 0  |err|>25%: 0
+ gloves2 : n=5 median=+0.00% p10=+0.00% p90=+1.22% min=+0.0% max=+1.7% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ gloves3 : n=5 median=+0.81% p10=+0.74% p90=+2.14% min=+0.7% max=+3.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ gloves4 : n=5 median=-0.03% p10=-0.88% p90=+0.37% min=-1.3% max=+0.6% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ gloves5 : n=9 median=+1.08% p10=-0.36% p90=+2.63% min=-0.6% max=+6.1% |err|>5%: 1  |err|>10%: 0  |err|>25%: 0
+ gloves6 : n=5 median=+0.00% p10=-0.10% p90=+0.00% min=-0.2% max=+0.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ gun     : n=46 median=+0.00% p10=-1.00% p90=+0.50% min=-2.5% max=+3.2% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ helmet1 : n=1 median=-8.58% p10=-8.58% p90=-8.58% min=-8.6% max=-8.6% |err|>5%: 1  |err|>10%: 0  |err|>25%: 0
+ helmet2 : n=14 median=+0.00% p10=+0.00% p90=+1.17% min=+0.0% max=+2.4% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ helmet3 : n=20 median=+0.85% p10=-0.32% p90=+2.99% min=-0.8% max=+4.3% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ helmet4 : n=20 median=-0.33% p10=-1.43% p90=+0.00% min=-1.8% max=+2.6% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ helmet5 : n=14 median=-0.03% p10=-0.88% p90=+0.08% min=-1.1% max=+0.9% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ helmet6 : n=2 median=+0.48% p10=+0.10% p90=+0.86% min=+0.0% max=+1.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ knife   : n=6 median=-1.36% p10=-39.80% p90=+0.64% min=-57.1% max=+1.3% |err|>5%: 2  |err|>10%: 2  |err|>25%: 1
+ pants1  : n=5 median=-0.74% p10=-10.05% p90=+3.03% min=-13.1% max=+4.0% |err|>5%: 2  |err|>10%: 1  |err|>25%: 0
+ pants2  : n=5 median=+0.00% p10=+0.00% p90=+2.94% min=+0.0% max=+4.6% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ pants3  : n=5 median=+2.96% p10=+0.00% p90=+3.62% min=-0.6% max=+4.0% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ pants4  : n=10 median=-0.12% p10=-0.70% p90=+0.94% min=-0.9% max=+1.1% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ pants5  : n=14 median=+0.00% p10=-0.44% p90=+0.41% min=-1.2% max=+1.6% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ pants6  : n=3 median=+0.00% p10=+0.00% p90=+0.12% min=+0.0% max=+0.2% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ rifle   : n=67 median=+0.01% p10=-0.57% p90=+1.47% min=-1.5% max=+3.8% |err|>5%: 0  |err|>10%: 0  |err|>25%: 0
+ sniper  : n=144 median=+0.02% p10=-0.29% p90=+1.08% min=-17.0% max=+2.7% |err|>5%: 2  |err|>10%: 1  |err|>25%: 0
+ tank    : n=38 median=+0.24% p10=-0.02% p90=+1.77% min=-1.0% max=+10.5% |err|>5%: 1  |err|>10%: 1  |err|>25%: 0
+
+=== weapons: comparables vs exact rows
+ knife: rolls=6 rolls where comps hold fewer exact rows than available=1 rolls with NO exact row in comps=1
+    {'attack': 40, 'criticalChance': 2} n_exact=6 exact_in_comp=6/12 hist=1.862 exact_q55=1.862 sel_med=1.862 score=86 max_attack=True
+    {'attack': 40, 'criticalChance': 3} n_exact=9 exact_in_comp=9/12 hist=1.898 exact_q55=1.898 sel_med=1.874 score=86 max_attack=True
+    {'attack': 40, 'criticalChance': 1} n_exact=6 exact_in_comp=6/12 hist=1.83 exact_q55=1.83 sel_med=1.851 score=86 max_attack=True
+    {'attack': 39, 'criticalChance': 5} n_exact=3 exact_in_comp=3/8 hist=1.859 exact_q55=1.857 sel_med=2.4 score=73 max_attack=False
+    {'attack': 40, 'criticalChance': 5} n_exact=4 exact_in_comp=0/8 hist=1.859 exact_q55=4.0 sel_med=4.3294999999999995 score=73 max_attack=True
+ gun: rolls=46 rolls where comps hold fewer exact rows than available=25 rolls with NO exact row in comps=0
+    {'attack': 52, 'criticalChance': 9} n_exact=4 exact_in_comp=4/10 hist=4.0 exact_q55=4.03 sel_med=4.0 score=87 max_attack=False
+    {'attack': 53, 'criticalChance': 9} n_exact=4 exact_in_comp=2/10 hist=3.95 exact_q55=4.0 sel_med=4.0 score=87 max_attack=False
+    {'attack': 60, 'criticalChance': 9} n_exact=4 exact_in_comp=4/11 hist=3.93 exact_q55=4.0 sel_med=4.0 score=82 max_attack=True
+    {'attack': 54, 'criticalChance': 9} n_exact=6 exact_in_comp=6/10 hist=3.899 exact_q55=3.8 sel_med=4.0 score=87 max_attack=False
+    {'attack': 59, 'criticalChance': 7} n_exact=3 exact_in_comp=1/9 hist=4.0 exact_q55=3.0 sel_med=3.9850000000000003 score=74 max_attack=False
+ rifle: rolls=67 rolls where comps hold fewer exact rows than available=13 rolls with NO exact row in comps=0
+    {'attack': 84, 'criticalChance': 11} n_exact=4 exact_in_comp=4/12 hist=12.098 exact_q55=12.0 sel_med=12.0 score=87 max_attack=False
+    {'attack': 71, 'criticalChance': 11} n_exact=3 exact_in_comp=3/11 hist=12.0 exact_q55=12.1 sel_med=12.1 score=87 max_attack=False
+    {'attack': 88, 'criticalChance': 11} n_exact=3 exact_in_comp=3/12 hist=12.1 exact_q55=12.0 sel_med=12.0 score=87 max_attack=False
+    {'attack': 90, 'criticalChance': 15} n_exact=4 exact_in_comp=4/12 hist=23.0 exact_q55=23.217 sel_med=23.2085 score=77 max_attack=True
+    {'attack': 73, 'criticalChance': 15} n_exact=4 exact_in_comp=4/12 hist=12.15 exact_q55=12.299 sel_med=12.0 score=87 max_attack=False
+ sniper: rolls=144 rolls where comps hold fewer exact rows than available=18 rolls with NO exact row in comps=1
+    {'attack': 123, 'criticalChance': 18} n_exact=6 exact_in_comp=6/12 hist=52.999 exact_q55=53.72 sel_med=52.9675 score=87 max_attack=False
+    {'attack': 110, 'criticalChance': 20} n_exact=4 exact_in_comp=2/10 hist=51.5 exact_q55=52.849 sel_med=52.989000000000004 score=87 max_attack=False
+    {'attack': 127, 'criticalChance': 16} n_exact=4 exact_in_comp=4/12 hist=45.999 exact_q55=48.217 sel_med=46.4685 score=87 max_attack=False
+    {'attack': 130, 'criticalChance': 16} n_exact=7 exact_in_comp=7/12 hist=56.0 exact_q55=58.749 sel_med=59.44 score=77 max_attack=True
+    {'attack': 130, 'criticalChance': 17} n_exact=4 exact_in_comp=0/8 hist=50.49 exact_q55=60.82 sel_med=60.82 score=79 max_attack=True
+ tank: rolls=38 rolls where comps hold fewer exact rows than available=4 rolls with NO exact row in comps=0
+    {'attack': 161, 'criticalChance': 26} n_exact=3 exact_in_comp=3/12 hist=133.0 exact_q55=130.0 sel_med=132.0 score=87 max_attack=False
+    {'attack': 169, 'criticalChance': 35} n_exact=3 exact_in_comp=2/9 hist=210.0 exact_q55=205.0 sel_med=205.0 score=79 max_attack=False
+    {'attack': 163, 'criticalChance': 35} n_exact=3 exact_in_comp=3/11 hist=189.9 exact_q55=185.0 sel_med=185.0 score=77 max_attack=False
+    {'attack': 169, 'criticalChance': 34} n_exact=7 exact_in_comp=6/11 hist=211.0 exact_q55=205.0 sel_med=201.75 score=87 max_attack=False
+    {'attack': 166, 'criticalChance': 34} n_exact=3 exact_in_comp=2/11 hist=194.989 exact_q55=183.999 sel_med=176.4995 score=82 max_attack=False
+ jet: no roll with >=3 exact sales in window
+
+=== max-attack weapon rolls (the non-broken cliff): hist vs exact q55
+ max-attack rolls: n=18 median=-0.00% p10=-8.37% p90=+0.01% min=-53.5% max=+0.1% |err|>5%: 2  |err|>10%: 2  |err|>25%: 1
+ other weapon rolls: n=283 median=+0.00% p10=-0.01% p90=+0.65% min=-4.6% max=+33.3% |err|>5%: 2  |err|>10%: 1  |err|>25%: 1
+
+=== armour rolls: source of hist and worst cases
+ sources: Counter({'exact': 226})
+    {'code': 'pants5', 'slot': 'pants', 'tier': 5, 'roll': {'armor': 39}, 'n_exact': 5, 'hist': 109.895, 'exact_q55': 109.895, 'sel_med': 109.8995, 'score': 65, 'source': 'exact'}
+    {'code': 'pants5', 'slot': 'pants', 'tier': 5, 'roll': {'armor': 49}, 'n_exact': 16, 'hist': 130.0, 'exact_q55': 130.0, 'sel_med': 129.89, 'score': 73, 'source': 'exact'}
+    {'code': 'pants6', 'slot': 'pants', 'tier': 6, 'roll': {'armor': 70}, 'n_exact': 3, 'hist': 440.0, 'exact_q55': 440.0, 'sel_med': 440.0, 'score': 61, 'source': 'exact'}
+    {'code': 'pants6', 'slot': 'pants', 'tier': 6, 'roll': {'armor': 64}, 'n_exact': 5, 'hist': 329.0, 'exact_q55': 329.0, 'sel_med': 328.5, 'score': 66, 'source': 'exact'}
+    {'code': 'pants6', 'slot': 'pants', 'tier': 6, 'roll': {'armor': 56}, 'n_exact': 3, 'hist': 320.0, 'exact_q55': 320.0, 'sel_med': 320.0, 'score': 66, 'source': 'exact'}

@@ -1,0 +1,20 @@
+sniper attack 130: sales 609 (rest 529, x1.15) | unique sellers 246 (rest 207, x1.19) | seller-capped@2 335 (rest 282, x1.19) | unique buyers 187 (rest 254, x0.74) | top sellers [19, 19, 15]
+   sellers with >=30 sniper sales: 81; their max-roll share relative to market: median x0.80, max x3.38; excess sales attributable to sellers with >2x: 32 of 80 excess
+   crit 20 unique sellers 672 vs rest mean 596 (x1.13)
+tank attack 170: sales 111 (rest 97, x1.15) | unique sellers 60 (rest 61, x0.98) | seller-capped@2 75 (rest 76, x0.99) | unique buyers 64 (rest 75, x0.85) | top sellers [14, 8, 8]
+   sellers with >=30 tank sales: 14; their max-roll share relative to market: median x0.92, max x11.51; excess sales attributable to sellers with >2x: 12 of 14 excess
+   crit 35 unique sellers 143 vs rest mean 139 (x1.03)
+gun attack 60: sales 1083 (rest 762, x1.42) | unique sellers 522 (rest 431, x1.21) | seller-capped@2 722 (rest 588, x1.23) | unique buyers 252 (rest 109, x2.30) | top sellers [32, 25, 22]
+   sellers with >=30 gun sales: 37; their max-roll share relative to market: median x0.89, max x7.33; excess sales attributable to sellers with >2x: 40 of 320 excess
+   crit 10 unique sellers 736 vs rest mean 675 (x1.09)
+rifle attack 90: sales 708 (rest 366, x1.93) | unique sellers 347 (rest 245, x1.42) | seller-capped@2 472 (rest 304, x1.55) | unique buyers 243 (rest 172, x1.41) | top sellers [21, 17, 15]
+   sellers with >=30 rifle sales: 33; their max-roll share relative to market: median x1.08, max x3.53; excess sales attributable to sellers with >2x: 62 of 341 excess
+   crit 15 unique sellers 789 vs rest mean 659 (x1.20)
+
+per-roll median resale/purchase ratio (strict flips, rolls with >=5 flips):
+  knife   rolls with >=5 flips   2; median of per-roll medians 1.013; share of rolls with median ratio>1: 50%
+  gun     rolls with >=5 flips  21; median of per-roll medians 1.043; share of rolls with median ratio>1: 100%
+  rifle   rolls with >=5 flips  34; median of per-roll medians 1.099; share of rolls with median ratio>1: 100%
+  sniper  rolls with >=5 flips  72; median of per-roll medians 1.044; share of rolls with median ratio>1: 97%
+  tank    rolls with >=5 flips   1; median of per-roll medians 1.085; share of rolls with median ratio>1: 100%
+  jet     rolls with >=5 flips   0; median of per-roll medians 0.000; share of rolls with median ratio>1: 0%

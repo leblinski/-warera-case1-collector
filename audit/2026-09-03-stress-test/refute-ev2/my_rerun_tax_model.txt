@@ -1,0 +1,47 @@
+== Case card under alternative tax models (bar 0.10) ==
+ bar 0.1
+page: equipment nets median*(1-1%), scraps net bid         gross 3.6781 edge +0.1281 pct +3.61%  broken/tier 13% 99% 64% 0% 3% 9%
+seller nets typed (Price-tab model): tax=0, scraps net bid gross 3.6978 edge +0.1478 pct +4.16%  broken/tier 13% 96% 58% 0% 1% 5%
+tax on both sides: equipment*(0.99), scraps bid*0.99       gross 3.6608 edge +0.1108 pct +3.12%  broken/tier 13% 96% 58% 0% 1% 5%
+Price-tab paintScrap model: equipment typed(tax0), scraps bid/1.01 gross 3.6822 edge +0.1322 pct +3.72%  broken/tier 13% 96% 36% 0% 0% 1%
+ bar 0.0
+page: equipment nets median*(1-1%), scraps net bid         gross 3.6848 edge +0.1348 pct +3.80%  broken/tier 5% 95% 59% 0% 3% 9%
+seller nets typed (Price-tab model): tax=0, scraps net bid gross 3.7074 edge +0.1574 pct +4.43%  broken/tier 4% 95% 43% 0% 1% 5%
+tax on both sides: equipment*(0.99), scraps bid*0.99       gross 3.6703 edge +0.1203 pct +3.39%  broken/tier 4% 95% 43% 0% 1% 5%
+Price-tab paintScrap model: equipment typed(tax0), scraps bid/1.01 gross 3.6947 edge +0.1447 pct +4.07%  broken/tier 4% 93% 20% 0% 0% 1%
+
+== Craft rows (profit % on walked scrap+steel cost) ==
+ page tax1    -47.9% -45.3% -28.7% +1.6% +0.8% -0.9%
+ typed tax0   -47.5% -45.3% -28.2% +2.6% +1.8% -0.0%
+ both taxed   -48.1% -45.8% -28.9% +1.6% +0.8% -1.0%
+
+== Sort verdicts that flip between tax=1 and tax=0 (median*0.99 <= need < median) ==
+ bar 0.10
+  tier 1: 0 of 81 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 2: 2 of 85 priced rolls flip break->sell; 1.02 listings per 100 cases; gold at stake 0.117/100 cases  e.g. weapon 60/10 med 4.185; pants 10 med 4.160
+  tier 3: 10 of 140 priced rolls flip break->sell; 1.16 listings per 100 cases; gold at stake 0.183/100 cases  e.g. weapon 80/14 med 12.299; weapon 87/11 med 12.284; weapon 89/11 med 12.325; helmet 33 med 12.268
+  tier 4: 0 of 200 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 5: 14 of 354 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.003/100 cases  e.g. helmet 95 med 109.990; helmet 97 med 110.000; helmet 98 med 110.000; helmet 100 med 110.000
+  tier 6: 13 of 180 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.001/100 cases  e.g. helmet 123 med 330.000; helmet 128 med 330.000; helmet 130 med 329.250; helmet 132 med 330.000
+  total 39 rolls, 2.18 listings/100 cases, 0.304 gold/100 cases
+ bar 0.00
+  tier 1: 1 of 81 priced rolls flip break->sell; 1.74 listings per 100 cases; gold at stake 0.017/100 cases  e.g. pants 1 med 1.360
+  tier 2: 0 of 85 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 3: 24 of 140 priced rolls flip break->sell; 1.42 listings per 100 cases; gold at stake 0.077/100 cases  e.g. weapon 71/14 med 12.194; weapon 74/15 med 12.170; weapon 76/15 med 12.179; weapon 77/15 med 12.200
+  tier 4: 0 of 200 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.000/100 cases
+  tier 5: 13 of 354 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.002/100 cases  e.g. helmet 95 med 109.990; helmet 97 med 110.000; helmet 98 med 110.000; helmet 100 med 110.000
+  tier 6: 13 of 180 priced rolls flip break->sell; 0.00 listings per 100 cases; gold at stake 0.001/100 cases  e.g. helmet 123 med 330.000; helmet 128 med 330.000; helmet 130 med 329.250; helmet 132 med 330.000
+  total 51 rolls, 3.16 listings/100 cases, 0.098 gold/100 cases
+
+== Dismantle floor: Price tab (paintScrap) vs Sort tab (craftDismantle/sortNeed), tax 1%, bid 0.225 ==
+ tier  S=yield*bid  Price"listed"=S/1.01  Price"typed"=S/1.01^2  Sort floor(median terms, bar0)=S/0.99  Sort floor bar0.10=(S+0.10)/0.99
+  1     1.3500       1.3366                1.3234                1.3636                    1.4646
+  2     4.0500       4.0099                3.9702                4.0909                    4.1919
+  3    12.1500      12.0297               11.9106               12.2727                   12.3737
+  4    36.4500      36.0891               35.7318               36.8182                   36.9192
+  5   109.3500     108.2673              107.1954              110.4545                  110.5556
+  6   328.0500     324.8020              321.5861              331.3636                  331.4646
+
+ rolls whose median lies between the Price-tab floor (S/1.01) and the Sort-tab floor ((S+bar)/0.99): Price says list, Sort says break
+  bar 0.00: t1 1/81 t2 2/85 t3 52/140 t4 0/200 t5 19/354 t6 25/180  total 99
+  bar 0.10: t1 11/81 t2 6/85 t3 61/140 t4 0/200 t5 20/354 t6 25/180  total 123

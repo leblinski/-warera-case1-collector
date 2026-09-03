@@ -1,0 +1,8 @@
+bid 0.214 gross 3.6411 | per-tier net: 1.5642 3.9766 13.4300 50.8090 137.6517 378.7664 | broken: 9% 9% 0% 0% 0% 0%
+bid 0.215 gross 3.6137 | per-tier net: 1.5554 3.9033 13.4300 50.8090 137.6517 378.7664 | broken: 12% 93% 0% 0% 0% 0%
+bid 0.220 gross 3.6415 | per-tier net: 1.5663 3.9745 13.4253 50.8090 137.6517 378.8562 | broken: 13% 96% 34% 0% 0% 1%
+bid 0.225 gross 3.6781 | per-tier net: 1.5806 4.0556 13.4718 50.8090 137.7747 379.8272 | broken: 13% 99% 64% 0% 3% 9%
+ bid 0.214 tier1 need 1.3840 dis 1.2840: weapon=1.8983(brk 0/46) helmet=1.7593(brk 0/15) chest=1.3179(brk 4/5) gloves=1.3593(brk 2/5) pants=1.3511(brk 2/5) boots=1.3177(brk 4/5)
+ bid 0.215 tier1 need 1.3900 dis 1.2900: weapon=1.8983(brk 0/46) helmet=1.7593(brk 0/15) chest=1.3227(brk 4/5) gloves=1.3235(brk 4/5) pants=1.3143(brk 4/5) boots=1.3225(brk 4/5)
+ tier-1 rolls with net sale in (1.384,1.394]: 4 -> [('gloves', '3', 1.399), ('gloves', '4', 1.4), ('pants', '3', 1.4), ('pants', '4', 1.404)]
+ per-listing-cost model (fee 0.10) gross: 0.213->3.5617 0.214->3.5630 0.215->3.5672 0.216->3.5735 0.220->3.5997 0.225->3.6402

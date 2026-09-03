@@ -1,0 +1,232 @@
+{
+ "2026-08-29": {
+  "sniper": {
+   "n": 2534,
+   "att_max": 86,
+   "att_rest_mean": 84.41379310344827,
+   "att_excess": 1.0187908496732028,
+   "att_sigma": 0.17264465049256786,
+   "crit_max": 554,
+   "crit_rest_mean": 495,
+   "crit_excess": 1.1191919191919193,
+   "att_min": 79
+  },
+  "tank": {
+   "n": 423,
+   "att_max": 13,
+   "att_rest_mean": 14.137931034482758,
+   "att_excess": 0.9195121951219513,
+   "att_sigma": -0.302637689437592,
+   "crit_max": 38,
+   "crit_rest_mean": 42.77777777777778,
+   "crit_excess": 0.8883116883116883,
+   "att_min": 19
+  },
+  "gun": {
+   "n": 1068,
+   "att_max": 160,
+   "att_rest_mean": 100.88888888888889,
+   "att_excess": 1.5859030837004406,
+   "att_sigma": 5.885013362853085,
+   "crit_max": 264,
+   "crit_rest_mean": 201,
+   "crit_excess": 1.3134328358208955,
+   "att_min": 98
+  },
+  "rifle": {
+   "n": 1267,
+   "att_max": 106,
+   "att_rest_mean": 61.10526315789474,
+   "att_excess": 1.734711455641688,
+   "att_sigma": 5.743228835412506,
+   "crit_max": 372,
+   "crit_rest_mean": 223.75,
+   "crit_excess": 1.6625698324022347,
+   "att_min": 30
+  }
+ },
+ "2026-08-30": {
+  "sniper": {
+   "n": 2837,
+   "att_max": 101,
+   "att_rest_mean": 94.34482758620689,
+   "att_excess": 1.0705409356725146,
+   "att_sigma": 0.6851730359047079,
+   "crit_max": 659,
+   "crit_rest_mean": 544.5,
+   "crit_excess": 1.2102846648301193,
+   "att_min": 93
+  },
+  "tank": {
+   "n": 495,
+   "att_max": 18,
+   "att_rest_mean": 16.448275862068964,
+   "att_excess": 1.0943396226415094,
+   "att_sigma": 0.3826082456196358,
+   "crit_max": 52,
+   "crit_rest_mean": 49.22222222222222,
+   "crit_excess": 1.0564334085778782,
+   "att_min": 26
+  },
+  "gun": {
+   "n": 1454,
+   "att_max": 209,
+   "att_rest_mean": 138.33333333333334,
+   "att_excess": 1.510843373493976,
+   "att_sigma": 6.008294133410438,
+   "crit_max": 334,
+   "crit_rest_mean": 280,
+   "crit_excess": 1.1928571428571428,
+   "att_min": 157
+  },
+  "rifle": {
+   "n": 1265,
+   "att_max": 177,
+   "att_rest_mean": 57.26315789473684,
+   "att_excess": 3.0909926470588234,
+   "att_sigma": 15.823048265873064,
+   "crit_max": 374,
+   "crit_rest_mean": 222.75,
+   "crit_excess": 1.6790123456790123,
+   "att_min": 37
+  }
+ },
+ "2026-08-31": {
+  "sniper": {
+   "n": 3070,
+   "att_max": 110,
+   "att_rest_mean": 102.06896551724138,
+   "att_excess": 1.0777027027027026,
+   "att_sigma": 0.7850240853239323,
+   "crit_max": 653,
+   "crit_rest_mean": 604.25,
+   "crit_excess": 1.0806785270997104,
+   "att_min": 103
+  },
+  "tank": {
+   "n": 668,
+   "att_max": 27,
+   "att_rest_mean": 22.103448275862068,
+   "att_excess": 1.2215288611544461,
+   "att_sigma": 1.0415025333776757,
+   "crit_max": 65,
+   "crit_rest_mean": 67,
+   "crit_excess": 0.9701492537313433,
+   "att_min": 23
+  },
+  "gun": {
+   "n": 1504,
+   "att_max": 199,
+   "att_rest_mean": 145,
+   "att_excess": 1.3724137931034484,
+   "att_sigma": 4.484455912101958,
+   "crit_max": 358,
+   "crit_rest_mean": 286.5,
+   "crit_excess": 1.24956369982548,
+   "att_min": 143
+  },
+  "rifle": {
+   "n": 1489,
+   "att_max": 122,
+   "att_rest_mean": 71.94736842105263,
+   "att_excess": 1.695683979517191,
+   "att_sigma": 5.900916362917705,
+   "crit_max": 418,
+   "crit_rest_mean": 267.75,
+   "crit_excess": 1.561157796451914,
+   "att_min": 36
+  }
+ },
+ "2026-09-01": {
+  "sniper": {
+   "n": 2783,
+   "att_max": 118,
+   "att_rest_mean": 91.89655172413794,
+   "att_excess": 1.2840525328330206,
+   "att_sigma": 2.723003965923363,
+   "crit_max": 513,
+   "crit_rest_mean": 567.5,
+   "crit_excess": 0.9039647577092511,
+   "att_min": 97
+  },
+  "tank": {
+   "n": 514,
+   "att_max": 17,
+   "att_rest_mean": 17.137931034482758,
+   "att_excess": 0.9919517102615695,
+   "att_sigma": -0.03331829721697511,
+   "crit_max": 59,
+   "crit_rest_mean": 50.55555555555556,
+   "crit_excess": 1.167032967032967,
+   "att_min": 17
+  },
+  "gun": {
+   "n": 1495,
+   "att_max": 187,
+   "att_rest_mean": 145.33333333333334,
+   "att_excess": 1.286697247706422,
+   "att_sigma": 3.456257897558318,
+   "crit_max": 333,
+   "crit_rest_mean": 290.5,
+   "crit_excess": 1.1462994836488813,
+   "att_min": 132
+  },
+  "rifle": {
+   "n": 1595,
+   "att_max": 138,
+   "att_rest_mean": 76.6842105263158,
+   "att_excess": 1.7995881949210706,
+   "att_sigma": 7.001955542948236,
+   "crit_max": 505,
+   "crit_rest_mean": 272.5,
+   "crit_excess": 1.853211009174312,
+   "att_min": 59
+  }
+ },
+ "2026-09-02": {
+  "sniper": {
+   "n": 2974,
+   "att_max": 130,
+   "att_rest_mean": 98.06896551724138,
+   "att_excess": 1.3255977496483826,
+   "att_sigma": 3.2243872241917706,
+   "crit_max": 656,
+   "crit_rest_mean": 579.5,
+   "crit_excess": 1.1320103537532356,
+   "att_min": 110
+  },
+  "tank": {
+   "n": 488,
+   "att_max": 18,
+   "att_rest_mean": 16.20689655172414,
+   "att_excess": 1.1106382978723404,
+   "att_sigma": 0.4454053360999006,
+   "crit_max": 60,
+   "crit_rest_mean": 47.55555555555556,
+   "crit_excess": 1.2616822429906542,
+   "att_min": 13
+  },
+  "gun": {
+   "n": 1520,
+   "att_max": 207,
+   "att_rest_mean": 145.88888888888889,
+   "att_excess": 1.418888042650419,
+   "att_sigma": 5.059517142724748,
+   "crit_max": 309,
+   "crit_rest_mean": 302.75,
+   "crit_excess": 1.0206440957886045,
+   "att_min": 158
+  },
+  "rifle": {
+   "n": 1243,
+   "att_max": 103,
+   "att_rest_mean": 60,
+   "att_excess": 1.7166666666666666,
+   "att_sigma": 5.551276129563964,
+   "crit_max": 336,
+   "crit_rest_mean": 226.75,
+   "crit_excess": 1.48180815876516,
+   "att_min": 33
+  }
+ }
+}

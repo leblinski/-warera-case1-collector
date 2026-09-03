@@ -1,0 +1,69 @@
+{
+ "dataStamp": "Prices collected 4 min ago. Published every 15 minutes.",
+ "price": {
+  "taxChip": "Tax 1%",
+  "taxIn": "1",
+  "figure": "—",
+  "docketHint": "Enter a price above.",
+  "docketLabel": "TYPE THIS TO UNDERCUT THEM",
+  "flipFigure": "—",
+  "flipDetail": "Enter a price to see where flipping starts.",
+  "scrapDetail": "Enter a market price to compare listing versus dismantling.",
+  "scrapNote": "live market",
+  "scrapPrice": "0.225",
+  "scrapVerdict": "1.337",
+  "scrapRows": "Common 1.337 Uncommon 4.010 Rare 12.030 Epic 36.089 Legendary 108.267 Mythic 324.802",
+  "quickScrap": "1.337",
+  "cutCard": "",
+  "cutCardHidden": true,
+  "rollFacts": "LIST AT 1.300 1.048–1.449 SELLS IN <1m SALES 33 last 48h",
+  "rollNbrs": "EITHER SIDE 1 1.300 <1m 2 1.300 <1m 3 1.300 <1m 4 1.394 43m 5 1.467 18m"
+ },
+ "cases": {
+  "verdict": "—",
+  "detail": "No case price available.",
+  "rows": "",
+  "foot": "",
+  "swing": "",
+  "tab": ""
+ },
+ "craft": {
+  "verdict": "—",
+  "detail": "The collector is not publishing commodity order books yet, so input costs cannot be priced.",
+  "rows": "",
+  "foot": "",
+  "note": "Cheapest sell orders lifted in order, on the collector’s books. An API key in settings reads them live instead.",
+  "scrapIn": "0.223",
+  "steelIn": "1.683",
+  "books": ""
+ },
+ "sort": {
+  "tier1": {
+   "head": null,
+   "rows": "",
+   "detail": null
+  },
+  "tier2": {
+   "head": null,
+   "rows": "",
+   "detail": null
+  },
+  "tier6": {
+   "head": null,
+   "rows": "",
+   "detail": null
+  },
+  "gate": "",
+  "foot": "",
+  "detail": "The collector is not publishing commodity order books yet, so input costs cannot be priced."
+ },
+ "_requests": [
+  "index.json",
+  "summary.json",
+  "commodities.json",
+  "prices/boots1.json"
+ ],
+ "_errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ]
+}

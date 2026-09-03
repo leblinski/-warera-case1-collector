@@ -1,0 +1,172 @@
+{
+ "0": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 0,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 0,
+  "nonbeatUnreachAbove": 0,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  }
+ },
+ "1": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 248,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 495,
+  "nonbeatUnreachAbove": 495,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  },
+  "unreachExamples": [
+   [
+    "1.868",
+    "typed 1.850",
+    "displays 1.869"
+   ],
+   [
+    "2.474",
+    "typed 2.450",
+    "displays 2.475"
+   ],
+   [
+    "2.777",
+    "typed 2.750",
+    "displays 2.778"
+   ]
+  ],
+  "sample": {
+   "undercut_3_550": "3.514",
+   "nonbeat_3_550": "3.515",
+   "s3_for_buy_3_550": "3.588"
+  }
+ },
+ "5": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 1191,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 2381,
+  "nonbeatUnreachAbove": 2381,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  }
+ },
+ "0.5": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 125,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 249,
+  "nonbeatUnreachAbove": 249,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  }
+ },
+ "2.5": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 610,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 1220,
+  "nonbeatUnreachAbove": 1220,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  }
+ },
+ "12.5": {
+  "undercutFail": 0,
+  "undercutNotMax": 0,
+  "undercutNull": 1,
+  "halfEvenWouldAllowOneMore": 2778,
+  "nonbeatFail": 0,
+  "nonbeatUnreach": 5556,
+  "nonbeatUnreachAbove": 5556,
+  "nonbeatUnreachBelow": 0,
+  "s3Fail": 0,
+  "s3NotMin": 0,
+  "buyI3Mismatch": 0,
+  "ex": {
+   "undercutFail": [],
+   "undercutNotMax": [],
+   "nonbeatFail": [],
+   "s3Fail": [],
+   "s3NotMin": []
+  }
+ }
+}
+4dp inputs 0.0001..50.0000: flipCheckCore buyI3 != toThousandths in 369 cases, e.g. [
+  [ '0.5005', '500', '501' ],
+  [ '0.5015', '501', '502' ],
+  [ '0.5025', '502', '503' ],
+  [ '0.5035', '503', '504' ],
+  [ '0.5045', '504', '505' ]
+]
+extractNumber("1.234,56") = "1234.56"
+extractNumber("1,234.56") = "1234.56"
+extractNumber("1,234") = "1.234"
+extractNumber("1,234,567") = null
+extractNumber("1.234.567") = "1234.567"
+extractNumber("12 345") = "12345"
+extractNumber("3.55") = "3.55"
+extractNumber("0,5") = "0.5"
+extractNumber("1,5") = "1.5"
+extractNumber("  2,50 gold") = "2.50"
+extractNumber("3.5.5") = "35.5"
+extractNumber("1e3") = "1"
+extractNumber("−1.5") = "1.5"
+extractNumber("1.") = "1"
+bookLevels key roundtrip:  0 of 600 order prices fail Number(String(p))===p
+tax "1" -> Number 1, taxFrac 101/100
+tax "1,5" -> Number NaN, taxFrac 100/100
+tax "1.5" -> Number 1.5, taxFrac 1015/1000
+tax "" -> Number 0, taxFrac 100/100
+tax "abc" -> Number NaN, taxFrac 100/100
+tax "-1" -> Number -1, taxFrac 99/100

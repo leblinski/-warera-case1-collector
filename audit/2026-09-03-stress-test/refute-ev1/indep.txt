@@ -1,0 +1,19 @@
+bid 0.225 ask 3.55
+page default (bar 0.10, fee 0):   gross 3.6781 edge +0.1281 pct +3.61% listings/case 0.379
+  per-tier net: 1.5806 4.0556 13.4718 50.8090 137.7747 379.8272 | broken: 13% 99% 64% 0% 3% 9%
+bar 0.10, fee 0.05:                gross 3.6591 edge +0.1091 pct +3.07% listings/case 0.379
+bar 0.10, fee 0.10:                gross 3.6402 edge +0.0902 pct +2.54% listings/case 0.379
+bar 0.10, fee 0.20:                gross 3.6022 edge +0.0522 pct +1.47% listings/case 0.379
+bar 0, fee 0:                     gross 3.6848 pct +3.80% listings/case 0.591
+bar 0, fee 0.10:                  gross 3.6257 pct +2.13% listings/case 0.591
+fee 0.10: best bar in 0..0.40 step 0.01 -> bar 0.10 gross 3.6402
+comment check: dropped listings/100 cases 21.17, gold given up/100 0.671, per dropped listing 0.0317
+bid 0.214 gross 3.6411 | 0.215 gross 3.6137
+threshold bar 0.10               bid sweep 0.150..0.300 step 0.001: 9 decreasing steps; largest (0.215, 3.641128318629487, 3.613678839429487)
+threshold bar 0                  bid sweep 0.150..0.300 step 0.001: 0 decreasing steps; largest -
+fee model max(sale-0.10,dis)     bid sweep 0.150..0.300 step 0.001: 0 decreasing steps; largest -
+abs 0.10 + pct 0.0 join=either gross 3.6781 | join=both gross 3.6781
+abs 0.10 + pct 0.5 join=either gross 3.6844 | join=both gross 3.6780
+abs 0.10 + pct 1.0 join=either gross 3.6841 | join=both gross 3.6780
+abs 0.10 + pct 2.0 join=either gross 3.6824 | join=both gross 3.6772
+abs 0.10 + pct 5.0 join=either gross 3.6781 | join=both gross 3.6729

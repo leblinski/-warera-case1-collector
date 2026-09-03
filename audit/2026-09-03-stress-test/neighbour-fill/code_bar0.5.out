@@ -1,0 +1,39 @@
+tax 1.0 taxMul 0.99 bar 0.5
+
+=== weapon cut lines: as coded vs quiet-skipped vs neighbour-included ===
+knife   priced  46 wide-only  22 from-only  30 none   2 | priced sell 12/46
+   page  crit 5 from 34 · 4 from 38 · 3 from 40
+   skip  crit 5 from 34 · 4 all · 3 from 40
+   from  crit 5 from 34 · 4 from 38 · 3 from 40
+gun     priced  50 wide-only   0 from-only   0 none   0 | priced sell 0/50
+   page  none (short-circuit r.sell===0)
+   skip  crit 
+   from  crit 
+rifle   priced 100 wide-only   0 from-only   0 none   0 | priced sell 29/100
+   page  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+   skip  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+   from  crit 15 from 79 · 14 from 83 · 13 from 85 · 12 from 89 · 11 from 90
+sniper  priced 150 wide-only   0 from-only   0 none   0 | priced sell 127/150
+   page  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 111
+   skip  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 111
+   from  crit 19+ all · 18 from 107 · 17 from 108 · 16 from 111
+tank    priced 284 wide-only  16 from-only   0 none   0 | priced sell 284/284
+   page  every roll (short-circuit r.sell===r.known)
+   skip  crit 26+ all
+   from  crit 26+ all
+jet     priced 110 wide-only 205 from-only 465 none  20 | priced sell 110/110
+   page  every roll (short-circuit r.sell===r.known)
+   skip  crit 41+ all
+   from  crit 41+ all
+
+heat cells whose green/break class (margin>=0 vs scrap) contradicts the list verdict (net>need): 65
+   [('knife', '21/1', 1.81, 0.442), ('knife', '21/2', 1.783, 0.415), ('knife', '21/5', 1.815, 0.447), ('knife', '22/1', 1.81, 0.442), ('knife', '22/3', 1.817, 0.449), ('knife', '23/1', 1.776, 0.408), ('knife', '23/2', 1.8, 0.432), ('knife', '23/3', 1.798, 0.43), ('knife', '24/1', 1.813, 0.445), ('knife', '24/5', 1.822, 0.454), ('knife', '25/1', 1.819, 0.451), ('knife', '25/5', 1.825, 0.457), ('knife', '26/1', 1.783, 0.415), ('knife', '26/3', 1.81, 0.442), ('knife', '27/1', 1.802, 0.434), ('knife', '27/2', 1.798, 0.43), ('knife', '28/1', 1.79, 0.422), ('knife', '29/1', 1.79, 0.422), ('knife', '29/3', 1.812, 0.444), ('knife', '29/5', 1.834, 0.466), ('knife', '30/1', 1.796, 0.428), ('knife', '31/1', 1.8, 0.432), ('knife', '32/1', 1.798, 0.431), ('knife', '32/2', 1.808, 0.44), ('knife', '33/1', 1.8, 0.432), ('knife', '34/1', 1.801, 0.433), ('knife', '35/1', 1.84, 0.472), ('knife', '36/3', 1.864, 0.495), ('knife', '37/1', 1.81, 0.442), ('knife', '38/3', 1.833, 0.465), ('knife', '39/2', 1.824, 0.456), ('knife', '39/3', 1.835, 0.467), ('knife', '40/1', 1.851, 0.482), ('knife', '40/2', 1.862, 0.493), ('gun', '60/10', 4.185, 0.093), ('rifle', '80/14', 12.299, 0.026), ('rifle', '81/14', 12.5, 0.225), ('rifle', '82/14', 12.53, 0.255), ('rifle', '84/13', 12.544, 0.269), ('rifle', '87/11', 12.284, 0.011)]
+wide-only weapon cells 243 ; heat class (0.99 hard-coded, vs scrap) contradicts x.sell (taxMul, vs need): 22
+   [('knife', '21/3', 1.744), ('knife', '22/2', 1.799), ('knife', '22/5', 1.767), ('knife', '23/4', 1.759), ('knife', '24/2', 1.74), ('knife', '25/2', 1.813), ('knife', '26/2', 1.744), ('knife', '27/3', 1.757), ('knife', '28/2', 1.749), ('knife', '28/3', 1.759), ('knife', '29/2', 1.751), ('knife', '30/5', 1.851), ('knife', '31/2', 1.755), ('knife', '31/4', 1.777), ('knife', '32/4', 1.779), ('knife', '34/2', 1.762), ('knife', '34/4', 1.849), ('knife', '35/3', 1.775), ('knife', '35/4', 1.788), ('knife', '36/1', 1.756), ('knife', '36/4', 1.854), ('knife', '37/4', 1.856)]
+
+=== armour cut lines: as coded (skip quiet) vs neighbour/wide included ===
+(armour bands with no line above: quiet rolls never change the cut)
+
+=== strict lower-bound share, and per-item majority baseline (held-one-out, fillQuiet) ===
+neighbours n=979  true>=nb 79.0%  true>nb (strict) 70.0%  neighbours that were wide-only 108
+per-item majority baseline: 923/1040 = 88.8%

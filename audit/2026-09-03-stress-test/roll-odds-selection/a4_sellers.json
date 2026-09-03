@@ -1,0 +1,70 @@
+{
+ "sniper": {
+  "sales_x": 1.1513788382554273,
+  "unique_sellers_x": 1.1903887869180712,
+  "capped2_x": 1.1859130859375,
+  "unique_buyers_x": 0.7360206297502715,
+  "top_sellers_max": [
+   19,
+   19,
+   15
+  ]
+ },
+ "tank": {
+  "sales_x": 1.1463675213675213,
+  "unique_sellers_x": 0.9797297297297297,
+  "capped2_x": 0.9926973984481972,
+  "unique_buyers_x": 0.8537258509659613,
+  "top_sellers_max": [
+   14,
+   8,
+   8
+  ]
+ },
+ "gun": {
+  "sales_x": 1.4208454810495628,
+  "unique_sellers_x": 1.2114492006188757,
+  "capped2_x": 1.227891156462585,
+  "unique_buyers_x": 2.3025380710659897,
+  "top_sellers_max": [
+   32,
+   25,
+   22
+  ]
+ },
+ "rifle": {
+  "sales_x": 1.9327586206896552,
+  "unique_sellers_x": 1.4157182735666738,
+  "capped2_x": 1.5518255753590589,
+  "unique_buyers_x": 1.4110635696821516,
+  "top_sellers_max": [
+   21,
+   17,
+   15
+  ]
+ },
+ "knife_flip_roll": {
+  "rolls": 2,
+  "median": 1.0129255354977773
+ },
+ "gun_flip_roll": {
+  "rolls": 21,
+  "median": 1.0434108527131782
+ },
+ "rifle_flip_roll": {
+  "rolls": 34,
+  "median": 1.0991333333333333
+ },
+ "sniper_flip_roll": {
+  "rolls": 72,
+  "median": 1.044303027921102
+ },
+ "tank_flip_roll": {
+  "rolls": 1,
+  "median": 1.0845023474178404
+ },
+ "jet_flip_roll": {
+  "rolls": 0,
+  "median": null
+ }
+}

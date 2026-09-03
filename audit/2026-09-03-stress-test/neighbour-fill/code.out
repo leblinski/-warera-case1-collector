@@ -1,0 +1,39 @@
+tax 1.0 taxMul 0.99 bar 0.1
+
+=== weapon cut lines: as coded vs quiet-skipped vs neighbour-included ===
+knife   priced  46 wide-only  22 from-only  30 none   2 | priced sell 46/46
+   page  crit 5 from 34 · 4 from 34 · 3 from 38 · 2 from 39 · 1 from 39
+   skip  crit 1+ all
+   from  crit 1+ all
+gun     priced  50 wide-only   0 from-only   0 none   0 | priced sell 0/50
+   page  crit 
+   skip  crit 
+   from  crit 
+rifle   priced 100 wide-only   0 from-only   0 none   0 | priced sell 33/100
+   page  crit 15 from 79 · 14 from 81 · 13 from 84 · 12 from 88 · 11 from 90
+   skip  crit 15 from 79 · 14 from 81 · 13 from 84 · 12 from 88 · 11 from 90
+   from  crit 15 from 79 · 14 from 81 · 13 from 84 · 12 from 88 · 11 from 90
+sniper  priced 150 wide-only   0 from-only   0 none   0 | priced sell 150/150
+   page  crit 16+ all
+   skip  crit 16+ all
+   from  crit 16+ all
+tank    priced 284 wide-only  16 from-only   0 none   0 | priced sell 284/284
+   page  crit 26+ all
+   skip  crit 26+ all
+   from  crit 26+ all
+jet     priced 110 wide-only 205 from-only 465 none  20 | priced sell 110/110
+   page  crit 46 from 300 · 45 from 300 · 42 from 300 · 41 from 300
+   skip  crit 41+ all
+   from  crit 41+ all
+
+heat cells whose green/break class (margin>=0 vs scrap) contradicts the list verdict (net>need): 4
+   [('gun', '60/10', 4.185, 0.093), ('rifle', '80/14', 12.299, 0.026), ('rifle', '87/11', 12.284, 0.011), ('rifle', '89/11', 12.325, 0.052)]
+wide-only weapon cells 243 ; heat class (0.99 hard-coded, vs scrap) contradicts x.sell (taxMul, vs need): 0
+   []
+
+=== armour cut lines: as coded (skip quiet) vs neighbour/wide included ===
+(armour bands with no line above: quiet rolls never change the cut)
+
+=== strict lower-bound share, and per-item majority baseline (held-one-out, fillQuiet) ===
+neighbours n=979  true>=nb 79.0%  true>nb (strict) 70.0%  neighbours that were wide-only 108
+per-item majority baseline: 952/1040 = 91.5%

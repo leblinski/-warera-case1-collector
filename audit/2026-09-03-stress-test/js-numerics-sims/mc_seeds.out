@@ -1,0 +1,8 @@
+seed 2: tier6 z=+0.98   whole-case mean 3.6847 z=+0.91
+seed 3: tier6 z=-1.49   whole-case mean 3.6811 z=+0.42
+seed 4: tier6 z=+1.09   whole-case mean 3.6894 z=+1.56
+seed 5: tier6 z=+0.74   whole-case mean 3.6788 z=+0.09
+seed 6: tier6 z=+0.68   whole-case mean 3.6709 z=-1.02
+mean z tier6 +0.40, whole-case +0.39 (5 seeds of 1e6; |mean z| should be < ~0.9)
+slot pick freq [0.2999, 0.14, 0.1404, 0.1397, 0.1398, 0.1402] expected [0.3, 0.14, 0.14, 0.14, 0.14, 0.14]
+tier pick freq (5e6) [0.6203216, 0.2996568, 0.0709816, 0.0085508, 0.0003932, 9.6e-05] expected [0.62, 0.3, 0.071, 0.0085, 0.0004, 0.0001]  mythic count 480 expected 500.0

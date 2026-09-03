@@ -1,0 +1,43 @@
+
+=== window: fast window (initialTargetHours per tier); rolls with >=5 filtered exact sales: 384
+ q55 vs plain median of same (filtered) set: n=384 mean=+0.20% median=+0.00% p10=+0.00% p90=+0.63% share>0=0.60 share==0=0.40 share<0=0.00
+ q70 vs plain median: n=384 mean=+0.74% median=+0.36% p10=+0.00% p90=+1.58% share>0=0.88 share==0=0.12 share<0=0.00
+ q50(step weights) vs plain median: n=384 mean=-0.01% median=+0.00% p10=+0.00% p90=+0.10% share>0=0.27 share==0=0.63 share<0=0.10
+ q55 vs 12h-half-life weighted median: n=384 mean=+0.21% median=+0.00% p10=+0.00% p90=+0.52% share>0=0.36 share==0=0.64 share<0=0.00
+ q55 vs collector selected.median (Sort tab figure): n=384 mean=+0.31% median=+0.00% p10=-0.54% p90=+1.40% share>0=0.50 share==0=0.22 share<0=0.28
+ plain filtered median vs collector selected.median: n=384 mean=+0.11% median=+0.00% p10=-0.72% p90=+1.19% share>0=0.42 share==0=0.21 share<0=0.37
+  tier 1 q55 vs median: n=16 mean=+0.84% median=+0.00% p10=+0.00% p90=+0.48% share>0=0.19 share==0=0.81 share<0=0.00
+  tier 2 q55 vs median: n=62 mean=+0.08% median=+0.00% p10=+0.00% p90=+0.25% share>0=0.15 share==0=0.85 share<0=0.00
+  tier 3 q55 vs median: n=68 mean=+0.20% median=+0.01% p10=+0.00% p90=+0.69% share>0=0.69 share==0=0.31 share<0=0.00
+  tier 4 q55 vs median: n=180 mean=+0.22% median=+0.01% p10=+0.00% p90=+0.71% share>0=0.79 share==0=0.21 share<0=0.00
+  tier 5 q55 vs median: n=54 mean=+0.13% median=+0.02% p10=+0.00% p90=+0.44% share>0=0.57 share==0=0.43 share<0=0.00
+  tier 6 q55 vs median: n=4 mean=+0.00% median=+0.00% p10=+0.00% p90=+0.00% share>0=0.00 share==0=1.00 share<0=0.00
+ [n>=10] q55 vs plain median: n=218 mean=+0.21% median=+0.02% p10=+0.00% p90=+0.67% share>0=0.77 share==0=0.23 share<0=0.00
+ [n>=10] q70 vs plain median: n=218 mean=+0.71% median=+0.38% p10=+0.01% p90=+1.84% share>0=0.95 share==0=0.05 share<0=0.00
+ largest |q55-med|: [('boots1', 6, 1.346, 1.197), ('sniper', 13, 39.65, 38.614), ('helmet4', 34, 48.0, 46.999), ('boots4', 219, 54.98, 53.84), ('sniper', 13, 45.54, 44.8), ('sniper', 18, 65.896, 64.87), ('sniper', 11, 39.499, 38.9), ('sniper', 7, 37.495, 36.999)]
+
+=== window: full 168h (deep, unreachable in UI); rolls with >=5 filtered exact sales: 837
+ q55 vs plain median of same (filtered) set: n=837 mean=+0.21% median=+0.01% p10=-0.11% p90=+0.78% share>0=0.53 share==0=0.31 share<0=0.16
+ q70 vs plain median: n=837 mean=+0.88% median=+0.59% p10=+0.00% p90=+1.87% share>0=0.90 share==0=0.10 share<0=0.00
+ q50(step weights) vs plain median: n=837 mean=+0.01% median=+0.00% p10=-0.47% p90=+0.57% share>0=0.34 share==0=0.34 share<0=0.32
+ q55 vs 12h-half-life weighted median: n=837 mean=+0.19% median=+0.00% p10=-0.48% p90=+1.07% share>0=0.41 share==0=0.38 share<0=0.21
+ q55 vs collector selected.median (Sort tab figure): n=827 mean=+0.29% median=+0.00% p10=-0.43% p90=+1.22% share>0=0.50 share==0=0.27 share<0=0.23
+ plain filtered median vs collector selected.median: n=827 mean=+0.08% median=+0.00% p10=-1.08% p90=+1.18% share>0=0.42 share==0=0.21 share<0=0.37
+  tier 1 q55 vs median: n=34 mean=+0.39% median=+0.00% p10=+0.00% p90=+0.61% share>0=0.24 share==0=0.71 share<0=0.06
+  tier 2 q55 vs median: n=85 mean=+0.07% median=+0.00% p10=+0.00% p90=+0.25% share>0=0.13 share==0=0.87 share<0=0.00
+  tier 3 q55 vs median: n=140 mean=+0.30% median=+0.07% p10=+0.00% p90=+0.81% share>0=0.62 share==0=0.31 share<0=0.06
+  tier 4 q55 vs median: n=200 mean=+0.16% median=+0.03% p10=-0.12% p90=+0.74% share>0=0.65 share==0=0.11 share<0=0.24
+  tier 5 q55 vs median: n=311 mean=+0.21% median=+0.01% p10=-0.29% p90=+0.90% share>0=0.56 share==0=0.25 share<0=0.19
+  tier 6 q55 vs median: n=67 mean=+0.18% median=+0.05% p10=-0.53% p90=+0.82% share>0=0.52 share==0=0.21 share<0=0.27
+ [n>=10] q55 vs plain median: n=605 mean=+0.18% median=+0.00% p10=-0.10% p90=+0.73% share>0=0.52 share==0=0.31 share<0=0.17
+ [n>=10] q70 vs plain median: n=605 mean=+0.90% median=+0.57% p10=+0.00% p90=+1.88% share>0=0.90 share==0=0.10 share<0=0.00
+ largest |q55-med|: [('boots1', 33, 1.39, 1.3), ('rifle', 17, 14.149, 13.3), ('chest1', 26, 1.2, 1.15), ('tank', 5, 148.0, 142.0), ('helmet5', 64, 134.988, 140.0), ('tank', 9, 155.0, 149.99), ('pants4', 506, 43.4, 42.0), ('chest5', 74, 144.76, 149.74)]
+
+=== recencyWeight step table vs collector 2^(-age/12h): equivalent half-life at each step boundary
+ age   6h: page weight ratio to fresh 0.893 -> equivalent half-life 36.7h; collector ratio 0.7071
+ age  12h: page weight ratio to fresh 0.786 -> equivalent half-life 34.5h; collector ratio 0.5000
+ age  24h: page weight ratio to fresh 0.643 -> equivalent half-life 37.7h; collector ratio 0.2500
+ age  48h: page weight ratio to fresh 0.464 -> equivalent half-life 43.4h; collector ratio 0.0625
+ age  72h: page weight ratio to fresh 0.339 -> equivalent half-life 46.2h; collector ratio 0.0156
+ age 120h: page weight ratio to fresh 0.241 -> equivalent half-life 58.5h; collector ratio 0.0010
+ age 168h: page weight ratio to fresh 0.179 -> equivalent half-life 67.6h; collector ratio 0.0001
