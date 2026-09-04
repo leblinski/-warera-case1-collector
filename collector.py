@@ -53,6 +53,14 @@ FULL_RESCAN_HOURS = 6
 # thousand pages and cannot complete in one run. Six times the incremental overlap is far
 # beyond the upstream scrape delay of five seconds.
 BACKSTOP_HOURS = 3
+# How deep a cache with no history of its own tries to go on its first run. Paging the whole
+# retention window in one go cannot be done inside the page budget - the shared stream runs
+# about eleven pages an hour, so 168h is roughly 1,800 pages against a limit of 1,000 - and a
+# fresh cache that tries it exhausts the budget, errors, keeps last_success_at unset, fails
+# --require-healthy, and does the same again on the next run for ever. Depth is meant to
+# accumulate forward anyway, so the first run takes a bite it can finish and the window grows
+# from there.
+INITIAL_DEPTH_HOURS = 48
 RECENCY_HALF_LIFE_HOURS = 12
 MIN_PRIMARY_COMPS = 3
 
@@ -330,8 +338,19 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
                    or parse_time(row["last_full_scan_at"]) <= now - timedelta(hours=FULL_RESCAN_HOURS)
                    for row in old.values())
     full_scan = never_complete or periodic
-    deep_floor = cutoff if never_complete else max(cutoff, now - timedelta(hours=BACKSTOP_HOURS))
+    initial = never_complete and checkpoint is None
+    deep_floor = (max(cutoff, now - timedelta(hours=INITIAL_DEPTH_HOURS)) if initial
+                  else cutoff if never_complete
+                  else max(cutoff, now - timedelta(hours=BACKSTOP_HOURS)))
     overlap_cutoff = max(cutoff, parse_time(checkpoint) - timedelta(hours=OVERLAP_HOURS)) if checkpoint else cutoff
+    # The backstop is a ceiling on work, never a reason to skip history. Stopping three hours
+    # back while the last success is four hours back leaves that hour unfetched, and the
+    # checkpoint then moves past it, so the sales in the gap are gone from the cache and the
+    # archive alike. Whichever floor is older wins.
+    if checkpoint and not never_complete:
+        deep_floor = min(deep_floor, overlap_cutoff)
+    complete_stops = ("retention_boundary", "end_of_history",
+                      f"initial_depth_{INITIAL_DEPTH_HOURS:g}h")
     cursor = None
     seen_cursors = set()
     pages = 0
@@ -369,7 +388,8 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
             elif not next_cursor:
                 stop = "end_of_history"
             elif full_scan and oldest is not None and oldest < deep_floor - timedelta(seconds=1):
-                stop = f"backstop_{BACKSTOP_HOURS:g}h"
+                stop = (f"initial_depth_{INITIAL_DEPTH_HOURS:g}h" if initial
+                        else f"backstop_{BACKSTOP_HOURS:g}h")
             elif not full_scan and reached_known and oldest is not None and oldest < overlap_cutoff - timedelta(seconds=1):
                 stop = f"known_history_with_{OVERLAP_HOURS:g}h_overlap"
             if stop:
@@ -390,8 +410,10 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
             **category, "status": "error" if error else "ok", "error": error,
             "attempted_at": stamp(now), "last_success_at": old[code].get("last_success_at") if error else stamp(now),
             "last_full_scan_at": old[code].get("last_full_scan_at") if error or not full_scan else stamp(now),
+            # Reaching the depth this run set out to reach is what completes the history,
+            # whether that was the retention boundary or the first run's initial bite.
             "history_complete": bool(old[code].get("history_complete"))
-                                if error or stop not in ("retention_boundary", "end_of_history") else True,
+                                if error or stop not in complete_stops else True,
             "pages_fetched": pages, "stop_reason": stop, "full_scan": full_scan,
             "new_transaction_count": len(set(kept[code]) - known), "transaction_count": len(rows),
             "quality_issue_count": sum(bool(tx["quality_issues"]) for tx in rows),
