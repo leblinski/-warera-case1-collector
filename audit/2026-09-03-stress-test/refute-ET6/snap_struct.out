@@ -1,0 +1,4 @@
+['schema_version', 'generated_at', 'updated_at', 'status', 'source', 'policy', 'health', 'commodities', 'categories']
+['item_code', 'name', 'tier', 'rarity', 'slot', 'status', 'error', 'attempted_at', 'last_success_at', 'last_full_scan_at', 'history_complete', 'pages_fetched', 'stop_reason', 'full_scan', 'new_transaction_count', 'transaction_count', 'quality_issue_count', 'transactions', 'rolls']
+{'exact_roll': 'dict', 'primary_24h': 'dict', 'fallback_48h': 'dict', 'retained_window': 'dict', 'retained_window_hours': 168, 'selected_window_hours': 48, 'selected': 'dict', 'low_sample': True}
+transactions 480 {"id": "6a998ee02ecee5bfa1cc20d1", "sold_at": "2026-09-03T15:14:40.293Z", "seller_id": "693d604819f6f7570767cc93", "buyer_id": "688e8e64d672278e5de77be0", "offer_created_at": "2026-09-03T03:25:05.963Z", "money": 380, "quantity": 1, "skills": {"attack": 231, "criticalChance": 42}, "state": 100, "max_state": 100}

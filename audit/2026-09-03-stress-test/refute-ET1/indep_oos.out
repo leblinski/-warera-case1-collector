@@ -1,0 +1,44 @@
+
+== same grid as finding origins=11 hor=24h roll-origins=8927 rolls=965 sales=245238 ==
+med48     relMAE(ro) 2.89  relMAE(sale-wtd) 3.21  sold 61.6  d vs med48 +0.000 [+0.000,+0.000]  wins/ties/losses 0/8927/0
+selected  relMAE(ro) 2.84  relMAE(sale-wtd) 3.08  sold 60.0  d vs med48 -0.045 [-0.070,-0.019]  wins/ties/losses 3022/3594/2311
+rwmed     relMAE(ro) 2.82  relMAE(sale-wtd) 3.04  sold 60.5  d vs med48 -0.064 [-0.101,-0.030]  wins/ties/losses 3840/2484/2603
+mean48    relMAE(ro) 3.15  relMAE(sale-wtd) 3.51  sold 68.7  d vs med48 +0.267 [+0.222,+0.306]  wins/ties/losses 2512/1121/5294
+q75       relMAE(ro) 3.00  relMAE(sale-wtd) 3.30  sold 47.9  d vs med48 +0.113 [+0.054,+0.180]  wins/ties/losses 4286/871/3770
+q25       relMAE(ro) 3.36  relMAE(sale-wtd) 3.79  sold 74.8  d vs med48 +0.470 [+0.405,+0.532]  wins/ties/losses 2028/757/6142
+  n48 in [1,4] ro=2213: med48 2.49  selected 2.49  rwmed 2.56  mean48 2.60  q75 2.40
+  n48 in [5,29] ro=2572: med48 2.47  selected 2.42  rwmed 2.36  mean48 2.64  q75 2.68
+  n48 in [30,inf] ro=4142: med48 3.36  selected 3.29  rwmed 3.25  mean48 3.77  q75 3.52
+
+== phase +3h origins=10 hor=24h roll-origins=8132 rolls=958 sales=222640 ==
+med48     relMAE(ro) 2.85  relMAE(sale-wtd) 3.18  sold 62.2  d vs med48 +0.000 [+0.000,+0.000]  wins/ties/losses 0/8132/0
+selected  relMAE(ro) 2.81  relMAE(sale-wtd) 3.06  sold 60.3  d vs med48 -0.036 [-0.063,-0.014]  wins/ties/losses 2774/3302/2056
+rwmed     relMAE(ro) 2.79  relMAE(sale-wtd) 3.01  sold 60.8  d vs med48 -0.057 [-0.097,-0.022]  wins/ties/losses 3543/2253/2336
+mean48    relMAE(ro) 3.13  relMAE(sale-wtd) 3.49  sold 69.2  d vs med48 +0.276 [+0.231,+0.314]  wins/ties/losses 2268/996/4868
+q75       relMAE(ro) 2.96  relMAE(sale-wtd) 3.25  sold 48.3  d vs med48 +0.105 [+0.040,+0.170]  wins/ties/losses 3960/813/3359
+q25       relMAE(ro) 3.34  relMAE(sale-wtd) 3.80  sold 75.2  d vs med48 +0.485 [+0.422,+0.549]  wins/ties/losses 1801/679/5652
+  n48 in [1,4] ro=2005: med48 2.46  selected 2.46  rwmed 2.54  mean48 2.56  q75 2.37
+  n48 in [5,29] ro=2358: med48 2.41  selected 2.39  rwmed 2.31  mean48 2.60  q75 2.62
+  n48 in [30,inf] ro=3769: med48 3.33  selected 3.27  rwmed 3.23  mean48 3.76  q75 3.48
+
+== 6h horizon origins=14 hor=6h roll-origins=8312 rolls=962 sales=76499 ==
+med48     relMAE(ro) 3.12  relMAE(sale-wtd) 3.10  sold 56.1  d vs med48 +0.000 [+0.000,+0.000]  wins/ties/losses 0/8312/0
+selected  relMAE(ro) 3.04  relMAE(sale-wtd) 2.92  sold 54.3  d vs med48 -0.083 [-0.112,-0.051]  wins/ties/losses 3202/2550/2560
+rwmed     relMAE(ro) 3.02  relMAE(sale-wtd) 2.88  sold 55.6  d vs med48 -0.100 [-0.135,-0.057]  wins/ties/losses 3626/2181/2505
+mean48    relMAE(ro) 3.38  relMAE(sale-wtd) 3.37  sold 64.8  d vs med48 +0.258 [+0.218,+0.300]  wins/ties/losses 2941/587/4784
+q75       relMAE(ro) 3.38  relMAE(sale-wtd) 3.27  sold 39.3  d vs med48 +0.255 [+0.188,+0.323]  wins/ties/losses 3319/589/4404
+q25       relMAE(ro) 3.50  relMAE(sale-wtd) 3.60  sold 72.4  d vs med48 +0.380 [+0.331,+0.433]  wins/ties/losses 2635/471/5206
+  n48 in [1,4] ro=1099: med48 2.55  selected 2.55  rwmed 2.74  mean48 2.65  q75 2.52
+  n48 in [5,29] ro=2235: med48 2.35  selected 2.26  rwmed 2.19  mean48 2.51  q75 2.70
+  n48 in [30,inf] ro=4978: med48 3.59  selected 3.50  rwmed 3.46  mean48 3.93  q75 3.87
+
+== 1h step (dense origins) origins=63 hor=24h roll-origins=51145 rolls=980 sales=1402488 ==
+med48     relMAE(ro) 2.87  relMAE(sale-wtd) 3.20  sold 61.8  d vs med48 +0.000 [+0.000,+0.000]  wins/ties/losses 0/51145/0
+selected  relMAE(ro) 2.82  relMAE(sale-wtd) 3.06  sold 60.0  d vs med48 -0.044 [-0.076,-0.018]  wins/ties/losses 17363/20654/13128
+rwmed     relMAE(ro) 2.80  relMAE(sale-wtd) 3.02  sold 60.5  d vs med48 -0.062 [-0.096,-0.026]  wins/ties/losses 22099/14173/14873
+mean48    relMAE(ro) 3.14  relMAE(sale-wtd) 3.50  sold 68.8  d vs med48 +0.270 [+0.228,+0.308]  wins/ties/losses 14290/6362/30493
+q75       relMAE(ro) 2.97  relMAE(sale-wtd) 3.28  sold 47.9  d vs med48 +0.107 [+0.049,+0.172]  wins/ties/losses 24639/5029/21477
+q25       relMAE(ro) 3.34  relMAE(sale-wtd) 3.79  sold 74.9  d vs med48 +0.474 [+0.406,+0.535]  wins/ties/losses 11560/4324/35261
+  n48 in [1,4] ro=12662: med48 2.48  selected 2.48  rwmed 2.55  mean48 2.58  q75 2.39
+  n48 in [5,29] ro=14742: med48 2.43  selected 2.38  rwmed 2.32  mean48 2.60  q75 2.64
+  n48 in [30,inf] ro=23741: med48 3.34  selected 3.28  rwmed 3.24  mean48 3.76  q75 3.49

@@ -1,0 +1,30 @@
+scrap best_bid 0.225 rows 100 levels [(0.225, 654018), (0.224, 12590), (0.223, 6108), (0.222, 51264), (0.221, 11467), (0.22, 65407)] sum>=0.22275 672716
+sum odds*yield 14.6712
+gross@0.225 3.6781 edge +0.1281 pct +3.61%; exact fixed-decision slope d(gross)/d(bid)=9.016; page brokenShare/tier 13% 99% 64% 0% 3% 9%; sum odds*yield*brokenShare=8.253
+  bid 0.0000 gross 3.6467 pct +2.72%  (delta pp vs base -0.88)
+  bid 0.1500 gross 3.6467 pct +2.72%  (delta pp vs base -0.88)
+  bid 0.2000 gross 3.6420 pct +2.59%  (delta pp vs base -1.02)
+  bid 0.2150 gross 3.6137 pct +1.79%  (delta pp vs base -1.81)
+  bid 0.2200 gross 3.6415 pct +2.58%  (delta pp vs base -1.03)
+  bid 0.2240 gross 3.6696 pct +3.37%  (delta pp vs base -0.24)
+  bid 0.2245 gross 3.6740 pct +3.49%  (delta pp vs base -0.12)
+  bid 0.2255 gross 3.6805 pct +3.68%  (delta pp vs base +0.07)
+  bid 0.2260 gross 3.6834 pct +3.76%  (delta pp vs base +0.15)
+  bid 0.2300 gross 3.7193 pct +4.77%  (delta pp vs base +1.16)
+  bid 0.2400 gross 3.8195 pct +7.59%  (delta pp vs base +3.98)
+central FD slope h=0.0005: 6.538
+one-sided: +0.005 -> 8.237/unit; -0.005 -> 7.327/unit; +0.015 -> 9.428/unit
+    100 cases    825 scraps avg 0.22500 unfilled 0
+    100 cases   1467 scraps avg 0.22500 unfilled 0
+   1000 cases   8253 scraps avg 0.22500 unfilled 0
+   1000 cases  14671 scraps avg 0.22500 unfilled 0
+  10000 cases  82531 scraps avg 0.22500 unfilled 0
+  10000 cases 146712 scraps avg 0.22500 unfilled 0
+case ask 3.55 depth at best 187
+  n   187 unit 3.5500 thin False pct +3.61%
+  n   188 unit 3.5500 thin False pct +3.61%
+  n   500 unit 3.5531 thin False pct +3.52%
+  n  1000 unit 3.5563 thin False pct +3.42%
+  n  3500 unit 3.5691 thin False pct +3.05%
+  n 10000 unit 3.5877 thin True pct +2.52%
+zero-edge ask = gross 3.6781 (+3.61%)

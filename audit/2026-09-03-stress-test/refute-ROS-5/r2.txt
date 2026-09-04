@@ -1,0 +1,6 @@
+base gross (ev_ref) 3.6781 ; reweighted uniform 3.6781
+sniper attack130 x1.16                                  gross 3.6784  delta +0.00028  (edge 0.1281 -> 0.1284, +3.61% -> +3.62%)
+sniper att130 x1.16 & crit20 x1.09                      gross 3.6788  delta +0.00073  (edge 0.1281 -> 0.1288, +3.61% -> +3.63%)
+every item top attack/top armour roll x1.16             gross 3.6882  delta +0.01014  (edge 0.1281 -> 0.1382, +3.61% -> +3.89%)
+all items top attack x1.16, top crit x1.09, top armour x1.16 gross 3.6904  delta +0.01226  (edge 0.1281 -> 0.1404, +3.61% -> +3.95%)
+draws for 3 sigma on 16% excess in 1/30 cell: 10547 ; case openings at 0.0085*0.30: 4.14M

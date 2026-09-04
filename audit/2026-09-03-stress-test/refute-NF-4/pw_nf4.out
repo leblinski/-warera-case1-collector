@@ -1,0 +1,51 @@
+{
+ "sortMin": null,
+ "tax": "1",
+ "gate": "A roll needs 0.1 over scrap. That is 0.100 (7.4%) on a Common and 0.10 (0.03%) on a Mythic.",
+ "tier2": {
+  "rule": "none",
+  "cells": {
+   "60/10": {
+    "cls": "heat-cell",
+    "fill": "rgba(107,184,168,0.691)",
+    "readout": "60/10 sells 4.185 scraps 4.05 +0.093 break",
+    "row": "cut-line no | 604.18560m+0.093 under bar"
+   },
+   "60/6": {
+    "cls": "heat-cell br",
+    "fill": "rgba(194,112,63,0.30)",
+    "readout": "60/6 sells 4.000 scraps 4.05 -0.090 break",
+    "row": "cut-line no | 604.000<1m-0.090 break"
+   }
+  }
+ },
+ "tier3": {
+  "rule": "crit 15 from 79 · 14 from 81 · 13 from 84 · 12 from 88 · 11 from 90",
+  "cells": {
+   "80/14": {
+    "cls": "heat-cell",
+    "fill": "rgba(107,184,168,0.182)",
+    "readout": "80/14 sells 12.299 scraps 12.15 +0.026 break",
+    "row": "cut-line no | 8012.29955m+0.026 under bar"
+   },
+   "87/11": {
+    "cls": "heat-cell",
+    "fill": "rgba(107,184,168,0.157)",
+    "readout": "87/11 sells 12.284 scraps 12.15 +0.011 break",
+    "row": "cut-line no | 8712.2842.9h+0.011 under bar"
+   },
+   "89/11": {
+    "cls": "heat-cell",
+    "fill": "rgba(107,184,168,0.208)",
+    "readout": "89/11 sells 12.325 scraps 12.15 +0.052 break",
+    "row": "cut-line no | 8912.3252.0h+0.052 under bar"
+   },
+   "79/15": {
+    "cls": "heat-cell",
+    "fill": "rgba(107,184,168,0.371)",
+    "readout": "79/15 sells 12.794 scraps 12.15 +0.516 sell",
+    "row": "cut-line yes | 7912.79467m+0.516 sell"
+   }
+  }
+ }
+}

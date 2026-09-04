@@ -1,0 +1,14 @@
+MIN_FWD 1 bid_mode hist cur_bid 0.225
+  A on D subset                    n=2277 acc=96.2% sell->break=60 break->sell=27 truesell=1707
+  A own selected                   n=2437 acc=96.1% sell->break=65 break->sell=29 truesell=1782
+  B own retained                   n=2437 acc=95.4% sell->break=88 break->sell=25 truesell=1782
+  C quiet no-wide neighbour        n=173 acc=100.0% sell->break=0 break->sell=0 truesell=172
+  C tier1                          n=19 acc=100.0% sell->break=0 break->sell=0 truesell=19
+  C tier5                          n=14 acc=100.0% sell->break=0 break->sell=0 truesell=14
+  C tier6                          n=140 acc=100.0% sell->break=0 break->sell=0 truesell=139
+  D neighbour held-one-out         n=2277 acc=94.9% sell->break=105 break->sell=11 truesell=1707
+  E quiet-48h wide verdict         n=80 acc=98.8% sell->break=1 break->sell=0 truesell=78
+  disagreements vindicated: {'retained right': 18, 'selected right': 37}
+  D err: n=116 |truth_net-bar|/bar median=0.85% share<1%=66 share<2%=88
+  A err: n=94 |truth_net-bar|/bar median=0.48% share<1%=66 share<2%=78
+  neighbour-guessed rolls at T0-24h by item/verdict: {('knife', 'sell'): 40, ('helmet1', 'sell'): 1, ('tank', 'sell'): 0, ('jet', 'sell'): 492, ('helmet6', 'break'): 0, ('helmet6', 'sell'): 0}

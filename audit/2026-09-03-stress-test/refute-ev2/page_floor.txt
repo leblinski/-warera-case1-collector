@@ -1,0 +1,77 @@
+{
+ "t3": {
+  "tier": 3,
+  "price": "12.100",
+  "scrapNote": "live market",
+  "scrapPrice": "0.225",
+  "beat": true,
+  "listed": {
+   "verdict": "12.030",
+   "detail": "A 12.099 sale target is 0.069 above the dismantle floor.",
+   "rows": "Common 1.337 Uncommon 4.010 Rare 12.030 Epic 36.089 Legendary 108.267 Mythic 324.802",
+   "docket": "Displayed market price 12.100 · tap to copy",
+   "figure": null
+  },
+  "typed": {
+   "verdict": "12.030",
+   "rows": "Common 1.323 Uncommon 3.970 Rare 11.911 Epic 35.732 Legendary 107.195 Mythic 321.586",
+   "note": "Figure to type if you list the equipment at its scrap-equivalent value."
+  },
+  "sort": {
+   "floors": [
+    "scraps fetch 12.15 · list above 12.37"
+   ],
+   "cutCard": "Rare: break anything selling under 12.374. 55 of 140 rolls clear the bar. Cut lines: Rifle crit 15 from 79 · 14 from 81 · 13 from 84 · 12 from 88 · 11 from 90 · Helmet 40 and up · Chest 12 and up · Gloves 14 and up · Pants 13 and up · Boots 14 and up."
+  }
+ },
+ "t1": {
+  "tier": 1,
+  "price": "1.400",
+  "scrapNote": "live market",
+  "scrapPrice": "0.225",
+  "beat": true,
+  "listed": {
+   "verdict": "1.337",
+   "detail": "A 1.399 sale target is 0.062 above the dismantle floor.",
+   "rows": "Common 1.337 Uncommon 4.010 Rare 12.030 Epic 36.089 Legendary 108.267 Mythic 324.802",
+   "docket": "Displayed market price 1.400 · tap to copy",
+   "figure": null
+  },
+  "typed": {
+   "verdict": "1.337",
+   "rows": "Common 1.323 Uncommon 3.970 Rare 11.911 Epic 35.732 Legendary 107.195 Mythic 321.586",
+   "note": "Figure to type if you list the equipment at its scrap-equivalent value."
+  },
+  "sort": {
+   "floors": [
+    "scraps fetch 1.35 · list above 1.46"
+   ],
+   "cutCard": "Common: break anything selling under 1.465. 64 of 81 rolls clear the bar. Cut lines: Chest 5 and up · Gloves 5 and up · Boots 5 and up."
+  }
+ },
+ "t2": {
+  "tier": 2,
+  "price": "4.100",
+  "scrapNote": "live market",
+  "scrapPrice": "0.225",
+  "beat": true,
+  "listed": {
+   "verdict": "4.010",
+   "detail": "A 4.099 sale target is 0.089 above the dismantle floor.",
+   "rows": "Common 1.337 Uncommon 4.010 Rare 12.030 Epic 36.089 Legendary 108.267 Mythic 324.802",
+   "docket": "Displayed market price 4.100 · tap to copy",
+   "figure": null
+  },
+  "typed": {
+   "verdict": "4.010",
+   "rows": "Common 1.323 Uncommon 3.970 Rare 11.911 Epic 35.732 Legendary 107.195 Mythic 321.586",
+   "note": "Figure to type if you list the equipment at its scrap-equivalent value."
+  },
+  "sort": {
+   "floors": [
+    "scraps fetch 4.05 · list above 4.19"
+   ],
+   "cutCard": "Uncommon: break anything selling under 4.192. 2 of 85 rolls clear the bar. Cut lines: Helmet 30 and up · Chest 10 and up."
+  }
+ }
+}

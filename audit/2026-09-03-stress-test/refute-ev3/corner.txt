@@ -1,0 +1,3 @@
+46 priced mean 1.9175; 43 non-corner priced mean 1.8285; corner 3 sum 9.5795
+corner share of renorm slot value: 0.2062 (3/46 weight) vs 0.0948 at 3/100 weight -> diff 0.1113
+knife if unpriced rolls priced at the non-corner priced mean 1.8285: slot 1.8507

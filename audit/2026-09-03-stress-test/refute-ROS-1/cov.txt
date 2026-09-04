@@ -1,0 +1,5 @@
+scrap bid 0.225 case ask 3.55
+Cases-tab foot would print: covered 1040 of 1810 rolls (57%)
+scrap knife delta to gross -0.0551
+worse knife delta to gross -0.0253
+fillquiet knife delta to gross -0.0144

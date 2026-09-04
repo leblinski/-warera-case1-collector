@@ -1,0 +1,2 @@
+knife 40/5: selected window 24 count 48 median 4.3294999999999995 tts 2472.6955 -> page cell 41m
+basic sell-verdict rolls 64, thin(<5 sales) 41; median tts all 103.3 min, non-thin only 78.6 min (n=23)

@@ -1,0 +1,49 @@
+rows 126800 dup ids 0 elig 126800 neg tts 0
+README-style ever-buyer: 15354 (12.1%) | one-to-one pairs: 8672 (6.8%)
+
+weapons (strict):
+  knife   sales   1712 flips   59 (3.4%) resale/purchase med 1.083  hold med 3.0h  purchase below nonflip roll median: 
+  gun     sales   7943 flips  260 (3.3%) resale/purchase med 1.051  hold med 1.9h  purchase below nonflip roll median: 
+  rifle   sales   7668 flips  707 (9.2%) resale/purchase med 1.086  hold med 3.0h  purchase below nonflip roll median: 
+  sniper  sales  15948 flips  717 (4.5%) resale/purchase med 1.045  hold med 2.5h  purchase below nonflip roll median: 
+  tank    sales   2919 flips  175 (6.0%) resale/purchase med 1.046  hold med 5.7h  purchase below nonflip roll median: 
+  jet     sales    480 flips   32 (6.7%) resale/purchase med 1.030  hold med 4.6h  purchase below nonflip roll median: 
+
+replication of selected median/tts vs collector: 1040 rolls, 0 mismatches
+
+tier       rolls rolls_with_flip  sellsIn_string_changes  medOfRollMed(min) with/without  price_median_changed  median rel price change
+basic         81    31    15 (19%)     81.6 /   83.1     10   -0.16% (max abs 4.35%)
+reinforced    85    82     7 (8%)      0.5 /    0.5      9   -0.24% (max abs 1.34%)
+advanced     140   117    65 (46%)     17.6 /   15.1     58   -0.12% (max abs 2.79%)
+elite        200   199   103 (52%)     40.9 /   39.0     99   +0.00% (max abs 0.75%)
+legendary    354   169    71 (20%)    118.6 /  121.0     63   -0.05% (max abs 15.94%)
+mythic       180    30    20 (11%)    213.3 /  168.4     17   -0.69% (max abs 16.52%)
+
+mythic rolls whose selected tts changes when flips removed (19):
+   ('jet', '{"skills":{"attack":221,"criticalChance":43}}', 2, 240.68679166634877, 319.97829999923704, '4.0h', '5.3h')
+   ('jet', '{"skills":{"attack":222,"criticalChance":41}}', 2, 64.88393333554268, 128.12261666854224, '65m', '2.1h')
+   ('jet', '{"skills":{"attack":241,"criticalChance":42}}', 3, 39.2411333322525, 142.62643333276114, '39m', '2.4h')
+   ('jet', '{"skills":{"attack":262,"criticalChance":44}}', 2, 352.80997500022255, 34.83033333222071, '5.9h', '35m')
+   ('jet', '{"skills":{"attack":281,"criticalChance":41}}', 2, 680.7154916663965, 0.38049999872843426, '11h', '<1m')
+   ('jet', '{"skills":{"attack":282,"criticalChance":44}}', 2, 594.6548750003179, 10.447466667493185, '9.9h', '10m')
+   ('jet', '{"skills":{"attack":297,"criticalChance":49}}', 2, 637.9971666693688, 70.68813333511352, '11h', '71m')
+   ('jet', '{"skills":{"attack":298,"criticalChance":48}}', 2, 85.21196666558583, 3.0969333330790203, '85m', '3m')
+   ('jet', '{"skills":{"attack":300,"criticalChance":45}}', 3, 224.05463333527248, 135.2162916680177, '3.7h', '2.3h')
+   ('boots6', '{"skills":{"dodge":55}}', 7, 189.8018499970436, 201.82245833277702, '3.2h', '3.4h')
+   ('boots6', '{"skills":{"dodge":58}}', 6, 295.66073333422344, 540.2325666666031, '4.9h', '9.0h')
+   ('helmet6', '{"skills":{"criticalDamages":130}}', 2, 463.35282500187554, 700.9641833345096, '7.7h', '12h')
+   ('helmet6', '{"skills":{"criticalDamages":144}}', 3, 264.6487833301226, 600.6842416644097, '4.4h', '10h')
+   ('helmet6', '{"skills":{"criticalDamages":149}}', 3, 104.45635000069936, 17.902508334318796, '1.7h', '18m')
+   ('helmet6', '{"skills":{"criticalDamages":150}}', 5, 74.8997499982516, 696.5828666647275, '75m', '12h')
+   ('gloves6', '{"skills":{"precision":52}}', 4, 306.8955083310604, 166.47788333098094, '5.1h', '2.8h')
+   ('chest6', '{"skills":{"armor":64}}', 4, 100.7951249996821, 27.9753999988238, '1.7h', '28m')
+   ('chest6', '{"skills":{"armor":67}}', 6, 267.34242500066756, 189.20331666668255, '4.5h', '3.2h')
+   ('pants6', '{"skills":{"armor":69}}', 5, 344.4003666639328, 358.9908499995867, '5.7h', '6.0h')
+
+per-roll tts ratio (noflip/with) among changed rolls; direction; price |rel| > 2%
+  basic      tts changed  20 (up   7 / down  13) ratio p10 0.62 p50 0.90 p90 1.20 | price changed  10, >2%: 2, median |rel| 0.29%
+  reinforced tts changed  30 (up   5 / down  25) ratio p10 0.58 p50 0.93 p90 1.05 | price changed   9, >2%: 0, median |rel| 0.25%
+  advanced   tts changed  73 (up  18 / down  55) ratio p10 0.33 p50 0.92 p90 1.17 | price changed  58, >2%: 5, median |rel| 0.17%
+  elite      tts changed 125 (up  64 / down  61) ratio p10 0.79 p50 1.00 p90 1.19 | price changed  99, >2%: 0, median |rel| 0.03%
+  legendary  tts changed  74 (up  35 / down  39) ratio p10 0.55 p50 0.97 p90 2.38 | price changed  63, >2%: 7, median |rel| 0.40%
+  mythic     tts changed  19 (up   9 / down  10) ratio p10 0.02 p50 0.71 p90 2.27 | price changed  17, >2%: 4, median |rel| 0.69%

@@ -1,0 +1,29 @@
+baseline gross 3.6781 pct +3.61% cost 3.5500
+knife dis 1.3500 need 1.4500
+priced 46 unpriced 54; wide-available on unpriced 22
+priced sell 46 break 0; mean price 1.9175; page slot value 1.8983 (ev_ref 1.8983)
+fill sources Counter({'nbr': 30, 'wide': 22, 'none': 2})
+wide-filled mean retained median 1.7811 (n=22)
+nbr-filled mean price 1.7941 (n=30)
+fill slot value 1.8306 over 98; verdicts sell 52
+case gross fill 3.6655 (-0.0126) pct +3.25%
+case gross scrap-for-unpriced 3.6230 pct +2.06%
+
+CONFOUND: 7d retained median, priced rolls: mean 1.9262 median 1.8110 (n=46)  | unpriced rolls: mean 1.7811 (n=22)
+ priced rolls: selected median mean 1.9175 vs their own retained median mean 1.9262 -> drift -0.0087
+ wide-filled rolls retained counts: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 5, 5, 5, 10]
+ knife value using retained median for all 68 rolls with one: 1.8605 -> case 3.6711 pct +3.41%
+
+knife median sale price by UTC day (all rolls):
+  2026-08-29 n= 370 median 1.7700 mean 2.2218
+  2026-08-30 n= 312 median 1.8560 mean 2.3305
+  2026-08-31 n= 256 median 2.0000 mean 2.5258
+  2026-09-01 n= 297 median 2.0000 mean 2.5030
+  2026-09-02 n= 313 median 1.8960 mean 2.6244
+  2026-09-03 n= 164 median 1.8620 mean 2.1352
+
+48h sales by crit band: c1 n=94 med 1.820  c2 n=41 med 1.822  c3 n=74 med 1.844  c4 n=69 med 1.948  c5 n=277 med 2.990
+48h sales by attack bucket: a20 n=67 med 1.820  a25 n=55 med 1.820  a30 n=37 med 1.823  a35 n=169 med 1.898  a40 n=227 med 4.000
+
+7d sales: on unpriced rolls n=298 median 1.8045 mean 1.7938 | on priced rolls n=1414 median 1.9040 mean 2.5292
+sales OLDER than 48h: unpriced rolls n=223 median 1.7800 mean 1.7819 | priced rolls n=934 median 1.9845 mean 2.4912

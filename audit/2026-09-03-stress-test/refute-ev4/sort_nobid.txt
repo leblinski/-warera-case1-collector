@@ -1,0 +1,22 @@
+{
+ "sortTier1": {
+  "rows": "COMMON scraps fetch 0.00 · list above 0.10 SLOT SELL PER 1,000 GOLD Knife every roll 86 162 Helmet every roll 87 153 Chest every roll 87 113 Gloves every roll 87 119 Pants every roll 87 120 Boots every roll 87 116",
+  "detail": "A roll only earns a listing if it beats what its own scraps fetch. Below the cut line, breaking it is worth more than selling it.",
+  "gate": "A roll needs 0.1 over scrap. That is 0.100 (—) on a Common and 0.10 (—) on a Mythic.",
+  "foot": "Cut lines move with the scrap price, so they are computed fresh, not written down. 81 of 81 rolls with sale history clear the bar. Right-hand figure is how many of that slot’s seen rolls do. Open a slot and “list at” is the median of that roll’s own recent sales, dimmed where fewer than 5 of them set it."
+ },
+ "sortTier2": {
+  "rows": "UNCOMMON scraps fetch 0.00 · list above 0.10 SLOT SELL PER 1,000 GOLD Gun every roll 90 357 Helmet every roll 42 167 Chest every roll 42 168 Gloves every roll 42 167 Pants every roll 42 168 Boots every roll 42 167",
+  "detail": "A roll only earns a listing if it beats what its own scraps fetch. Below the cut line, breaking it is worth more than selling it.",
+  "gate": "A roll needs 0.1 over scrap. That is 0.100 (—) on a Common and 0.10 (—) on a Mythic.",
+  "foot": "Cut lines move with the scrap price, so they are computed fresh, not written down. 85 of 85 rolls with sale history clear the bar. Right-hand figure is how many of that slot’s seen rolls do. Open a slot and “list at” is the median of that roll’s own recent sales, dimmed where fewer than 5 of them set it."
+ },
+ "sortTier2_realBid": {
+  "rows": "UNCOMMON scraps fetch 4.05 · list above 4.19 SLOT SELL PER 1,000 GOLD Gun none — — Helmet 30 and up 2.8 0.3 Chest 10 and up 8.4 1.4 Gloves none — — Pants none — — Boots none — — break the rest 289 —",
+  "detail": "A roll only earns a listing if it beats what its own scraps fetch. Below the cut line, breaking it is worth more than selling it.",
+  "gate": "A roll needs 0.1 over scrap. That is 0.100 (7.4%) on a Common and 0.10 (0.03%) on a Mythic."
+ },
+ "craftBooks": "SCRAPS — BUY ORDERS nothing resting SELL ORDERS 0.226 101,222 0.227 26,100 0.228 8,812 0.229 33,438 0.230 24,719 STEEL 1.669 / 1.675 BUY ORDERS 1.669 2,435 1.668 501 1.667 1,000 1.666 3,475 1.665 487 SELL ORDERS 1.675 572 1.676 580 1.677 4,642 1.678 713 1.679 4,066",
+ "craftRows": "TIER COST SELLS FOR PROFIT BREAK EVEN Common 3.03 1.57 −48.1% — Uncommon 7.42 3.98 −46.4% 0.0350 Rare 18.90 13.43 −29.0% 0.1246 Epic 50.01 50.81 +1.6% 0.2309 Legendary 136.64 137.65 +0.7% 0.2281 Mythic 383.11 378.77 −1.1% 0.2230",
+ "craftFoot": ""
+}

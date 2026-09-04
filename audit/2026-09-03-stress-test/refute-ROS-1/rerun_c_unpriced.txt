@@ -1,0 +1,8 @@
+page             gross 3.6781 edge +0.1281 pct +3.61%  tiers 1.581 4.056 13.472 50.809 137.775 379.827
+scrap            gross 3.6202 edge +0.0702 pct +1.98%  tiers 1.492 4.056 13.472 50.809 137.154 353.754
+worse            gross 3.6521 edge +0.1021 pct +2.88%  tiers 1.540 4.056 13.472 50.809 137.686 372.735
+nearest          gross 3.6709 edge +0.1209 pct +3.40%  tiers 1.569 4.056 13.472 50.809 137.684 376.624
+wide_then_worse  gross 3.6577 edge +0.1077 pct +3.03%  tiers 1.549 4.056 13.472 50.809 137.713 374.305
+
+Per-item unpriced rolls (space, priced, wide-only, never-seen) and fillQuiet verdict tallies; item net under page/scrap/worse
+knife    space 100 priced  46 wide-only  22 never  32 | fillQuiet sell 52 break 0 none 2 | net page 1.898 scrap 1.602 worse 1.762 nearest 1.861 wide 1.792

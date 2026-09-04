@@ -1,0 +1,9 @@
+priced 1040 quiet 255 marked 458 marked&24h 86 marked&fb48>=5 50 unmarked 582
+marked&fb48>=5 by item {'knife': 2, 'helmet1': 4, 'rifle': 3, 'tank': 33, 'boots6': 1, 'helmet6': 1, 'gloves6': 4, 'chest6': 1, 'pants6': 1}
+count dist {'5-9': 129, '1': 184, '3-4': 188, '2': 86, '10-29': 286, '30+': 167}
+unmarked range>10%: 361 (62.0%) >20%: 241 >30%: 106 median 15.9%
+for the 50: |48h median - 24h median|/24h median: median 0.18% p90 2.15% max 9.41%; >1%: 10, >3%: 2
+   ('rifle', '{"skills":{"attack":71,"criticalChance":14}}', 4, 9, 12.1945, 12.14)
+   ('rifle', '{"skills":{"attack":76,"criticalChance":14}}', 3, 14, 12.0, 12.05)
+   ('rifle', '{"skills":{"attack":87,"criticalChance":11}}', 4, 21, 12.2835, 12.199)
+rolls >=5 nonstale 48h (shards): 632  IQR/med>10%: 18 (2.8%)  median IQR/med 1.73%

@@ -1,0 +1,17 @@
+{
+ "tax0": {
+  "detail": "+4.16% per case. A case costs 3.55000; the average case holds 3.6978 after 0% tax. Break even at a case price of 3.6978 (+4.16% from what you would pay now).",
+  "rows": "TIER ODDS WORTH BREAK ADDS Common 62.00% 1.59 13% 0.9858 Uncommon 30.00% 4.06 96% 1.2183 Rare 7.10% 13.57 58% 0.9635 Epic 0.85% 51.32 0% 0.4362 Legendary 0.04% 139.06 1% 0.0556 Mythic 0.01% 382.92 5% 0.0383"
+ },
+ "noBid": {
+  "detail": "+2.72% per case. A case costs 3.55000; the average case holds 3.6467 after 1% tax. Break even at a case price of 3.6467 (+2.72% from what you would pay now).",
+  "rows": "TIER ODDS WORTH BREAK ADDS Common 62.00% 1.57 0% 0.9745 Uncommon 30.00% 3.98 0% 1.1939 Rare 7.10% 13.43 0% 0.9535 Epic 0.85% 50.81 0% 0.4319 Legendary 0.04% 137.65 0% 0.0551 Mythic 0.01% 378.77 0% 0.0379",
+  "foot": "Odds: the game’s own. Values: collected sale medians, 45,060 sales across 1040 of 1810 rolls (57%). Break: how often that tier is worth dismantling rather than listing. Each piece counts at whichever is worth more, under the same bar the Sort tab uses, so this assumes you sort every piece rather than listing all of them. Selling what you open moves these prices, and the more you open at once the more it moves them."
+ },
+ "eitherPct05": {
+  "detail": "+3.79% per case. A case costs 3.55000; the average case holds 3.6844 after 1% tax. Break even at a case price of 3.6844 (+3.79% from what you would pay now)."
+ },
+ "bar0": {
+  "detail": "+3.80% per case. A case costs 3.55000; the average case holds 3.6848 after 1% tax. Break even at a case price of 3.6848 (+3.80% from what you would pay now)."
+ }
+}

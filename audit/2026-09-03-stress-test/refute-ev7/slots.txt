@@ -1,0 +1,21 @@
+tier 1 brokenShare(page) 0.1273
+   weapon  covered  46/100 sells  46 broken   0  frac_sells 1.000
+   helmet  covered  15/ 15 sells  15 broken   0  frac_sells 1.000
+   chest   covered   5/  5 sells   1 broken   4  frac_sells 0.200
+   gloves  covered   5/  5 sells   1 broken   4  frac_sells 0.200
+   pants   covered   5/  5 sells   0 broken   5  frac_sells 0.000
+   boots   covered   5/  5 sells   1 broken   4  frac_sells 0.200
+tier 2 brokenShare(page) 0.9859
+   weapon  covered  50/ 50 sells   0 broken  50  frac_sells 0.000
+   helmet  covered  15/ 15 sells   1 broken  14  frac_sells 0.067
+   chest   covered   5/  5 sells   1 broken   4  frac_sells 0.200
+   gloves  covered   5/  5 sells   0 broken   5  frac_sells 0.000
+   pants   covered   5/  5 sells   0 broken   5  frac_sells 0.000
+   boots   covered   5/  5 sells   0 broken   5  frac_sells 0.000
+tier 3 brokenShare(page) 0.6354
+   weapon  covered 100/100 sells  33 broken  67  frac_sells 0.330
+   helmet  covered  20/ 20 sells  11 broken   9  frac_sells 0.550
+   chest   covered   5/  5 sells   4 broken   1  frac_sells 0.800
+   gloves  covered   5/  5 sells   2 broken   3  frac_sells 0.400
+   pants   covered   5/  5 sells   3 broken   2  frac_sells 0.600
+   boots   covered   5/  5 sells   2 broken   3  frac_sells 0.400

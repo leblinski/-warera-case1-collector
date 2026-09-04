@@ -1,0 +1,50 @@
+scrap bid 0.225 priced 1040 true sell 806 true break 234 majority base 77.5%
+held-one-out lower-same-band: n=979 ok=951 acc=97.14% nocov=61 cm sell/sell=749 sell/break=25 break/sell=3 break/break=202
+  tier 1 n=73 acc=95.9% base=82.2% diff=13.7pp sell->break=3 break->sell=0
+  tier 2 n=75 acc=97.3% base=97.3% diff=0.0pp sell->break=2 break->sell=0
+  tier 3 n=130 acc=92.3% base=57.7% diff=34.6pp sell->break=10 break->sell=0
+  tier 4 n=190 acc=100.0% base=100.0% diff=0.0pp sell->break=0 break->sell=0
+  tier 5 n=339 acc=98.2% base=94.7% diff=3.5pp sell->break=4 break->sell=2
+  tier 6 n=172 acc=95.9% base=84.9% diff=11.0pp sell->break=6 break->sell=1
+per-item majority baseline: all 952/1040=91.5%  covered 896/979=91.5%
+items where held-out acc != per-item majority:
+   rifle    n=95 nb=90 maj=62
+   helmet3  n=19 nb=18 maj=11
+   chest3   n=4 nb=3 maj=4
+   gloves3  n=4 nb=3 maj=2
+   boots3   n=4 nb=3 maj=2
+   helmet5  n=19 nb=16 maj=10
+   pants5   n=14 nb=13 maj=8
+   helmet6  n=20 nb=15 maj=13
+   chest6   n=13 nb=12 maj=9
+   pants6   n=14 nb=13 maj=10
+errors (28):
+   ('chest1', '5', 1.468, 0.103, '4', (1.3895, 1.42))
+   ('gloves1', '5', 1.472, 0.107, '4', (1.4, 1.41))
+   ('boots1', '5', 1.467, 0.102, '4', (1.394, 1.43))
+   ('helmet2', '30', 4.2, 0.108, '29', (4.0, 4.06))
+   ('chest2', '10', 4.257, 0.164, '9', (4.0, 4.0))
+   ('rifle', '79/15', 12.794, 0.516, '78/15', (12.14, 12.395))
+   ('rifle', '81/14', 12.5, 0.225, '80/14', (12.299, 12.198))
+   ('rifle', '84/13', 12.5445, 0.269, '83/13', (12.2, 12.2))
+   ('rifle', '88/12', 12.385000000000002, 0.111, '87/12', (12.2, 12.198))
+   ('rifle', '90/11', 14.15, 1.858, '89/11', (12.325, 12.4))
+   ('helmet3', '40', 12.399, 0.125, '39', (12.32, 12.3))
+   ('chest3', '12', 12.45, 0.175, '11', (12.3, 12.19))
+   ('gloves3', '14', 13.75, 1.463, '13', (12.35, 12.3))
+   ('pants3', '13', 12.776, 0.498, '12', (12.310500000000001, 12.355))
+   ('boots3', '14', 13.475000000000001, 1.19, '13', (12.3, 12.278500000000001))
+   ('helmet5', '99', 110.89, 0.431, '98', (110.0, 109.9))
+   ('helmet5', '100', 110.0, -0.45, '99', (110.89, 110.0))
+   ('helmet5', '103', 111.0, 0.54, '102', (110.0, 111.092))
+   ('chest5', '38', 110.0, -0.45, '37', (110.924, 108.99))
+   ('chest5', '40', 111.411, 0.947, '39', (110.0, 109.0))
+   ('pants5', '43', 112.2, 1.728, '42', (110.5, 110.7))
+   ('helmet6', '133', 332.0, 0.63, '132', (330.0, 325.0))
+   ('helmet6', '135', 334.999, 3.599, '134', (None, 327.0))
+   ('helmet6', '141', 355.0, 23.4, '140', (None, 320.0))
+   ('helmet6', '143', 330.0, -1.35, '142', (360.396, 361.198))
+   ('helmet6', '144', 390.0, 58.05, '143', (330.0, 360.0))
+   ('chest6', '66', 333.47, 2.085, '65', (328.713, 327.98))
+   ('pants6', '67', 338.0, 6.57, '66', (329.0, 328.25))
+LIVE fillQuiet neighbour path fires on (item: rolls, of which guessed sell): {'knife': (30, 30), 'jet': (465, 465)} total 495

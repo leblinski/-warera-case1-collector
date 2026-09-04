@@ -1,0 +1,69 @@
+
+sniper: attack -> n(all) n(nonstale) stale% median tts(min) median price(nonstale) | last 4 vs rest
+  127: 535 520 2.8% 94.3 56.300
+  128: 516 501 2.9% 90.5 56.950
+  129: 531 498 6.2% 81.9 58.390
+  130: 609 587 3.6% 67.9 64.700
+  rest mean n 528.9 nonstale 507.1 stale 4.1% ; median of per-attack tts 60.3 min
+  max excess (all tx) 1.151 = 3.5 sigma; (nonstale) 1.158
+  crit counts [3073, 3026, 3207, 3216, 3426] max excess 1.094 (5.3 sigma)
+  cell 130/20: 122 observed vs 130.8 expected from marginals (uniform: 106.3)
+  low end attack 101: n 551 vs rest mean 528.1
+
+tank: attack -> n(all) n(nonstale) stale% median tts(min) median price(nonstale) | last 4 vs rest
+  167: 93 86 7.5% 155.3 161.995
+  168: 100 91 9.0% 205.0 168.317
+  169: 100 89 11.0% 211.3 170.000
+  170: 111 106 4.5% 263.4 180.950
+  rest mean n 96.8 nonstale 90.2 stale 6.8% ; median of per-attack tts 118.4 min
+  max excess (all tx) 1.146 = 1.4 sigma; (nonstale) 1.175
+  crit counts [299, 294, 269, 289, 283, 282, 281, 302, 309, 311] max excess 1.073 (1.2 sigma)
+  cell 170/35: 20 observed vs 11.8 expected from marginals (uniform: 9.7)
+  low end attack 141: n 113 vs rest mean 96.2
+
+gun: attack -> n(all) n(nonstale) stale% median tts(min) median price(nonstale) | last 4 vs rest
+  57: 771 770 0.1% 0.5 3.990
+  58: 772 772 0.0% 0.9 4.000
+  59: 734 727 1.0% 0.8 4.000
+  60: 1083 1066 1.6% 5.4 4.000
+  rest mean n 762.2 nonstale 761.1 stale 0.1% ; median of per-attack tts 0.5 min
+  max excess (all tx) 1.421 = 11.6 sigma; (nonstale) 1.401
+  crit counts [1525, 1501, 1552, 1561, 1804] max excess 1.175 (6.9 sigma)
+  cell 60/10: 434 observed vs 246.0 expected from marginals (uniform: 158.9)
+  low end attack 51: n 770 vs rest mean 761.2
+
+rifle: attack -> n(all) n(nonstale) stale% median tts(min) median price(nonstale) | last 4 vs rest
+  87: 442 423 4.3% 57.2 13.989
+  88: 552 516 6.5% 52.0 15.645
+  89: 592 550 7.1% 55.8 15.000
+  90: 708 662 6.5% 35.9 18.300
+  rest mean n 366.3 nonstale 351.2 stale 3.6% ; median of per-attack tts 26.7 min
+  max excess (all tx) 1.933 = 17.9 sigma; (nonstale) 1.885
+  crit counts [1094, 1192, 1302, 1837, 2243] max excess 1.654 (24.1 sigma)
+  cell 90/15: 181 observed vs 207.1 expected from marginals (uniform: 76.7)
+  low end attack 71: n 214 vs rest mean 374.8
+
+knife: attack -> n(all) n(nonstale) stale% median tts(min) median price(nonstale) | last 4 vs rest
+  37: 68 48 29.4% 56.1 1.895
+  38: 157 105 33.1% 142.7 2.000
+  39: 226 149 34.1% 102.2 2.400
+  40: 600 587 2.2% 101.7 3.080
+  rest mean n 58.5 nonstale 31.6 stale 54.9% ; median of per-attack tts 1248.3 min
+  max excess (all tx) 10.252 = 70.8 sigma; (nonstale) 18.588
+  crit counts [259, 173, 249, 334, 697] max excess 2.747 (27.8 sigma)
+  cell 40/5: 314 observed vs 244.3 expected from marginals (uniform: 17.1)
+  low end attack 21: n 50 vs rest mean 59.0
+
+stale (tts>48h) share per item:
+  helmet1     459 stale   153 (33.3%)
+  knife      1712 stale   525 (30.7%)
+  helmet6     157 stale    19 (12.1%)
+  jet         480 stale    53 (11.0%)
+  tank       2919 stale   197 (6.7%)
+  pants6      135 stale     9 (6.7%)
+  chest6      154 stale     8 (5.2%)
+  pants5     1118 stale    55 (4.9%)
+  helmet3    4717 stale   231 (4.9%)
+  gloves5    1372 stale    61 (4.4%)
+knife all tx 1712, attack 40: 600; nonstale 1187, attack 40: 587; stale knife sales median price 1.800 vs nonstale 2.222
+README-style "seller was ever an earlier buyer": 15354 of 126800 (12.1%); weapons only 2539

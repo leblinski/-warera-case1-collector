@@ -1,0 +1,2 @@
+CURRENT snapshot quiet rolls with no wide, default bar: neighbour verdicts {('knife', 'dash'): 2, ('knife', 'sell'): 30, ('jet', 'dash'): 20, ('jet', 'sell'): 465}
+D subset (n=2277): (A right,D right)=2141 (A right,D wrong)=58 (A wrong,D right)=21 (both wrong)=57

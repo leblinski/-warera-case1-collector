@@ -1,0 +1,14 @@
+  from-only: interpolation [all]                 n= 164 p50=-0.4% |err| p50=2.0% p90=9.9% within5%=82% truth>=cand=58%
+  from-only: interpolation [jet]                 n= 127 p50=-0.1% |err| p50=2.0% p90=11.0% within5%=79% truth>=cand=53%
+  from-only: interpolation [knife]               n=  13 p50=-1.9% |err| p50=1.9% p90=4.5% within5%=100% truth>=cand=85%
+  from-only: interpolation [other]               n=  24 p50=-1.1% |err| p50=1.9% p90=8.0% within5%=88% truth>=cand=71%
+  from-only: lower nb price (dash shown) [all]   n= 173 p50=-1.5% |err| p50=2.8% p90=12.8% within5%=75% truth>=cand=68%
+  from-only: lower nb price (dash shown) [jet]   n= 136 p50=-1.0% |err| p50=2.6% p90=15.8% within5%=71% truth>=cand=64%
+  from-only: lower nb price (dash shown) [knife] n=  13 p50=-3.0% |err| p50=3.0% p90=4.6% within5%=100% truth>=cand=77%
+  from-only: lower nb price (dash shown) [other] n=  24 p50=-1.9% |err| p50=2.7% p90=8.5% within5%=79% truth>=cand=83%
+  from-only: upper nb price [all]                n= 170 p50=+0.7% |err| p50=2.1% p90=16.3% within5%=78% truth>=cand=41%
+  wide-only: lower nb price [all]                n=  77 p50=-1.8% |err| p50=2.2% p90=6.2% within5%=83% truth>=cand=75%
+  wide-only: week median (shown) [all]           n=  80 p50=-1.2% |err| p50=2.1% p90=5.7% within5%=86% truth>=cand=65%
+  wide-only: week median (shown) [jet]           n=  20 p50=+0.5% |err| p50=2.0% p90=6.6% within5%=85% truth>=cand=45%
+  wide-only: week median (shown) [knife]         n=  16 p50=-3.9% |err| p50=3.9% p90=3.9% within5%=94% truth>=cand=94%
+  wide-only: week median (shown) [other]         n=  44 p50=-0.6% |err| p50=1.8% p90=8.2% within5%=84% truth>=cand=64%

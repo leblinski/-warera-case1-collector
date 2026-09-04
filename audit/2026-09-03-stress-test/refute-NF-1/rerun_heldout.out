@@ -1,0 +1,87 @@
+generated_at 2026-09-03T15:30:50.113Z scrap bid 0.225 bar 0.1 taxMul 0.99
+
+=== (a) held-one-out, hidden roll removed entirely (no net, no wide); neighbour per fillQuiet ===
+priced rolls 1040  true sell 806  true break 234  majority base rate 77.5%
+space 1810  priced 1040  wide-only 253  from-only(dash+guess) 495  dash total 517  dash odds-weighted share of draws 5.95%
+fillQuiet lower-same-band          n=979 acc=97.1% nocov=61  cm[T:sell,P:sell]=749 [sell,break]=25 [break,sell]=3 [break,break]=202
+                                   lower-bound share 79.0% (n=979)  rel err p5=-8.4% p10=-5.3% p25=-2.5% p50=-0.8% p75=+0.0% p90=+0.8% p95=+1.8%  |err| median 1.2% p90 6.0%
+nearest either direction           n=1040 acc=97.2% nocov=0  cm[T:sell,P:sell]=781 [sell,break]=25 [break,sell]=4 [break,break]=230
+                                   lower-bound share 76.4% (n=1040)  rel err p5=-8.3% p10=-5.0% p25=-2.3% p50=-0.6% p75=+0.0% p90=+1.0% p95=+2.1%  |err| median 1.1% p90 5.9%
+same attack, crit down (weapons)   n=606 acc=98.2% nocov=434  cm[T:sell,P:sell]=507 [sell,break]=11 [break,sell]=0 [break,break]=88
+                                   lower-bound share 85.3% (n=606)  rel err p5=-15.8% p10=-12.0% p25=-6.7% p50=-2.2% p75=-0.2% p90=+0.5% p95=+1.3%  |err| median 2.5% p90 12.6%
+linear interpolation               n=1040 acc=97.6% nocov=0  cm[T:sell,P:sell]=793 [sell,break]=13 [break,sell]=12 [break,break]=222
+                                   lower-bound share 52.1% (n=1040)  rel err p5=-5.2% p10=-2.6% p25=-0.8% p50=+0.0% p75=+0.8% p90=+2.4% p95=+4.6%  |err| median 0.8% p90 4.9%
+
+fillQuiet by tier:
+  tier 1 basic      n=73 acc=95.9% nocov=8  cm[T:sell,P:sell]=57 [sell,break]=3 [break,sell]=0 [break,break]=13  base=82.2%  dash 32/135
+  tier 2 uncommon   n=75 acc=97.3% nocov=10  cm[T:sell,P:sell]=0 [sell,break]=2 [break,sell]=0 [break,break]=73  base=97.3%  dash 0/85
+  tier 3 rare       n=130 acc=92.3% nocov=10  cm[T:sell,P:sell]=45 [sell,break]=10 [break,sell]=0 [break,break]=75  base=57.7%  dash 0/140
+  tier 4 epic       n=190 acc=100.0% nocov=10  cm[T:sell,P:sell]=190 [sell,break]=0 [break,sell]=0 [break,break]=0  base=100.0%  dash 0/200
+  tier 5 legendary  n=339 acc=98.2% nocov=15  cm[T:sell,P:sell]=317 [sell,break]=4 [break,sell]=2 [break,break]=16  base=94.7%  dash 0/370
+  tier 6 mythic     n=172 acc=95.9% nocov=8  cm[T:sell,P:sell]=140 [sell,break]=6 [break,sell]=1 [break,break]=25  base=84.9%  dash 485/880
+fillQuiet by slot:
+  weapon  n=709 acc=99.3% nocov=31  cm[T:sell,P:sell]=597 [sell,break]=5 [break,sell]=0 [break,break]=107
+  helmet  n=105 acc=90.5% nocov=6  cm[T:sell,P:sell]=59 [sell,break]=8 [break,sell]=2 [break,break]=36
+  chest   n=48 acc=87.5% nocov=6  cm[T:sell,P:sell]=26 [sell,break]=5 [break,sell]=1 [break,break]=16
+  gloves  n=34 acc=94.1% nocov=6  cm[T:sell,P:sell]=23 [sell,break]=2 [break,sell]=0 [break,break]=9
+  pants   n=49 acc=93.9% nocov=6  cm[T:sell,P:sell]=21 [sell,break]=3 [break,sell]=0 [break,break]=25
+  boots   n=34 acc=94.1% nocov=6  cm[T:sell,P:sell]=23 [sell,break]=2 [break,sell]=0 [break,break]=9
+fillQuiet by true class:
+  true sell  n=774 acc=96.8% nocov=32  cm[T:sell,P:sell]=749 [sell,break]=25 [break,sell]=0 [break,break]=0
+  true break n=205 acc=98.5% nocov=29  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=3 [break,break]=202
+fillQuiet by item:
+  knife      n=43 acc=100.0% nocov=3  cm[T:sell,P:sell]=43 [sell,break]=0 [break,sell]=0 [break,break]=0
+  helmet1    n=14 acc=100.0% nocov=1  cm[T:sell,P:sell]=14 [sell,break]=0 [break,sell]=0 [break,break]=0
+  chest1     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=1 [break,sell]=0 [break,break]=3
+  gloves1    n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=1 [break,sell]=0 [break,break]=3
+  pants1     n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=0 [break,break]=4
+  boots1     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=1 [break,sell]=0 [break,break]=3
+  gun        n=45 acc=100.0% nocov=5  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=0 [break,break]=45
+  helmet2    n=14 acc=92.9% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=1 [break,sell]=0 [break,break]=13
+  chest2     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=1 [break,sell]=0 [break,break]=3
+  gloves2    n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=0 [break,break]=4
+  pants2     n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=0 [break,break]=4
+  boots2     n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=0 [sell,break]=0 [break,sell]=0 [break,break]=4
+  rifle      n=95 acc=94.7% nocov=5  cm[T:sell,P:sell]=28 [sell,break]=5 [break,sell]=0 [break,break]=62
+  helmet3    n=19 acc=94.7% nocov=1  cm[T:sell,P:sell]=10 [sell,break]=1 [break,sell]=0 [break,break]=8
+  chest3     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=3 [sell,break]=1 [break,sell]=0 [break,break]=0
+  gloves3    n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=1 [sell,break]=1 [break,sell]=0 [break,break]=2
+  pants3     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=2 [sell,break]=1 [break,sell]=0 [break,break]=1
+  boots3     n=4 acc=75.0% nocov=1  cm[T:sell,P:sell]=1 [sell,break]=1 [break,sell]=0 [break,break]=2
+  sniper     n=145 acc=100.0% nocov=5  cm[T:sell,P:sell]=145 [sell,break]=0 [break,sell]=0 [break,break]=0
+  helmet4    n=19 acc=100.0% nocov=1  cm[T:sell,P:sell]=19 [sell,break]=0 [break,sell]=0 [break,break]=0
+  chest4     n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+  gloves4    n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=4 [sell,break]=0 [break,sell]=0 [break,break]=0
+  pants4     n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+  boots4     n=4 acc=100.0% nocov=1  cm[T:sell,P:sell]=4 [sell,break]=0 [break,sell]=0 [break,break]=0
+  tank       n=274 acc=100.0% nocov=10  cm[T:sell,P:sell]=274 [sell,break]=0 [break,sell]=0 [break,break]=0
+  helmet5    n=19 acc=84.2% nocov=1  cm[T:sell,P:sell]=7 [sell,break]=2 [break,sell]=1 [break,break]=9
+  chest5     n=14 acc=85.7% nocov=1  cm[T:sell,P:sell]=11 [sell,break]=1 [break,sell]=1 [break,break]=1
+  gloves5    n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+  pants5     n=14 acc=92.9% nocov=1  cm[T:sell,P:sell]=7 [sell,break]=1 [break,sell]=0 [break,break]=6
+  boots5     n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+  jet        n=107 acc=100.0% nocov=3  cm[T:sell,P:sell]=107 [sell,break]=0 [break,sell]=0 [break,break]=0
+  helmet6    n=20 acc=75.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=4 [break,sell]=1 [break,break]=6
+  chest6     n=13 acc=92.3% nocov=1  cm[T:sell,P:sell]=3 [sell,break]=1 [break,sell]=0 [break,break]=9
+  gloves6    n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+  pants6     n=14 acc=92.9% nocov=1  cm[T:sell,P:sell]=3 [sell,break]=1 [break,sell]=0 [break,break]=10
+  boots6     n=9 acc=100.0% nocov=1  cm[T:sell,P:sell]=9 [sell,break]=0 [break,sell]=0 [break,break]=0
+fillQuiet on hidden rolls that are thin (n<5): n=439 acc=98.4% nocov=19  cm[T:sell,P:sell]=407 [sell,break]=6 [break,sell]=1 [break,break]=25
+
+=== (c4) retained-window verdict vs selected verdict, rolls with both ===
+rolls with both 1040  agree 989 (95.1%)  disagree 51
+   ('chest2', 'sel=sell') 1
+   ('chest3', 'sel=sell') 1
+   ('chest5', 'sel=sell') 4
+   ('gun', 'sel=break') 1
+   ('helmet3', 'sel=sell') 1
+   ('helmet5', 'sel=break') 2
+   ('helmet5', 'sel=sell') 1
+   ('helmet6', 'sel=break') 1
+   ('helmet6', 'sel=sell') 3
+   ('pants1', 'sel=break') 2
+   ('pants5', 'sel=break') 2
+   ('pants6', 'sel=sell') 1
+   ('rifle', 'sel=break') 2
+   ('rifle', 'sel=sell') 2
+   ('sniper', 'sel=sell') 27

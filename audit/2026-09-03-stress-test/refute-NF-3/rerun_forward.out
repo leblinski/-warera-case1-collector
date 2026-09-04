@@ -1,0 +1,72 @@
+generated_at 2026-09-03T15:30:50.113Z scrap bid (current, used for every T0) 0.225 MIN_FWD 1
+
+--- T0 = generated_at - 72h = 2026-08-31T15:30:50.113000+00:00 ; truth = median of sales in next 24h ---
+  A own selected median @T0                            n=810 acc=98.1% [T sell,P sell]=539 [sell,break]=13 [break,sell]=2 [break,break]=256 base=68.1%
+  B own retained median @T0 (rolls with both)          n=810 acc=97.4% [T sell,P sell]=535 [sell,break]=17 [break,sell]=4 [break,break]=254 base=68.1%
+  C by tier 1                                          n=2 acc=100.0% [T sell,P sell]=2 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 5                                          n=12 acc=100.0% [T sell,P sell]=12 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 6                                          n=61 acc=100.0% [T sell,P sell]=60 [sell,break]=0 [break,sell]=0 [break,break]=1 base=98.4%
+  C quiet roll (no week median): neighbour verdict @T0 n=75 acc=100.0% [T sell,P sell]=74 [sell,break]=0 [break,sell]=0 [break,break]=1 base=98.7%
+  D held-one-out neighbour @T0, scored forward         n=758 acc=95.9% [T sell,P sell]=501 [sell,break]=30 [break,sell]=1 [break,break]=226 base=70.1%
+  E quiet-48h roll: week median verdict @T0            n=14 acc=92.9% [T sell,P sell]=13 [sell,break]=1 [break,sell]=0 [break,break]=0 base=100.0%
+
+--- T0 = generated_at - 48h = 2026-09-01T15:30:50.113000+00:00 ; truth = median of sales in next 24h ---
+  A own selected median @T0                            n=796 acc=96.2% [T sell,P sell]=541 [sell,break]=20 [break,sell]=10 [break,break]=225 base=70.5%
+  B own retained median @T0 (rolls with both)          n=796 acc=95.9% [T sell,P sell]=534 [sell,break]=27 [break,sell]=6 [break,break]=229 base=70.5%
+  C by tier 1                                          n=6 acc=100.0% [T sell,P sell]=6 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 5                                          n=2 acc=100.0% [T sell,P sell]=2 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 6                                          n=50 acc=100.0% [T sell,P sell]=50 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C quiet roll (no week median): neighbour verdict @T0 n=58 acc=100.0% [T sell,P sell]=58 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  D held-one-out neighbour @T0, scored forward         n=743 acc=94.2% [T sell,P sell]=502 [sell,break]=37 [break,sell]=6 [break,break]=198 base=72.5%
+  E quiet-48h roll: week median verdict @T0            n=17 acc=100.0% [T sell,P sell]=16 [sell,break]=0 [break,sell]=0 [break,break]=1 base=94.1%
+
+--- T0 = generated_at - 24h = 2026-09-02T15:30:50.113000+00:00 ; truth = median of sales in next 24h ---
+  A own selected median @T0                            n=831 acc=95.4% [T sell,P sell]=578 [sell,break]=26 [break,sell]=12 [break,break]=215 base=72.7%
+  B own retained median @T0 (rolls with both)          n=831 acc=93.0% [T sell,P sell]=561 [sell,break]=43 [break,sell]=15 [break,break]=212 base=72.7%
+  C by tier 1                                          n=11 acc=100.0% [T sell,P sell]=11 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 6                                          n=29 acc=100.0% [T sell,P sell]=29 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C quiet roll (no week median): neighbour verdict @T0 n=40 acc=100.0% [T sell,P sell]=40 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  D held-one-out neighbour @T0, scored forward         n=776 acc=94.7% [T sell,P sell]=540 [sell,break]=38 [break,sell]=3 [break,break]=195 base=74.5%
+  E quiet-48h roll: week median verdict @T0            n=49 acc=100.0% [T sell,P sell]=48 [sell,break]=0 [break,sell]=0 [break,break]=1 base=98.0%
+
+=== pooled over the three non-overlapping forward windows ===
+  A own selected median @T0                            n=2437 acc=96.6% [T sell,P sell]=1658 [sell,break]=59 [break,sell]=24 [break,break]=696 base=70.5%
+  B own retained median @T0 (rolls with both)          n=2437 acc=95.4% [T sell,P sell]=1630 [sell,break]=87 [break,sell]=25 [break,break]=695 base=70.5%
+  C by tier 1                                          n=19 acc=100.0% [T sell,P sell]=19 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 5                                          n=14 acc=100.0% [T sell,P sell]=14 [sell,break]=0 [break,sell]=0 [break,break]=0 base=100.0%
+  C by tier 6                                          n=140 acc=100.0% [T sell,P sell]=139 [sell,break]=0 [break,sell]=0 [break,break]=1 base=99.3%
+  C quiet roll (no week median): neighbour verdict @T0 n=173 acc=100.0% [T sell,P sell]=172 [sell,break]=0 [break,sell]=0 [break,break]=1 base=99.4%
+  D held-one-out neighbour @T0, scored forward         n=2277 acc=94.9% [T sell,P sell]=1543 [sell,break]=105 [break,sell]=10 [break,break]=619 base=72.4%
+  E quiet-48h roll: week median verdict @T0            n=80 acc=98.8% [T sell,P sell]=77 [sell,break]=1 [break,sell]=0 [break,break]=2 base=97.5%
+
+selected vs retained disagreements, who the next 24h vindicated: {'retained right': 12, 'selected right': 41}
+    ('boots1', 'sel=break', 'winner=retained') 1
+    ('chest1', 'sel=break', 'winner=retained') 1
+    ('chest5', 'sel=sell', 'winner=retained') 1
+    ('chest5', 'sel=sell', 'winner=selected') 3
+    ('gloves1', 'sel=break', 'winner=retained') 1
+    ('gloves1', 'sel=break', 'winner=selected') 1
+    ('helmet3', 'sel=sell', 'winner=retained') 2
+    ('helmet3', 'sel=sell', 'winner=selected') 4
+    ('helmet5', 'sel=break', 'winner=selected') 2
+    ('helmet5', 'sel=sell', 'winner=selected') 1
+    ('helmet6', 'sel=sell', 'winner=selected') 1
+    ('pants1', 'sel=break', 'winner=selected') 4
+    ('pants3', 'sel=sell', 'winner=retained') 1
+    ('pants3', 'sel=sell', 'winner=selected') 2
+    ('pants5', 'sel=sell', 'winner=retained') 1
+    ('pants5', 'sel=sell', 'winner=selected') 4
+    ('pants6', 'sel=sell', 'winner=retained') 1
+    ('rifle', 'sel=break', 'winner=retained') 2
+    ('rifle', 'sel=break', 'winner=selected') 1
+    ('rifle', 'sel=sell', 'winner=retained') 1
+    ('sniper', 'sel=sell', 'winner=selected') 18
+
+=== (d) relative error of candidate prices vs the roll's own next-24h median (>= 1 sales), pooled 3 windows ===
+  QUIET roll: interpolation                          n= 164  p10=-3.8% p25=-2.1% p50=-0.4% p75=+1.7% p90=+7.1%  |err| p50=2.0% p90=9.9%  share within 5%=82%
+  QUIET roll: lower neighbour price (page shows dash) n= 173  p10=-7.9% p25=-3.8% p50=-1.5% p75=+0.8% p90=+3.3%  |err| p50=2.8% p90=12.8%  share within 5%=75%
+  QUIET roll: own week median (page shows it)        n=  80  p10=-3.9% p25=-2.8% p50=-1.2% p75=+0.8% p90=+4.1%  |err| p50=2.1% p90=5.7%  share within 5%=86%
+  interpolation (priced roll hidden)                 n=2108  p10=-2.0% p25=-1.0% p50=-0.0% p75=+1.1% p90=+3.0%  |err| p50=1.0% p90=3.9%  share within 5%=93%
+  lower neighbour (priced roll hidden)               n=2277  p10=-5.9% p25=-2.8% p50=-1.0% p75=+0.0% p90=+0.8%  |err| p50=1.4% p90=6.4%  share within 5%=86%
+  own selected median                                n=2437  p10=-2.3% p25=-1.1% p50=-0.1% p75=+0.7% p90=+2.2%  |err| p50=0.9% p90=3.6%  share within 5%=94%
+  own week median                                    n=2437  p10=-2.7% p25=-1.4% p50=-0.5% p75=+0.4% p90=+1.9%  |err| p50=1.1% p90=4.0%  share within 5%=93%

@@ -1,0 +1,82 @@
+{
+ "head": [
+  "Roll",
+  "List at",
+  "Sells in",
+  "vs breaking it"
+ ],
+ "quietRows": 54,
+ "quietWithPrice": 22,
+ "quietDash": 32,
+ "sampleQuiet": [
+  [
+   "36",
+   "1.756",
+   "41h",
+   "this week · sell"
+  ],
+  [
+   "38",
+   "—",
+   "—",
+   "like 37 · sell"
+  ],
+  [
+   "22",
+   "1.799",
+   "44h",
+   "this week · sell"
+  ],
+  [
+   "24",
+   "1.740",
+   "46h",
+   "this week · sell"
+  ],
+  [
+   "38",
+   "—",
+   "—",
+   "like 37 · sell"
+  ],
+  [
+   "30",
+   "—",
+   "—",
+   "like 29 · sell"
+  ],
+  [
+   "33",
+   "—",
+   "—",
+   "like 32 · sell"
+  ]
+ ],
+ "samplePriced": [
+  [
+   "21",
+   "1.810",
+   "30m",
+   "+0.442 sell"
+  ],
+  [
+   "22",
+   "1.810",
+   "62m",
+   "+0.442 sell"
+  ],
+  [
+   "23",
+   "1.776",
+   "23m",
+   "+0.408 sell"
+  ]
+ ],
+ "quietCss": "rgb(143, 168, 179) / opacity 1",
+ "pricedCss": "rgb(234, 240, 242)",
+ "allTiers": {
+  "rows": 770,
+  "price": 253,
+  "dash": 517
+ }
+}

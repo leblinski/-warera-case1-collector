@@ -1,0 +1,14 @@
+baseline gross 3.6781 edge +0.1281 pct +3.61% ask 3.55
+weighted_median  gross 3.6739 edge +0.1239 pct +3.49%
+recency_mean     gross 3.6573 edge +0.1073 pct +3.02%
+retained_median  gross 3.6731 edge +0.1231 pct +3.47%
+min              gross 3.4811 edge -0.0689 pct -1.94%
+scale 0.999 gross 3.6764 edge +0.1264 pct +3.56%
+scale 0.990 gross 3.6566 edge +0.1066 pct +3.00%
+scale 0.950 gross 3.5981 edge +0.0481 pct +1.36%
+scale 0.920 gross 3.5568 edge +0.0068 pct +0.19%
+scale 0.915 gross 3.5499 edge -0.0001 pct -0.00%
+scale 0.910 gross 3.5433 edge -0.0067 pct -0.19%
+scale 0.900 gross 3.5301 edge -0.0199 pct -0.56%
+crossing f=0.9151  -> medians overstate by 9.28%
+crossing (weighted_median) f=0.9183 -> 8.90%

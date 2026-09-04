@@ -1,0 +1,33 @@
+NOW 1788449450 first 1787963495 span_h 135.0 origins 7 step 6 hor 48
+roll-origins scored: n48>=1: 6197  quiet: 158  rolls: 983
+share of quiet (roll,T) with a sale in next 48h: 158/479 = 33.0%
+share of n48==1 (roll,T) with a sale in next 48h: 420/1261 = 33.3%
+
+(e) thin n48 1..4: roll-origins 1729 rolls 402 fut sales 5620
+med48                        n= 1729 relMAE 2.62% medAE 1.68% p90AE 4.90% bias -0.39% sold 67.2%
+ret7                         n= 1729 relMAE 2.66% medAE 1.71% p90AE 5.14% bias -0.41% sold 67.9%
+  dRelMAE ret7-med48 +0.03 CI [-0.02,+0.09]
+  thin roll-origins where ret7==med48 (identical estimate): 1130 of 1729 (65%)
+  among the 599 where they DIFFER: med48 relMAE 2.46% ret7 2.56% d +0.10 CI [-0.08,+0.25]
+  n48=1 n=420 med48 3.38 ret7 3.48 d +0.10 [+0.01,+0.21]
+  n48=2 n=450 med48 2.58 ret7 2.54 d -0.04 [-0.19,+0.09]
+  n48=3 n=468 med48 2.20 ret7 2.22 d +0.01 [-0.07,+0.09]
+  n48=4 n=391 med48 2.37 ret7 2.44 d +0.07 [-0.01,+0.15]
+  n7>=n48+3: n=207 med48 2.21 ret7 2.61 d +0.40 [+0.19,+0.64]
+
+policy over all n48>=1 roll-origins (relMAE%):
+  med48 always                 n= 6197 relMAE 2.95% medAE 2.03% p90AE 5.80% bias +0.46% sold 64.1%
+  ret7 if n48<5 else med48     n= 6197 relMAE 2.96% medAE 2.03% p90AE 5.81% bias +0.46% sold 64.3%
+  ret7 if n48<3 else med48     n= 6197 relMAE 2.95% medAE 2.03% p90AE 5.81% bias +0.47% sold 64.2%
+  ret7 always                  n= 6197 relMAE 2.99% medAE 2.04% p90AE 5.84% bias +0.44% sold 64.8%
+
+(quiet) quiet ret7                   n=  158 relMAE 3.50% medAE 2.87% p90AE 5.25% bias -1.17% sold 75.2%
+(n48=1) n48=1 med48                  n=  420 relMAE 3.38% medAE 1.99% p90AE 7.19% bias -0.86% sold 65.9%
+(n48=2) n48=2 med48                  n=  450 relMAE 2.58% medAE 1.67% p90AE 4.73% bias -0.68% sold 68.4%
+  quiet relMAE - n48=1 relMAE: +0.13 CI [-1.07,+1.41]
+  quiet: retained sales per origin median 1; age of retained sales (h): median 62 p10 51 p90 73; n7 dist:  [] {1: 100, 2: 22, 3: 13, 4: 13, 5: 10}
+  tier basic      quiet n= 71 relMAE 3.31% medAE 3.78% | n48=1 n= 12 relMAE 2.73%
+  tier legendary  quiet n= 37 relMAE 3.05% medAE 2.80% | n48=1 n=236 relMAE 3.09%
+  tier mythic     quiet n= 50 relMAE 4.11% medAE 2.08% | n48=1 n=172 relMAE 3.82%
+  n48 2-7: med48                        n= 1971 relMAE 2.37% medAE 1.56% p90AE 4.42% bias -0.16% sold 68.2%
+  n48 30-inf: med48                        n= 2632 relMAE 3.42% medAE 2.62% p90AE 6.65% bias +1.07% sold 60.9%

@@ -1,0 +1,17 @@
+snapshot 2026-09-02T09:54:20.750Z
+A priced rolls 1060; median of selected.tts over rolls 64.3 min; count-weighted 16.5
+   selected.tts re-derived from raw sales: 1058 rolls matched a window, 0 tts mismatches
+B sale-weighted median tts: all retained 18.6 (n=92453); 48h 17.5 (n=44863); 24h 16.6 (n=21794)
+C overall: <=roll median 10.5 (n=58710); >median 44.5 (n=33475)
+   sell-verdict rolls total 801
+D per tier: rolls-med | sales-all | <=med | ==med | >med | sell-verdict rolls unweighted (n) | sell-verdict draw-weighted
+  basic      132.3 | 57.5 | 26.9 (n=2763) | 167.9 (n=377) | 148.5 (n=2101) | 220.2 (n=53) | 93.9
+  reinforced 0.4 | 1.6 | 0.5 (n=11610) | 1.9 (n=3135) | 32.8 (n=5389) | 36.6 (n=2) | 32.2
+  advanced   15.5 | 19.5 | 11.7 (n=15187) | 29.1 (n=744) | 57.9 (n=6978) | 36.4 (n=55) | 22.6
+  elite      48.0 | 21.1 | 16.0 (n=24535) | 25.0 (n=558) | 31.5 (n=16219) | 53.8 (n=179) | 18.0
+  legendary  114.8 | 68.4 | 48.6 (n=4141) | 105.7 (n=404) | 109.9 (n=2534) | 125.7 (n=334) | 65.8
+  mythic     208.8 | 160.3 | 90.2 (n=474) | 203.6 (n=184) | 301.2 (n=254) | 184.3 (n=178) | 154.7
+   sell-verdict rolls all tiers, unweighted median of roll medians 93.4 (n=801)
+E split test N>=6: 587 rolls, 43738 sales; <=median 7.2 min (n=23698), ==median 3.1 (n=3241), >=Q3 40.4 (n=12523), ratio 5.6x
+E split test N>=7: 559 rolls, 43570 sales; <=median 7.2 min (n=23602), ==median 3.0 (n=3216), >=Q3 39.9 (n=12458), ratio 5.6x
+E split test N>=10: 526 rolls, 43323 sales; <=median 7.1 min (n=23451), ==median 2.7 (n=3163), >=Q3 39.2 (n=12377), ratio 5.6x

@@ -1,0 +1,21 @@
+recomputed selected median from shards: 1040 priced rolls, 0 mismatches (max abs diff 0.0000) -> shard filter replicates the page
+page (selected.median):        gross 3.6781 edge +0.1281 pct +3.61%  broken 13% 99% 64% 0% 3% 9%
+selected median recomputed       gross 3.6781 edge +0.1281 pct +3.61%  priced rolls 1040  broken 13% 99% 64% 0% 3% 9%
+48h median                       gross 3.6796 edge +0.1296 pct +3.65%  priced rolls 1040  broken 13% 98% 63% 3% 3% 9%
+25th pct of selected window      gross 3.6486 edge +0.0986 pct +2.78%  priced rolls 1040  broken 15% 99% 70% 4% 4% 10%
+25th pct of last 48h             gross 3.6458 edge +0.0958 pct +2.70%  priced rolls 1040  broken 15% 99% 70% 12% 3% 10%
+75th pct of last 48h             gross 3.7083 edge +0.1583 pct +4.46%  priced rolls 1040  broken 11% 96% 57% 0% 2% 9%
+48h min                          gross 3.4660 edge -0.0840 pct -2.37%  priced rolls 1040  broken 15% 100% 100% 46% 6% 11%
+last sale                        gross 3.6769 edge +0.1269 pct +3.58%  priced rolls 1040  broken 14% 97% 64% 1% 3% 10%
+median of sales that cleared <=30 min gross 3.6685 edge +0.1185 pct +3.34%  priced rolls  756  broken 24% 99% 73% 5% 6% 23%
+rolls with >=1 sale in 48h: 1040; with >=1 fast (<=30min) sale: 756
+
+mean ratio alt/median48 by tier (priced rolls):
+  p25_48   t1 0.968(n81) t2 0.977(n85) t3 0.982(n140) t4 0.991(n200) t5 0.992(n354) t6 0.996(n180)
+  min48    t1 0.920(n81) t2 0.738(n85) t3 0.849(n140) t4 0.847(n200) t5 0.968(n354) t6 0.988(n180)
+  last     t1 0.964(n81) t2 0.958(n85) t3 0.995(n140) t4 1.003(n200) t5 0.997(n354) t6 1.001(n180)
+  fast30   t1 0.975(n53) t2 0.997(n85) t3 0.981(n140) t4 0.996(n200) t5 0.983(n214) t6 0.983(n64)
+
+real	0m9.277s
+user	0m8.444s
+sys	0m0.816s

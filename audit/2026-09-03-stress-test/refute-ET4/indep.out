@@ -1,0 +1,12 @@
+48h eligible sales 46508 stale 1448 kept 45060 rolls 1040
+type7 quantile               thr=6 rolls=582 sales=43988 | Q3/med-1 mean=1.03% median=0.72% sw=1.15% | hi_sales=12197 hi_rel=1.95% | tts min: >=Q3 45.7 ==med 1.0 <=med 5.9 <Q3 10.4 | paired rolls 582: hi>le in 530 (91%), median ratio 7.08
+type7 quantile               thr=7 rolls=558 sales=43844 | Q3/med-1 mean=1.05% median=0.72% sw=1.16% | hi_sales=12146 hi_rel=1.95% | tts min: >=Q3 45.2 ==med 1.0 <=med 5.9 <Q3 10.3 | paired rolls 558: hi>le in 509 (91%), median ratio 7.05
+type7 quantile               thr=8 rolls=541 sales=43725 | Q3/med-1 mean=1.06% median=0.74% sw=1.16% | hi_sales=12108 hi_rel=1.95% | tts min: >=Q3 44.9 ==med 1.0 <=med 5.8 <Q3 10.3 | paired rolls 541: hi>le in 494 (91%), median ratio 7.14
+page floor-index Q3          thr=7 rolls=558 sales=43844 | Q3/med-1 mean=0.99% median=0.68% sw=1.13% | hi_sales=12623 hi_rel=1.90% | tts min: >=Q3 45.1 ==med 1.0 <=med 5.9 <Q3 10.1 | paired rolls 558: hi>le in 508 (91%), median ratio 6.29
+tier basic                   thr=10 rolls=31 sales=2326 | Q3/med-1 mean=3.59% median=2.18% sw=3.08% | hi_sales=664 hi_rel=5.26% | tts min: >=Q3 126.3 ==med 78.8 <=med 13.7 <Q3 17.5 | paired rolls 31: hi>le in 28 (90%), median ratio 13.75
+tier reinforced              thr=10 rolls=85 sales=8640 | Q3/med-1 mean=0.62% median=0.50% sw=0.76% | hi_sales=2690 hi_rel=1.25% | tts min: >=Q3 28.7 ==med 0.4 <=med 0.3 <Q3 0.4 | paired rolls 85: hi>le in 85 (100%), median ratio 81.91
+tier advanced                thr=10 rolls=139 sales=10783 | Q3/med-1 mean=1.17% median=0.83% sw=1.36% | hi_sales=2957 hi_rel=2.18% | tts min: >=Q3 64.1 ==med 14.9 <=med 5.2 <Q3 9.5 | paired rolls 139: hi>le in 138 (99%), median ratio 53.30
+tier elite                   thr=10 rolls=200 sales=19707 | Q3/med-1 mean=0.81% median=0.65% sw=1.00% | hi_sales=5144 hi_rel=1.76% | tts min: >=Q3 34.4 ==med 31.0 <=med 15.8 <Q3 18.5 | paired rolls 200: hi>le in 170 (85%), median ratio 2.94
+tier legendary               thr=10 rolls=70 sales=2134 | Q3/med-1 mean=1.07% median=0.70% sw=1.17% | hi_sales=608 hi_rel=2.04% | tts min: >=Q3 116.2 ==med 39.3 <=med 38.0 <Q3 47.5 | paired rolls 70: hi>le in 60 (86%), median ratio 4.20
+listings created before window start: >=Q3 979/12146 (8.1%)  <=med 405/23796 (1.7%)
+naive revenue proxy: median 1.000*0.616=0.616  Q3 1.0105*0.479=0.484

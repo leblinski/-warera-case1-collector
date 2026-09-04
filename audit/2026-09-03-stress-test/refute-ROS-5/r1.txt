@@ -1,0 +1,40 @@
+sniper n=15948; attack130 609 vs rest mean 528.9 (x1.151); multinomial z=3.41 (exp 531.6)
+  crit20 3426 vs rest mean 3130.5 (x1.094); z=4.68
+  comps-only: attack130 x1.158 z=3.48 ; crit20 x1.083 z=4.06
+  attack counts 125..130: [505, 541, 535, 516, 531, 609]  attack 101..104: [551, 559, 529, 526]
+  attack marginal chi2=37.9 df=29 p=0.12 ; excluding 130: chi2=26.4 df=28 p=0.55
+  crit marginal chi2=30.5 df=4 p=7e-06 ; excluding 20: chi2=8.7 df=3 p=0.032
+  median price by attack 124..130: [(124, 52.4), (125, 54.32), (126, 54.59), (127, 56.3), (128, 56.95), (129, 58.39), (130, 64.7)]
+  median price by crit 16..20: [(16, 37.7), (17, 39.17), (18, 46.5), (19, 49.4), (20, 54.35)]
+
+sniper per day: 130 count / n / share / x vs uniform(1/30) | crit20 share x vs 1/5
+  2026-08-29   86 / 2534 = 0.0339  x1.02 | crit20 x1.09
+  2026-08-30  101 / 2837 = 0.0356  x1.07 | crit20 x1.16
+  2026-08-31  110 / 3070 = 0.0358  x1.07 | crit20 x1.06
+  2026-09-01  118 / 2783 = 0.0424  x1.27 | crit20 x0.92
+  2026-09-02  130 / 2974 = 0.0437  x1.31 | crit20 x1.10
+  2026-09-03(partial to 15:30Z)   64 / 1750 = 0.0366  x1.10 | crit20 x1.12
+  homogeneity of 130 share across 5 archive days: chi2=6.00 df=4 p=0.198
+  across 6 days incl partial 09-03: chi2=6.17 df=5 p=0.290
+  linear trend of 130 share per day: slope 0.00266/day, z=2.30 (share 1/30=0.0333)
+  retained window halves: first 192/5498 x1.05, second 417/10450 x1.20; 2x2 chi2 p=0.114
+
+max-cell of band, all 7d tx, per item (Epic/Legendary/Mythic):
+  sniper   n=15948 attack max  609 exp  531.6 x1.15 z= 3.41 | attack min x1.04 z= 0.86 | crit max 3426 exp 3189.6 x1.09 z= 4.68
+  boots4   n= 8445 max 1693 exp 1689.0 x1.00 z= 0.11 | min x1.05 z= 1.77 | counts [1754, 1816, 1613, 1569, 1693]
+  helmet4  n= 7676 max  415 exp  383.8 x1.09 z= 1.63 | min x1.07 z= 1.37 | counts [410, 371, 387, 378, 362, 399, 395, 401, 413, 375, 366, 391, 348, 371, 365, 406, 379, 363, 381, 415]
+  gloves4  n= 7930 max 1668 exp 1586.0 x1.07 z= 2.30 | min x1.04 z= 1.46 | counts [1638, 1606, 1579, 1439, 1668]
+  chest4   n= 7927 max  830 exp  792.7 x1.05 z= 1.40 | min x0.99 z=-0.18 | counts [788, 854, 835, 785, 818, 755, 764, 706, 792, 830]
+  pants4   n= 7871 max  803 exp  787.1 x1.02 z= 0.60 | min x0.99 z=-0.23 | counts [781, 811, 872, 788, 827, 718, 700, 740, 831, 803]
+  tank     n= 2919 attack max  111 exp   97.3 x1.15 z= 1.41 | attack min x1.17 z= 1.62 | crit max  311 exp  291.9 x1.07 z= 1.18
+  boots5   n= 1742 max  175 exp  174.2 x1.01 z= 0.06 | min x1.25 z= 3.02 | counts [212, 172, 178, 165, 169, 163, 159, 176, 173, 175]
+  helmet5  n= 1089 max   78 exp   54.5 x1.47 z= 3.27 | min x0.65 z=-2.57 | counts [36, 46, 44, 45, 42, 44, 57, 40, 54, 59, 51, 75, 58, 46, 57, 69, 57, 66, 65, 78]
+  gloves5  n= 1372 max  159 exp  137.2 x1.18 z= 1.96 | min x0.89 z=-1.19 | counts [124, 137, 139, 143, 116, 144, 138, 138, 134, 159]
+  chest5   n= 1062 max   87 exp   70.8 x1.25 z= 1.99 | min x0.84 z=-1.33 | counts [60, 62, 52, 47, 63, 56, 71, 93, 77, 84, 83, 75, 80, 72, 87]
+  pants5   n= 1118 max  104 exp   74.5 x1.44 z= 3.53 | min x0.71 z=-2.46 | counts [54, 60, 79, 63, 66, 59, 69, 70, 63, 81, 88, 74, 100, 88, 104]
+  jet      n=  480 attack max    7 exp    6.0 x1.17 z= 0.41 | attack min x1.00 z= 0.00 | crit max   45 exp   48.0 x0.93 z=-0.46
+  boots6   n=  170 max   20 exp   17.0 x1.20 z= 0.77 | min x0.75 z=-1.02 | counts [13, 10, 11, 11, 24, 17, 26, 20, 18, 20]
+  helmet6  n=  157 max   11 exp    5.2 x2.18 z= 2.56 | min x0.76 z=-0.55 | counts [4, 4, 7, 4, 3, 4, 2, 5, 6, 5, 7, 8, 8, 8, 8, 5, 3, 3, 8, 2, 6, 5, 2, 9, 3, 6, 1, 4, 6, 11]
+  gloves6  n=  134 max   17 exp   13.4 x1.31 z= 1.04 | min x1.13 z= 0.46 | counts [15, 10, 15, 14, 12, 8, 16, 13, 14, 17]
+  chest6   n=  154 max    9 exp   10.3 x0.87 z=-0.41 | min x0.87 z=-0.41 | counts [9, 8, 10, 11, 16, 13, 7, 12, 16, 9, 9, 10, 2, 13, 9]
+  pants6   n=  135 max    7 exp    9.0 x0.77 z=-0.69 | min x1.24 z= 0.69 | counts [11, 5, 5, 6, 15, 10, 10, 5, 14, 9, 13, 6, 9, 10, 7]

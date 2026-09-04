@@ -1,0 +1,9 @@
+baseline (median):        gross 3.6781 edge +0.1281 pct +3.61%
+med48 bias-corrected             gross 3.6439 edge +0.0939 pct +2.64%  per-tier net: 1.538 4.050 13.408 50.611 137.872 380.628
+selected bias-corrected          gross 3.6445 edge +0.0945 pct +2.66%  per-tier net: 1.542 4.050 13.389 50.546 137.787 380.777
+uniform -0.68%                   gross 3.6616 edge +0.1116 pct +3.14%  per-tier net: 1.566 4.054 13.420 50.467 136.974 377.841
+uniform -1.37% (6h-horizon bias) gross 3.6513 edge +0.1013 pct +2.85%  per-tier net: 1.561 4.053 13.374 50.132 136.199 375.915
+weighted_median                  gross 3.6739 edge +0.1239 pct +3.49%
+recency_mean                     gross 3.6573 edge +0.1073 pct +3.02%
+retained_median                  gross 3.6731 edge +0.1231 pct +3.47%
+case edge crosses 0 when every median is scaled by 0.9151 (i.e. medians overstate next-day prices by 9.28%)

@@ -1,0 +1,25 @@
+quantity!=1 rows: 0
+24h sales per tier: [1261, 4316, 5572, 10254, 1743, 201]
+24h gold per tier: [2033, 17085, 78905, 525089, 251102, 78534]
+page mirror: gross 3.6781 cost 3.5500 edge 0.1281 (3.61%) sd 7.057
+
+tier: broken(page)  listings/case A (renorm)  B (uncovered=not listed)  cap10%A cap10%B
+ 1   12.7%  0.3249  0.2244        388      562
+ 2   98.6%  0.0112  0.0112      38536    38536
+ 3   63.5%  0.0344  0.0344      16215    16215
+ 4    0.0%  0.0085  0.0085     120635   120635
+ 5    2.9%  0.0003  0.0003     519368   529465
+ 6    9.5%  0.0001  0.0000     270161   440226
+total listings/case A 0.379 B 0.279; scraps/case 8.25
+ N=100: helmet1 12%(A)/12%(B) of 73, knife 7%(A)/3%(B) of 279, gloves1 1%(A)/1%(B) of 205
+ N=300: helmet1 36%(A)/36%(B) of 73, knife 20%(A)/9%(B) of 279, gloves1 3%(A)/3%(B) of 205
+ N=1000: helmet1 119%(A)/119%(B) of 73, knife 67%(A)/31%(B) of 279, gloves1 8%(A)/8%(B) of 205
+
+2-sigma cases (2sd/edge)^2, page sd 7.057:
+  +3.61%  n=  12141 capital   43101 days@capA(388/d)   31.3 days@capB(562/d)   21.6 profit   1555 gold/day@capA 49.7 @capB 72.0 @100%common 497.2
+  +4.3%   n=   8549 capital   30350 days@capA(388/d)   22.0 days@capB(562/d)   15.2 profit   1305 gold/day@capA 59.3 @capB 85.8 @100%common 592.5
+  +9.47%  n=   1763 capital    6257 days@capA(388/d)    4.5 days@capB(562/d)    3.1 profit    593 gold/day@capA 130.5 @capB 188.9 @100%common 1304.9
+  +2%     n=  39519 capital  140292 days@capA(388/d)  101.8 days@capB(562/d)   70.3 profit   2806 gold/day@capA 27.6 @capB 39.9 @100%common 275.6
+full per-roll sd 7.167 (page between-tier sd 7.057); 2sigma cases at +3.61% with full sd: 12521
+case best ask 3.550; depth within 1%: 3591; total shown 4766 rows 100
+case transactions in snapshot: False ['item_code', 'name', 'attempted_at', 'errors', 'price', 'price_raw', 'price_fetched_at', 'price_status', 'order_book', 'book_fetched_at', 'book_status', 'status']

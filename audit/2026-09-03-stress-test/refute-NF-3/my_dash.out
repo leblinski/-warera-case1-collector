@@ -1,0 +1,8 @@
+bid 0.225
+space 1810 priced 1040 wide_only 253 dash 517 dash share 5.954%
+  knife space/priced/wide/dash/dash-share% (100, 46, 22, 32, 5.952)
+  tank space/priced/wide/dash/dash-share% (300, 284, 16, 0, 0.0)
+  jet space/priced/wide/dash/dash-share% (800, 110, 205, 485, 0.002)
+  helmet6 space/priced/wide/dash/dash-share% (30, 21, 9, 0, 0.0)
+  chest6 space/priced/wide/dash/dash-share% (15, 14, 1, 0, 0.0)
+knife check: 0.62*0.30/100*32 = 5.9520%

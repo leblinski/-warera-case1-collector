@@ -1,0 +1,65 @@
+=== knife crit 4 band, bar 0.5 (cutRule as coded says "4 from 38"; skipping quiet rolls says "4 all") ===
+need 1.85 scrap 1.35
+   21/4 none
+   22/4 none
+   23/4 wide 1.759 break
+   24/4 from 23/4 break
+   25/4 from 23/4 break
+   26/4 from 23/4 break
+   27/4 from 23/4 break
+   28/4 from 23/4 break
+   29/4 from 23/4 break
+   30/4 from 23/4 break
+   31/4 wide 1.777 break
+   32/4 wide 1.779 break
+   33/4 from 32/4 break
+   34/4 wide 1.849 break
+   35/4 wide 1.788 break
+   36/4 wide 1.854 break
+   37/4 wide 1.856 break
+   38/4 priced 1.902 sell
+   39/4 priced 1.883 sell
+   40/4 priced 2.850 sell
+
+=== dash (no price on Sort tab) share of case draws by item, default bar ===
+  knife    dash rolls  32  share of draws 5.95%  guessed 30 of which guessed-break 0
+  jet      dash rolls 485  share of draws 0.00%  guessed 465 of which guessed-break 0
+  total dash share 5.95%
+
+=== cost of fillQuiet held-one-out errors (default bar) ===
+truth sell, neighbour says break (user breaks a sellable roll): n=25  margins over scrap: mean 4.200, min 0.102, max 58.050
+    ('chest1', '5', 1.468, 0.103, '4', 1.389)
+    ('gloves1', '5', 1.472, 0.107, '4', 1.4)
+    ('boots1', '5', 1.467, 0.102, '4', 1.394)
+    ('helmet2', '30', 4.2, 0.108, '29', 4.0)
+    ('chest2', '10', 4.257, 0.164, '9', 4.0)
+    ('rifle', '79/15', 12.794, 0.516, '78/15', 12.14)
+    ('rifle', '81/14', 12.5, 0.225, '80/14', 12.299)
+    ('rifle', '84/13', 12.544, 0.269, '83/13', 12.2)
+    ('rifle', '88/12', 12.385, 0.111, '87/12', 12.2)
+    ('rifle', '90/11', 14.15, 1.858, '89/11', 12.325)
+    ('helmet3', '40', 12.399, 0.125, '39', 12.32)
+    ('chest3', '12', 12.45, 0.175, '11', 12.3)
+    ('gloves3', '14', 13.75, 1.463, '13', 12.35)
+    ('pants3', '13', 12.776, 0.498, '12', 12.311)
+    ('boots3', '14', 13.475, 1.19, '13', 12.3)
+    ('helmet5', '99', 110.89, 0.431, '98', 110.0)
+    ('helmet5', '103', 111.0, 0.54, '102', 110.0)
+    ('chest5', '40', 111.411, 0.947, '39', 110.0)
+    ('pants5', '43', 112.2, 1.728, '42', 110.5)
+    ('helmet6', '133', 332.0, 0.63, '132', 330.0)
+    ('helmet6', '135', 334.999, 3.599, '134', 327.0)
+    ('helmet6', '141', 355.0, 23.4, '140', 320.0)
+    ('helmet6', '144', 390.0, 58.05, '143', 330.0)
+    ('chest6', '66', 333.47, 2.085, '65', 328.713)
+    ('pants6', '67', 338.0, 6.57, '66', 329.0)
+truth break, neighbour says sell (user lists a roll under the bar): n=3
+    ('helmet5', '100', 110.0, -0.45, '99', 110.89)
+    ('chest5', '38', 110.0, -0.45, '37', 110.924)
+    ('helmet6', '143', 330.0, -1.35, '142', 360.396)
+
+=== tier-1 cut card count check (page says "64 of 81 rolls clear the bar") ===
+  python: 64 of 81
+
+=== seen rolls outside craftRollSpace (README 1,295 seen / 255 quiet vs my 253 wide-only) ===
+  seen rolls 1295 outside roll space 2 [('boots2', '4', None, 1), ('pants2', '5', None, 1)]
