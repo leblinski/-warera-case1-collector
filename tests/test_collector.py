@@ -229,6 +229,40 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(roll['median'], 20)
         self.assertEqual(roll['stale_excluded'], 1)
 
+    def test_book_history_records_full_depth_and_does_not_double_a_rerun(self):
+        """Intent is unrecoverable: a book not captured this run is gone for good."""
+        payload = {'generated_at': c.stamp(NOW), 'commodities': {
+            'case1': {'status': 'ok', 'order_book': {
+                'buy_orders': [{'price': 3.5, 'quantity': 10}, {'price': 3.5, 'quantity': 5},
+                               {'price': 3.4, 'quantity': 7}],
+                'sell_orders': [{'price': 3.6, 'quantity': 2}]}},
+            'steel': {'status': 'error'}}}
+        with tempfile.TemporaryDirectory() as tmp:
+            books = Path(tmp) / 'books'
+            self.assertEqual(c.append_book_history(payload, books, NOW), 1)
+            path = books / (NOW.date().isoformat() + '.jsonl')
+            rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
+            self.assertEqual(len(rows), 1)
+            # Orders at one price become one rung, best first, and a failed book is skipped.
+            self.assertEqual(rows[0]['case1']['b'], [[3.5, 15], [3.4, 7]])
+            self.assertEqual(rows[0]['case1']['a'], [[3.6, 2]])
+            self.assertNotIn('steel', rows[0])
+            # The same run again replaces its line rather than sampling twice.
+            c.append_book_history(payload, books, NOW)
+            self.assertEqual(len(path.read_text(encoding='utf-8').splitlines()), 1)
+            # A later run appends, and the file stays in time order.
+            later = dict(payload, generated_at=c.stamp(NOW + timedelta(minutes=15)))
+            c.append_book_history(later, books, NOW)
+            stamps = [json.loads(line)['t'] for line in path.read_text(encoding='utf-8').splitlines()]
+            self.assertEqual(stamps, sorted(stamps))
+            self.assertEqual(len(stamps), 2)
+
+    def test_book_history_is_skipped_when_no_commodity_reported_a_book(self):
+        payload = {'generated_at': c.stamp(NOW), 'commodities': {'case1': {'status': 'error'}}}
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(c.append_book_history(payload, Path(tmp) / 'books', NOW), 0)
+            self.assertFalse(list((Path(tmp) / 'books').glob('*'))) if (Path(tmp) / 'books').exists() else None
+
     def test_raw_sale_rows_keep_the_backlog_the_statistics_drop(self):
         # Consumers that want the wider view still get every retained row.
         category = {'item_code': 'sniper', 'name': 'Sniper', 'tier': 'elite', 'rarity': 'epic',
