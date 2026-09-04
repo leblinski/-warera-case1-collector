@@ -734,6 +734,74 @@ def build_archive(payload, now):
     return days
 
 
+def book_ladder(order_book):
+    """Both sides of a book as [price, quantity] rungs, best first, aggregated by price."""
+    def side(orders, best_first_high):
+        levels = {}
+        for order in orders or []:
+            price = number(order.get("price"))
+            quantity = number(order.get("quantity"))
+            if price is None or quantity is None or price <= 0 or quantity <= 0:
+                continue
+            key = round(price, 3)
+            levels[key] = levels.get(key, 0) + quantity
+        return [[key, round(levels[key])] for key in sorted(levels, reverse=best_first_high)]
+    return {"b": side((order_book or {}).get("buy_orders"), True),
+            "a": side((order_book or {}).get("sell_orders"), False)}
+
+
+def book_snapshot(payload):
+    """One line of depth for every commodity that reported a book this run.
+
+    Prices are an outcome; a book is intent, and the collector was throwing the intent away
+    every fifteen minutes. Whether the support under a price is building or eroding, whether
+    a wall has rested there for an hour or a week, whether a level that held last Tuesday
+    holds again - none of it can be answered from a single snapshot, and none of it can be
+    recovered later. So the capture starts now and the reading of it can come whenever.
+
+    Full depth rather than the top few rungs, because the question that prompted this was how
+    far down the book a buyer could reasonably rest, and that is exactly what a trimmed
+    ladder throws away. It costs almost nothing to keep everything: aggregating raw orders
+    into price levels turns 200 orders into about 70 rungs, so a snapshot is 1.6 KB and a
+    day of them 0.15 MB, against a repository already growing 5.5 MB a day."""
+    books = {}
+    for code, row in (payload.get("commodities") or {}).items():
+        if row.get("status") != "ok" or "order_book" not in row:
+            continue
+        ladder = book_ladder(row["order_book"])
+        if ladder["b"] or ladder["a"]:
+            books[code] = ladder
+    return {"t": payload["generated_at"], **books} if books else None
+
+
+def append_book_history(payload, books_dir, now):
+    """One file a day of newline-delimited snapshots, appended in place.
+
+    Newline-delimited so a run appends rather than rewriting the day, which is what keeps
+    the git cost to the bytes actually added. Re-running for a timestamp already recorded
+    replaces that line rather than doubling it, so a re-run is not a second sample."""
+    snapshot = book_snapshot(payload)
+    if snapshot is None:
+        return 0
+    path = Path(books_dir) / f"{now.date().isoformat()}.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = []
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                if json.loads(line).get("t") == snapshot["t"]:
+                    continue
+            except ValueError:
+                raise CollectionError("Book history file holds a line that is not JSON")
+            lines.append(line)
+    lines.append(json.dumps(snapshot, ensure_ascii=False, allow_nan=False, separators=(",", ":")))
+    lines.sort(key=lambda line: json.loads(line)["t"])
+    atomic_text(path, "\n".join(lines) + "\n")
+    return 1
+
+
 def publish(payload, public_dir, archive_dir, now):
     """Write the consumer-facing artifacts. These are served, not committed; only the
     archive is durable, which is what keeps repository growth flat."""
@@ -759,9 +827,13 @@ def publish(payload, public_dir, archive_dir, now):
 
 
 def atomic_write(path, payload):
+    atomic_text(path, json.dumps(payload, ensure_ascii=False, allow_nan=False,
+                                 separators=(",", ":")) + "\n")
+
+
+def atomic_text(path, text):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n"
     temp_name = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent, suffix=".tmp", delete=False) as handle:
@@ -861,6 +933,8 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, default=ROOT / "data/warera_case1_market.json")
     parser.add_argument("--public-dir", type=Path, default=ROOT / "public",
                         help="Consumer-facing index/summary/price shards; served, not committed")
+    parser.add_argument("--books-dir", type=Path, default=ROOT / "data/books",
+                        help="Where the daily order-book history is appended.")
     parser.add_argument("--archive-dir", type=Path, default=ROOT / "data/archive",
                         help="Write-once daily sale files; the durable history")
     parser.add_argument("--base-url", choices=(GATEWAY, OFFICIAL), default=GATEWAY)
@@ -891,7 +965,9 @@ def main(argv=None):
         validate(output)
         atomic_write(args.output, output)
         files = publish(output, args.public_dir, args.archive_dir, parse_time(output["generated_at"]))
-        print(f"Saved {output['health']['transaction_count']} transactions and {files} published files; status={output['status']}")
+        books = append_book_history(output, args.books_dir, parse_time(output["generated_at"]))
+        print(f"Saved {output['health']['transaction_count']} transactions and {files} published files"
+              f"{' plus a book snapshot' if books else ''}; status={output['status']}")
         return 0 if output["status"] == "ok" else 1
     except (CollectionError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Collector failed: {exc}", file=sys.stderr)

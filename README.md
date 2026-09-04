@@ -98,8 +98,9 @@ python collector.py
 python collector.py --validate --require-healthy
 ```
 
-`--public-dir` (default `public/`) and `--archive-dir` (default `data/archive/`) control where
-the published files are written.
+`--public-dir` (default `public/`), `--archive-dir` (default `data/archive/`) and
+`--books-dir` (default `data/books/`) control where the published files, the daily sale
+archive and the order-book history are written.
 
 The default source is `https://gateway.warerastats.io/trpc`. Both the Gateway and
 the official transaction API require an API key for the required data. To explicitly
@@ -217,6 +218,15 @@ Consumers read these from GitHub Pages; only the rolling cache and the archive a
 | `commodities.json` | ~23 KB gz | Full scrap/steel/Case I order books, fetched on demand |
 | `prices/<item>.json` | 8-61 KB gz | One item: roll list, statistics, and compact sale rows |
 | `data/archive/<date>.json` | ~860 KB gz | One completed UTC day of sales, written once |
+| `data/books/<date>.jsonl` | ~30 KB gz | One UTC day of order-book snapshots, one line a run |
+
+Prices are an outcome; a book is intent, and a snapshot not taken is gone for good. Each run
+appends one line holding the full aggregated depth of all three commodity books - both sides,
+every price level, `[price, quantity]` best first. Aggregating 200 raw orders into about 70
+price rungs makes a snapshot 1.6 KB and a day of them 0.15 MB, so nothing is trimmed and
+nothing expires: the whole history costs about 55 MB a year against a repository already
+growing 5.5 MB a day. Re-running for a timestamp already recorded replaces that line rather
+than sampling twice.
 
 A client fetches `index.json` and `summary.json` on load - that is every price for every item
 in about 69 KB - and pulls an item's sale rows only when it needs the underlying history.
