@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
 COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # How long retained transactions live in the rolling output. The source only exposes a short
 # rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
@@ -426,10 +426,23 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
     return results
 
 
-def summarize(rows, now):
+def summarize(rows, now, timed=None):
+    """`rows` price the roll; `timed` times it, and the two are not the same set.
+
+    A sale off a listing that sat longer than the comps window is a poor comparable, so it
+    is kept out of the price. Keeping it out of the time to sell as well was a mistake in
+    one direction only: the filter drops slow sales and nothing else, so every roll it
+    touched came out looking quicker than it is. On this cache it touched 298 of 1,072
+    priced rolls, and the uncensored median was higher on all 298 of them - it cannot be
+    otherwise. Forty rolls more than doubled, and the knife at attack 24, crit 5 published
+    1.1 minutes against a true 2.6 days, which is the roll nobody wants reading as the
+    fastest thing on the board.
+
+    So the price keeps its filter and the clock does not."""
+    timed = rows if timed is None else timed
     if not rows:
         return {"count": 0, "median": None, "recency_weighted_price": None, "weighted_median": None,
-                "min": None, "max": None, "median_time_to_sell_seconds": None}
+                "min": None, "max": None, "median_time_to_sell_seconds": None, "stale_excluded": 0}
     prices = [row["unit_price"] for row in rows]
     half_life = RECENCY_HALF_LIFE_HOURS * 3600
     weights = [2 ** (-max(0, (now - parse_time(row["sold_at"])).total_seconds()) / half_life) for row in rows]
@@ -441,11 +454,15 @@ def summarize(rows, now):
         if cumulative >= halfway:
             weighted_median = price
             break
-    durations = [row["time_to_sell_seconds"] for row in rows if row["time_to_sell_seconds"] is not None]
+    durations = [row["time_to_sell_seconds"] for row in timed if row["time_to_sell_seconds"] is not None]
     return {"count": len(rows), "median": statistics.median(prices),
             "recency_weighted_price": sum(p * w for p, w in zip(prices, weights)) / sum(weights),
             "weighted_median": weighted_median, "min": min(prices), "max": max(prices),
-            "median_time_to_sell_seconds": statistics.median(durations) if durations else None}
+            "median_time_to_sell_seconds": statistics.median(durations) if durations else None,
+            # Sales the clock counted and the price ignored, so a reader can see how much of
+            # the timing rests on listings the price would not trust. Named to stay clear of
+            # the guard that keeps sale rows out of the on-load bundle.
+            "stale_excluded": len(timed) - len(rows)}
 
 
 def stale_listing(tx, max_hours=MAX_TIME_ON_MARKET_HOURS):
@@ -456,13 +473,13 @@ def stale_listing(tx, max_hours=MAX_TIME_ON_MARKET_HOURS):
     return seconds is not None and seconds > max_hours * 3600
 
 
-def retained_summary(rows, now):
+def retained_summary(rows, now, timed=None):
     """Wide enough to show a roll trades, not to price against, so it carries only what
     answers that. Recency weighting, spread and the rest are what the narrow windows are for,
     and repeating them here would cost every reader half again the download for fields the
     question does not use."""
-    full = summarize(rows, now)
-    return {key: full[key] for key in ("count", "median", "median_time_to_sell_seconds")}
+    full = summarize(rows, now, timed)
+    return {key: full[key] for key in ("count", "median", "median_time_to_sell_seconds", "stale_excluded")}
 
 
 def aggregate(transactions, now, min_primary_comps=MIN_PRIMARY_COMPS):
@@ -479,24 +496,36 @@ def aggregate(transactions, now, min_primary_comps=MIN_PRIMARY_COMPS):
     """
     groups = defaultdict(list)
     wide = defaultdict(list)
+    # The same rows without the staleness filter, kept only to time the roll.
+    groups_timed = defaultdict(list)
+    wide_timed = defaultdict(list)
     for tx in transactions:
-        if stale_listing(tx) or not tx["eligible_for_comps"]:
+        if not tx["eligible_for_comps"]:
             continue
         sold = parse_time(tx["sold_at"])
         if not now - timedelta(hours=RETENTION_HOURS) <= sold <= now:
             continue
+        recent_enough = sold >= now - timedelta(hours=COMPS_WINDOW_HOURS)
+        wide_timed[tx["roll_key"]].append(tx)
+        if recent_enough:
+            groups_timed[tx["roll_key"]].append(tx)
+        if stale_listing(tx):
+            continue
         wide[tx["roll_key"]].append(tx)
-        if sold >= now - timedelta(hours=COMPS_WINDOW_HOURS):
+        if recent_enough:
             groups[tx["roll_key"]].append(tx)
     rolls = {}
     for key, retained in sorted(wide.items()):
         rows = groups.get(key, [])
-        recent = [row for row in rows if parse_time(row["sold_at"]) >= now - timedelta(hours=PRIMARY_HOURS)]
-        primary = summarize(recent, now)
-        fallback = summarize(rows, now)
+        rows_timed = groups_timed.get(key, [])
+        cut = now - timedelta(hours=PRIMARY_HOURS)
+        recent = [row for row in rows if parse_time(row["sold_at"]) >= cut]
+        recent_timed = [row for row in rows_timed if parse_time(row["sold_at"]) >= cut]
+        primary = summarize(recent, now, recent_timed)
+        fallback = summarize(rows, now, rows_timed)
         use_primary = len(recent) >= min_primary_comps
         rolls[key] = {"exact_roll": roll_of(retained[0]), "primary_24h": primary, "fallback_48h": fallback,
-                      "retained_window": retained_summary(retained, now),
+                      "retained_window": retained_summary(retained, now, wide_timed.get(key, [])),
                       "retained_window_hours": RETENTION_HOURS,
                       "selected_window_hours": PRIMARY_HOURS if use_primary else COMPS_WINDOW_HOURS,
                       "selected": primary if use_primary else fallback,
@@ -762,7 +791,8 @@ def migrate(payload):
     Every primitive field schema 2 needs is already present, so each record re-derives locally.
 
     Every version since has changed what aggregate() returns - schema 3 dropped sales off
-    long-standing listings, schema 4 added the retained window. validate() recomputes those
+    long-standing listings, schema 4 added the retained window, schema 5 stopped letting the
+    staleness filter censor the time to sell. validate() recomputes those
     summaries as a tamper check, so any change to aggregate() leaves older caches failing it,
     and the collector rejects its own cache on load and cannot run at all. That is not a
     special case to handle once: it is what every future change to aggregate() will do. So

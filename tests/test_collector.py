@@ -214,6 +214,21 @@ class CollectorTests(unittest.TestCase):
         unknown['time_to_sell_seconds'] = None
         self.assertFalse(c.stale_listing(unknown))
 
+    def test_a_stale_listing_is_dropped_from_the_price_but_kept_on_the_clock(self):
+        """The staleness filter only ever removes slow sales, so timing with it biases low."""
+        slow = timedelta(hours=c.MAX_TIME_ON_MARKET_HOURS + 4)
+        rows = [self.normalized('quick', hours=1, price=20, on_market=timedelta(minutes=10)),
+                self.normalized('crawler', hours=2, price=99, on_market=slow)]
+        roll = next(iter(c.aggregate(rows, NOW).values()))['selected']
+        # The clock counts it, so the median sits between ten minutes and four days.
+        # Old behaviour reported a flat 600: the ten-minute sale, alone.
+        self.assertEqual(roll['median_time_to_sell_seconds'],
+                         (600 + slow.total_seconds()) / 2)
+        # The price still ignores it: one comparable, and not the 99.
+        self.assertEqual(roll['count'], 1)
+        self.assertEqual(roll['median'], 20)
+        self.assertEqual(roll['stale_excluded'], 1)
+
     def test_raw_sale_rows_keep_the_backlog_the_statistics_drop(self):
         # Consumers that want the wider view still get every retained row.
         category = {'item_code': 'sniper', 'name': 'Sniper', 'tier': 'elite', 'rarity': 'epic',
