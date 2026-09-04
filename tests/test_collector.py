@@ -287,6 +287,35 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(result['stop_reason'], f'backstop_{c.BACKSTOP_HOURS:g}h')
         self.assertEqual(len(client.calls), 2)
 
+    def test_backstop_still_reaches_a_checkpoint_older_than_it(self):
+        """An outage longer than the backstop must not leave a hole in the cache."""
+        previous = collect_category(SequenceClient([page([raw('known', hours=1)])]), CAT, {}, NOW)
+        self.assertTrue(previous['history_complete'])
+        # Four hours since the last success, against a three hour backstop, and a full scan due.
+        gap = c.BACKSTOP_HOURS + 1
+        previous['last_success_at'] = c.stamp(NOW - timedelta(hours=gap))
+        previous['last_full_scan_at'] = c.stamp(NOW - timedelta(hours=7))
+        client = SequenceClient([page([raw('recent', hours=1)], 'n1'),
+                                 page([raw('in-the-gap', hours=c.BACKSTOP_HOURS + 0.5)], 'n2'),
+                                 page([raw('past-the-checkpoint', hours=gap + 1)], 'n3')])
+        result = collect_category(client, CAT, previous, NOW)
+        self.assertTrue(result['full_scan'])
+        # It keeps paging past the backstop until the checkpoint's overlap is covered.
+        self.assertEqual(len(client.calls), 3)
+        ids = {row['id'] for row in result['transactions']}
+        self.assertIn('in-the-gap', ids)
+
+    def test_first_run_stops_at_the_initial_depth_and_counts_as_complete(self):
+        """A fresh cache cannot page the whole retention window inside the page budget."""
+        client = SequenceClient([page([raw('a', hours=1)], 'n1'),
+                                 page([raw('b', hours=c.INITIAL_DEPTH_HOURS + 2)], 'n2'),
+                                 page([raw('c', hours=RETAINED_PAST)], 'n3')])
+        result = collect_category(client, CAT, {}, NOW)
+        self.assertEqual(result['stop_reason'], f'initial_depth_{c.INITIAL_DEPTH_HOURS:g}h')
+        self.assertEqual(len(client.calls), 2)
+        # Complete at the depth it set out to reach; retention accumulates forward from here.
+        self.assertTrue(result['history_complete'])
+
     def test_cache_that_never_completed_history_still_pages_to_the_boundary(self):
         first = collect_category(SequenceClient([page([raw('a')], 'next'), c.ApiError('outage')]), CAT, {}, NOW)
         self.assertFalse(first['history_complete'])
