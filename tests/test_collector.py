@@ -257,6 +257,38 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(stamps, sorted(stamps))
             self.assertEqual(len(stamps), 2)
 
+    def test_served_book_history_is_the_window_trimmed_to_its_top_rungs(self):
+        """The capture is whole because intent cannot be recovered; the publication is cut
+        to the rungs and days a reader can actually use."""
+        deep = [[3.0 + i / 100, 10 + i] for i in range(9)]
+        with tempfile.TemporaryDirectory() as tmp:
+            books = Path(tmp) / 'books'
+            books.mkdir()
+            old = NOW - timedelta(hours=c.BOOK_HISTORY_HOURS + 1)
+            lines = [
+                {'t': c.stamp(old), 'case1': {'b': [[9.9, 1]], 'a': [[9.9, 1]]}},
+                {'t': c.stamp(NOW - timedelta(hours=2)), 'case1': {'b': list(reversed(deep)), 'a': deep}},
+                {'t': c.stamp(NOW - timedelta(hours=1)), 'case1': {'b': [[3.5, 15]], 'a': [[3.6, 2]]}},
+            ]
+            (books / (NOW.date().isoformat() + '.jsonl')).write_text(
+                '\n'.join(json.dumps(line) for line in lines) + '\n', encoding='utf-8')
+            served = c.build_book_history(books, NOW)
+            # Older than the window is dropped; what remains is in time order.
+            stamps = [row['t'] for row in served['snapshots']]
+            self.assertEqual(len(stamps), 2)
+            self.assertEqual(stamps, sorted(stamps))
+            self.assertNotIn(c.stamp(old), stamps)
+            # Depth is cut to the top rungs, best first, on both sides.
+            self.assertEqual(len(served['snapshots'][0]['case1']['b']), c.BOOK_HISTORY_RUNGS)
+            self.assertEqual(served['snapshots'][0]['case1']['b'][0], [3.08, 18])
+            self.assertEqual(served['snapshots'][0]['case1']['a'][0], [3.0, 10])
+            self.assertEqual(served['window_hours'], c.BOOK_HISTORY_HOURS)
+
+    def test_served_book_history_is_empty_before_any_capture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            served = c.build_book_history(Path(tmp) / 'books', NOW)
+            self.assertEqual(served['snapshots'], [])
+
     def test_book_history_is_skipped_when_no_commodity_reported_a_book(self):
         payload = {'generated_at': c.stamp(NOW), 'commodities': {'case1': {'status': 'error'}}}
         with tempfile.TemporaryDirectory() as tmp:
@@ -480,7 +512,7 @@ class CollectorTests(unittest.TestCase):
             output = c.collect(FullClient(), now=NOW)
         with tempfile.TemporaryDirectory() as tmp:
             public, archive = Path(tmp) / 'public', Path(tmp) / 'archive'
-            c.publish(output, public, archive, NOW)
+            c.publish(output, public, archive, Path(tmp) / 'books', NOW)
             self.assertEqual(len(list((public / 'prices').glob('*.json'))), 36)
             index = json.loads((public / 'index.json').read_text(encoding='utf-8'))
             self.assertEqual(set(index['items']), {row['item_code'] for row in c.categories()})
@@ -511,7 +543,8 @@ class CollectorTests(unittest.TestCase):
         rows[0]['sold_at'] = c.stamp(day_before)
         with tempfile.TemporaryDirectory() as tmp:
             public, archive = Path(tmp) / 'public', Path(tmp) / 'archive'
-            c.publish(output, public, archive, NOW)
+            books = Path(tmp) / 'books'
+            c.publish(output, public, archive, books, NOW)
             files = sorted(p.name for p in archive.glob('*.json'))
             self.assertEqual(files, [day_before.date().isoformat() + '.json'])
             target = archive / files[0]
@@ -519,7 +552,7 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(record['sale_count'], 1)
             self.assertEqual(record['sales'][0]['item_code'], 'sniper')
             before = target.stat().st_mtime_ns
-            c.publish(output, public, archive, NOW)
+            c.publish(output, public, archive, books, NOW)
             self.assertEqual(target.stat().st_mtime_ns, before)
 
     def test_schema_1_cache_migrates_without_a_refetch(self):

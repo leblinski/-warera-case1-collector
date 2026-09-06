@@ -25,6 +25,14 @@ OFFICIAL = "https://api2.warera.io/trpc"
 COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
 SCHEMA_VERSION = 5
 
+# How much of the captured book history is served, and how deep. Three days answers the
+# questions a single snapshot cannot - whether the wall under the price is building or
+# eroding, how long the touch has held, whether a level has held before - and the top rungs
+# are where those answers live. A snapshot of three commodities is about 140 bytes, so the
+# window is roughly 45 KB: small enough to hand a phone whole.
+BOOK_HISTORY_HOURS = 72
+BOOK_HISTORY_RUNGS = 6
+
 # How long retained transactions live in the rolling output. The source only exposes a short
 # rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
 # after running for that long. Distinct from COMPS_WINDOW_HOURS below.
@@ -802,14 +810,53 @@ def append_book_history(payload, books_dir, now):
     return 1
 
 
-def publish(payload, public_dir, archive_dir, now):
+def build_book_history(books_dir, now):
+    """The captured ladders, trimmed to the window and depth a reader can act on.
+
+    The capture stays whole - full depth, one file a day - because intent is unrecoverable
+    and a trimmed snapshot cannot be widened later. What is served is a different question.
+    A reader wants to know whether the support under the price is building or eroding and
+    how long the touch has held, and the top of each side answers that, so the publication
+    is cut to size and the history is not."""
+    books_dir = Path(books_dir)
+    if not books_dir.exists():
+        return {"schema_version": SCHEMA_VERSION, "generated_at": stamp(now),
+                "window_hours": BOOK_HISTORY_HOURS, "rungs": BOOK_HISTORY_RUNGS, "snapshots": []}
+    cutoff = now - timedelta(hours=BOOK_HISTORY_HOURS)
+    snapshots = []
+    for path in sorted(books_dir.glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                raise CollectionError("Book history file holds a line that is not JSON")
+            if parse_time(row.get("t")) < cutoff:
+                continue
+            trimmed = {"t": row["t"]}
+            for code, ladder in row.items():
+                if code == "t" or not isinstance(ladder, dict):
+                    continue
+                trimmed[code] = {"b": (ladder.get("b") or [])[:BOOK_HISTORY_RUNGS],
+                                 "a": (ladder.get("a") or [])[:BOOK_HISTORY_RUNGS]}
+            if len(trimmed) > 1:
+                snapshots.append(trimmed)
+    snapshots.sort(key=lambda row: row["t"])
+    return {"schema_version": SCHEMA_VERSION, "generated_at": stamp(now),
+            "window_hours": BOOK_HISTORY_HOURS, "rungs": BOOK_HISTORY_RUNGS,
+            "snapshots": snapshots}
+
+
+def publish(payload, public_dir, archive_dir, books_dir, now):
     """Write the consumer-facing artifacts. These are served, not committed; only the
     archive is durable, which is what keeps repository growth flat."""
     public_dir, archive_dir = Path(public_dir), Path(archive_dir)
     atomic_write(public_dir / "index.json", build_index(payload))
     atomic_write(public_dir / "summary.json", build_summary(payload))
     atomic_write(public_dir / "commodities.json", build_commodities(payload))
-    written = 3
+    atomic_write(public_dir / "books.json", build_book_history(books_dir, now))
+    written = 4
     for code, category in payload["categories"].items():
         atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
         written += 1
@@ -964,8 +1011,11 @@ def main(argv=None):
         output = collect(client, previous, max_pages=args.max_pages)
         validate(output)
         atomic_write(args.output, output)
-        files = publish(output, args.public_dir, args.archive_dir, parse_time(output["generated_at"]))
+        # The snapshot is appended before the publication reads it, so the served history
+        # ends at the run that just happened rather than the one before it.
         books = append_book_history(output, args.books_dir, parse_time(output["generated_at"]))
+        files = publish(output, args.public_dir, args.archive_dir, args.books_dir,
+                        parse_time(output["generated_at"]))
         print(f"Saved {output['health']['transaction_count']} transactions and {files} published files"
               f"{' plus a book snapshot' if books else ''}; status={output['status']}")
         return 0 if output["status"] == "ok" else 1
