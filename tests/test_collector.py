@@ -257,6 +257,42 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(stamps, sorted(stamps))
             self.assertEqual(len(stamps), 2)
 
+    def test_price_shape_separates_a_roll_that_prices_an_item_from_one_that_does_not(self):
+        """A knife is a commodity to 37 attack and not at 40; the advice differs and so must
+        the measure."""
+        def tx(roll, price, minutes=0):
+            return {'eligible_for_comps': True, 'roll_key': roll, 'unit_price': price,
+                    'sold_at': c.stamp(NOW - timedelta(minutes=minutes)),
+                    'time_to_sell_seconds': 60, 'quality_issues': []}
+        # Flat: eight rolls, all trading in the same narrow band.
+        flat = []
+        for r in range(20):
+            for i in range(10):
+                flat.append(tx('r%d' % r, 1.70 + 0.01 * (i % 5)))
+        shape = c.price_shape(flat, NOW)
+        self.assertTrue(shape['flat'])
+        self.assertLess(shape['ratio'], c.FLAT_RATIO)
+        self.assertEqual(shape['sales'], len(flat))
+        # Roll-priced: the same eight rolls an octave apart.
+        steep = []
+        for r in range(20):
+            for i in range(10):
+                steep.append(tx('r%d' % r, (1 + r) * (1.0 + 0.01 * (i % 5))))
+        self.assertFalse(c.price_shape(steep, NOW)['flat'])
+        # The band excludes the rolls that fetch a premium, so a commodity ask is placed
+        # against what it competes with rather than against a different product.
+        # Two premium rolls among twenty ordinary ones: a minority by count, and the whole
+        # top of the item's prices.
+        mixed = list(flat) + [tx('top%d' % t, 8.0) for t in range(2) for _ in range(10)]
+        band = c.price_shape(mixed, NOW)
+        self.assertTrue(band['flat'])
+        self.assertEqual(band['base_sales'], len(flat))
+        self.assertLess(band['base_quantiles'][-1], 2.0)
+        self.assertGreater(band['quantiles'][-1], 7.0)
+        self.assertGreater(band['premium_above'], 1.8)
+        # Too little history says nothing rather than guessing.
+        self.assertIsNone(c.price_shape(flat[:10], NOW))
+
     def test_served_book_history_is_the_window_trimmed_to_its_top_rungs(self):
         """The capture is whole because intent cannot be recovered; the publication is cut
         to the rungs and days a reader can actually use."""

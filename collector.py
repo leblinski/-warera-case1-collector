@@ -33,6 +33,18 @@ SCHEMA_VERSION = 5
 BOOK_HISTORY_HOURS = 72
 BOOK_HISTORY_RUNGS = 6
 
+# Whether an item's roll prices it. A roll is worth something when the spread between what
+# different rolls fetch is large against the noise inside one roll, and worth nothing when
+# it is not - and the two cases want opposite advice, so the measure has to be published
+# rather than assumed. Measured across this cache the split is not close: sniper 28.6,
+# helmet3 18.3, rifle 17.3, tank 13.8 on one side; knife 1.7, every tier-1 and tier-2 piece
+# between 0.5 and 1.5, and the gun at 0.0 - one price, 4.000, across twelve thousand sales.
+# Nothing lands between 1.7 and 4.7, so the threshold sits in the gap.
+FLAT_RATIO = 3.0
+SHAPE_MIN_ROLL_SALES = 8
+SHAPE_MIN_ROLLS = 4
+SHAPE_MIN_SALES = 60
+
 # How long retained transactions live in the rolling output. The source only exposes a short
 # rolling window, so depth accumulates forward: a fresh cache reaches RETENTION_HOURS only
 # after running for that long. Distinct from COMPS_WINDOW_HOURS below.
@@ -428,10 +440,97 @@ def collect_market(client, manifest, previous, now, max_pages=1000):
             "transactions": [pack_transaction(tx) for tx in rows],
         }
         result["rolls"] = aggregate(rows, now)
+        result["price_shape"] = price_shape(rows, now)
         results[code] = result
     if error:
         print(f"Market history incomplete: {error}", flush=True)
     return results
+
+
+def quantiles(values, steps=20):
+    """steps+1 points from the minimum to the maximum, so a consumer can place any price in
+    the distribution by interpolating rather than by carrying every sale."""
+    ordered = sorted(values)
+    if not ordered:
+        return []
+    last = len(ordered) - 1
+    out = []
+    for i in range(steps + 1):
+        pos = last * i / steps
+        low = int(pos)
+        high = min(last, low + 1)
+        out.append(round(ordered[low] + (ordered[high] - ordered[low]) * (pos - low), 6))
+    return out
+
+
+def price_shape(transactions, now):
+    """Does this item's roll price it, and what does the item as a whole fetch?
+
+    The calculator prices a piece off its own exact roll, which is right where a roll is
+    worth something and quietly wrong where it is not. On a knife the medians run 1.756 at
+    attack 25 and 1.810 at 36 - flat, inside the noise of a single roll - and then 1.899,
+    2.200 and 3.000 at 38, 39 and 40. Pricing the flat part off thirty-five sales of one
+    roll is fitting noise, and it produced one price for every knife in a hand: too high for
+    the twenty that do not sell and too low for the one that would.
+
+    So the shape is measured and published, and the advice can differ. `flat` says the roll
+    is not the thing to price against; `quantiles` is what the item itself fetches, which is
+    what a consumer should place an asking price against instead."""
+    rows = [tx for tx in transactions
+            if tx["eligible_for_comps"]
+            and now - timedelta(hours=RETENTION_HOURS) <= parse_time(tx["sold_at"]) <= now
+            and not stale_listing(tx)]
+    if len(rows) < SHAPE_MIN_SALES:
+        return None
+    groups = defaultdict(list)
+    for tx in rows:
+        groups[tx["roll_key"]].append(tx["unit_price"])
+    medians, spreads = [], []
+    for prices in groups.values():
+        if len(prices) < SHAPE_MIN_ROLL_SALES:
+            continue
+        ordered = sorted(prices)
+        medians.append(statistics.median(ordered))
+        low = ordered[int(len(ordered) * 0.25)]
+        high = ordered[int(len(ordered) * 0.75)]
+        if low > 0:
+            spreads.append((high / low - 1) * 100)
+    if len(medians) < SHAPE_MIN_ROLLS or not spreads:
+        return None
+    medians.sort()
+    lo = medians[int(len(medians) * 0.1)]
+    hi = medians[int(len(medians) * 0.9)]
+    between = (hi / lo - 1) * 100 if lo > 0 else 0.0
+    within = statistics.median(spreads)
+    ratio = between / max(1.0, within)
+    prices = [tx["unit_price"] for tx in rows]
+
+    # A flat item is not uniformly flat. A knife is a commodity at 1.75 across every roll
+    # from 21 to 37 attack and then 4.08 at 40 attack with 5 crit, and those top rolls are
+    # a tenth of the sales and the whole top half of the item's distribution. Placing a
+    # commodity ask against that mixture flatters it: 1.85 reads as the middle of the item
+    # and is high against the rolls it actually competes with.
+    #
+    # So the band an ordinary roll competes in is published separately, with the rolls that
+    # fetch a premium taken out. Twice, because the first cut is made against a median the
+    # premium rolls are themselves inflating.
+
+    margin = 1 + max(0.10, within / 100)
+    base = prices
+    cut = 0.0
+    for _ in range(2):
+        cut = statistics.median(base) * margin
+        keep = [key for key, group in groups.items()
+                if len(group) < SHAPE_MIN_ROLL_SALES or statistics.median(group) <= cut]
+        picked = [price for key in keep for price in groups[key]]
+        if len(picked) < SHAPE_MIN_SALES:
+            break
+        base = picked
+    return {"sales": len(rows), "rolls_measured": len(medians),
+            "roll_spread_pct": round(between, 2), "within_roll_pct": round(within, 2),
+            "ratio": round(ratio, 2), "flat": ratio < FLAT_RATIO,
+            "premium_above": round(cut, 6), "base_sales": len(base),
+            "quantiles": quantiles(prices), "base_quantiles": quantiles(base)}
 
 
 def summarize(rows, now, timed=None):
@@ -692,7 +791,8 @@ def build_summary(payload):
             "categories": {code: {"name": row["name"], "tier": row["tier"], "rarity": row["rarity"],
                                   "slot": row["slot"], "status": row["status"],
                                   "last_success_at": row["last_success_at"],
-                                  "transaction_count": row["transaction_count"], "rolls": row["rolls"]}
+                                  "transaction_count": row["transaction_count"], "rolls": row["rolls"],
+                                  "price_shape": row.get("price_shape")}
                            for code, row in payload["categories"].items()}}
 
 
@@ -932,6 +1032,7 @@ def migrate(payload):
         for code, category in payload.get("categories", {}).items():
             rows = [unpack_transaction(row, code) for row in category.get("transactions", [])]
             category["rolls"] = aggregate(rows, now)
+            category["price_shape"] = price_shape(rows, now)
     payload["schema_version"] = SCHEMA_VERSION
     print(f"Migrated cache from schema {version} to {SCHEMA_VERSION}", flush=True)
     return payload
