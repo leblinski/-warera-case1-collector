@@ -74,6 +74,7 @@ COMMODITY_TRADE_PAGES = 2
 # and visits the items that waited longest first. Coverage comes round over several runs,
 # which is what an incremental collector is for, and a run stays short enough that the next
 # one starts on time.
+COMMODITY_TRADE_ATTEMPTS = 2
 COMMODITY_TRADE_BUDGET_SECONDS = 150
 COMMODITY_TRADE_RESERVE_SECONDS = 90
 SCHEMA_VERSION = 6
@@ -260,12 +261,19 @@ class Client:
                     return
             time.sleep(min(delay, 1))
 
-    def call(self, procedure, params=None):
+    def call(self, procedure, params=None, attempts=4):
+        """attempts is how many times a retryable failure is worth paying for.
+
+        The default suits the equipment scan, where a lost page is a hole in the history.
+        A caller working inside a slice of the run passes fewer: four tries at a thirty
+        second timeout plus backoff is over two minutes spent on one item, which is the
+        whole slice, and the items behind it get nothing.
+        """
         url = self.base_url + "/" + procedure + "?" + urlencode({"input": canonical(params or {})})
         headers = {"Accept": "application/json", "User-Agent": "warera-case1-collector/1.0 (Supported by warerastats.io)"}
         if self.api_key:
             headers["X-API-Key"] = self.api_key
-        for attempt in range(4):
+        for attempt in range(attempts):
             self._throttle()
             try:
                 remaining = self.deadline - time.monotonic()
@@ -281,7 +289,7 @@ class Client:
                 failure = ApiError(f"{procedure}: network request failed ({type(exc).__name__})", 503)
             except (ValueError, TypeError) as exc:
                 raise ApiError(f"{procedure}: invalid JSON response") from exc
-            if failure.status not in (408, 429, 500, 502, 503, 504) or attempt == 3:
+            if failure.status not in (408, 429, 500, 502, 503, 504) or attempt == attempts - 1:
                 raise failure
             delay = max(2 ** attempt, failure.retry_after)
             with self.lock:
@@ -777,7 +785,8 @@ def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TR
         params = {"itemCode": code, "transactionType": COMMODITY_TRADE_TYPE, "limit": 100}
         if cursor:
             params["cursor"] = cursor
-        rows, cursor = page_data(client.call("transaction.getPaginatedTransactions", params))
+        rows, cursor = page_data(client.call("transaction.getPaginatedTransactions", params,
+                                            attempts=COMMODITY_TRADE_ATTEMPTS))
         pages += 1
         reached_known = False
         oldest = None
@@ -818,8 +827,11 @@ def collect_commodity_trades_all(client, commodities, now):
     where the last one ran out.
     """
     started = time.monotonic()
-    # Never fetched sorts first; after that, oldest first.
-    order = sorted(commodities, key=lambda code: commodities[code].get("trades_fetched_at") or "")
+    # A counter rather than a clock: every item attempted in one run would share a timestamp,
+    # and the rotation would collapse back to alphabetical. Never attempted sorts first, then
+    # least recently attempted.
+    turn = max((row.get("trades_turn") or 0) for row in commodities.values()) if commodities else 0
+    order = sorted(commodities, key=lambda code: (commodities[code].get("trades_turn") or 0, code))
     for code in order:
         row = commodities[code]
         spent = time.monotonic() - started
@@ -828,6 +840,12 @@ def collect_commodity_trades_all(client, commodities, now):
             row["trades_status"] = "skipped"
             row["trades_error"] = "out of time this run; the next run continues"
             continue
+        # Taken before the attempt, not after it: ordering on the last success sent a
+        # chronically failing item back to the head of the queue every run, and it spent the
+        # slice again before anything behind it was reached.
+        turn += 1
+        row["trades_turn"] = turn
+        row["trades_attempted_at"] = stamp(now)
         try:
             trades, pages, stop = collect_commodity_trades(client, code, row, now)
             row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
