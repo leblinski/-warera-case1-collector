@@ -88,6 +88,10 @@ class FullClient:
                         + [raw('expired', hours=RETAINED_PAST)])
         if procedure == 'itemTrading.getPrices':
             return {code: 1.5 for code in c.COMMODITIES}
+        if procedure == 'user.getUserLite':
+            uid = (params or {}).get('userId')
+            # The shape the probe found, trimmed: the rest is the account's own bookkeeping.
+            return {'_id': uid, 'username': 'player-' + str(uid)[-4:], 'country': 'ct-1'}
         return {'buyOrders': [], 'sellOrders': []}
 
 
@@ -666,6 +670,84 @@ class CollectorTests(unittest.TestCase):
         with patch.object(c, 'COMMODITY_TRADE_BUDGET_SECONDS', 0.01):
             c.collect_commodity_trades_all(Slow(), commodities, NOW)
         self.assertEqual(visited, ['bread'])      # the next run continues, it does not restart
+
+    def test_a_fill_gets_both_players_names_not_just_their_ids(self):
+        """The game shows PartyBanana sold to WINSTONTURTLE. The rows carry only hex, so a
+        ledger is unreadable until the ids are resolved."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        users = payload['users']
+        self.assertTrue(users)
+        seller = payload['commodities']['steel']['trades'][0]['seller_id']
+        self.assertEqual(users[seller]['username'], 'player-' + seller[-4:])
+        self.assertEqual(users[seller]['fetched_at'], c.stamp(NOW))
+
+    def test_a_name_already_known_is_not_looked_up_again(self):
+        """There is no batch shape, so every name costs a request. A name is also not a
+        price: it does not go stale in fifteen minutes."""
+        asked = []
+
+        class Counting(FullClient):
+            def call(self, procedure, params=None, attempts=4):
+                if procedure == 'user.getUserLite':
+                    asked.append((params or {}).get('userId'))
+                return super().call(procedure, params, attempts)
+
+        client = Counting()
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(client, now=NOW)
+        first = len(asked)
+        self.assertTrue(first)
+
+        asked.clear()
+        with contextlib.redirect_stdout(io.StringIO()):
+            again = c.collect(client, previous=payload, now=NOW)
+        self.assertEqual(asked, [])
+        self.assertEqual(again['users'], payload['users'])
+
+        # Past the refresh window the same account is asked again, because a player can rename.
+        later = NOW + timedelta(days=c.USER_NAME_REFRESH_DAYS + 1)
+        c.collect_user_names(client, payload, payload['users'], later)
+        self.assertTrue(asked)
+
+    def test_a_placeholder_order_does_not_outrank_every_real_account(self):
+        """One unit of fish parked at 999999 outweighed the whole game when the ranking
+        weighed orders by notional, and it would have been named first every run."""
+        payload = {'commodities': {'fish': {
+            'price': 3.5,
+            'order_book': {'sell_orders': [{'user': 'parked', 'price': 999999.0, 'quantity': 1},
+                                           {'user': 'real', 'price': 3.55, 'quantity': 4000}],
+                           'buy_orders': []}}}}
+        self.assertEqual(c.name_candidates(payload), ['real'])
+
+    def test_a_missing_name_does_not_stop_the_rest(self):
+        """A name that does not arrive is not an outage; the ledger shows the id until a
+        later run gets it."""
+        class Broken(FullClient):
+            def call(self, procedure, params=None, attempts=4):
+                if procedure == 'user.getUserLite':
+                    raise c.ApiError('user.getUserLite: network request failed', 503)
+                return super().call(procedure, params, attempts)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(Broken(), now=NOW)
+        self.assertEqual(payload['users'], {})
+        self.assertEqual(payload['status'], 'ok')
+
+    def test_names_publish_as_their_own_file(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            c.publish(payload, root / 'public', root / 'archive', root / 'books', NOW)
+            shard = json.loads((root / 'public' / 'users.json').read_text())
+        self.assertEqual(shard['columns'], ['username', 'country', 'fetched_at'])
+        self.assertEqual(shard['user_count'], len(payload['users']))
+        uid = next(iter(shard['users']))
+        name, country, fetched = shard['users'][uid]
+        self.assertEqual(name, payload['users'][uid]['username'])
+        self.assertEqual(country, 'ct-1')
+        self.assertEqual(fetched, c.stamp(NOW))
 
     def test_a_flaky_book_on_a_supplementary_commodity_does_not_redden_the_run(self):
         """With three commodities a failed book was worth a red run. With twenty-three one

@@ -75,6 +75,14 @@ COMMODITY_TRADE_PAGES = 2
 # which is what an incremental collector is for, and a run stays short enough that the next
 # one starts on time.
 COMMODITY_TRADE_ATTEMPTS = 2
+# A name is cheap - user.getUserLite answers in well under a second, unlike the per-item
+# transaction query - but there are thousands of accounts and no procedure takes a list, so
+# they are resolved a slice at a time, busiest first, and kept.
+USER_NAME_BUDGET_SECONDS = 45
+USER_NAME_REFRESH_DAYS = 14
+# An order priced far away from the item is not a position, it is a placeholder. One unit of
+# fish at 999999 outweighed every real order in the game when weighted by notional.
+OFF_MARKET_BAND = 2.0
 COMMODITY_TRADE_BUDGET_SECONDS = 150
 COMMODITY_TRADE_RESERVE_SECONDS = 90
 SCHEMA_VERSION = 6
@@ -865,6 +873,69 @@ def collect_commodity_trades_all(client, commodities, now):
     return commodities
 
 
+def name_candidates(payload):
+    """Account ids worth a name, busiest first.
+
+    Weighted by the gold each account has standing in the books and has moved in the fills
+    the cache still holds, so the accounts that actually shape a price are named first and
+    the long tail is named eventually.
+    """
+    weight = defaultdict(float)
+    for row in payload.get("commodities", {}).values():
+        book, mid = row.get("order_book") or {}, number(row.get("price"))
+        for side in ("buy_orders", "sell_orders"):
+            for order in book.get(side) or []:
+                uid, price, quantity = order.get("user"), number(order.get("price")), number(order.get("quantity"))
+                if not isinstance(uid, str) or price is None or quantity is None:
+                    continue
+                if mid and not (mid / OFF_MARKET_BAND <= price <= mid * OFF_MARKET_BAND):
+                    continue
+                weight[uid] += price * quantity
+        for trade in row.get("trades") or []:
+            for uid in (trade.get("seller_id"), trade.get("buyer_id")):
+                if isinstance(uid, str):
+                    weight[uid] += (number(trade.get("unit_price")) or 0) * (number(trade.get("quantity")) or 0)
+    for category in payload.get("categories", {}).values():
+        for trade in category.get("transactions") or []:
+            for uid in (trade.get("seller_id"), trade.get("buyer_id")):
+                if isinstance(uid, str):
+                    weight[uid] += number(trade.get("money")) or 0
+    return [uid for uid, _ in sorted(weight.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
+def collect_user_names(client, payload, previous, now):
+    """Put a player's name to the id every order and every fill carries.
+
+    The game shows both sides of a trade by name and the API will too, one account per call:
+    user.getUserLite is the only procedure that answered, and no batch shape exists. So this
+    takes a slice of the run, spends it on the accounts that matter most, and keeps what it
+    learns - a name is not a price and does not go stale in fifteen minutes.
+    """
+    users = dict(previous or {})
+    stale = now - timedelta(days=USER_NAME_REFRESH_DAYS)
+    started = time.monotonic()
+    for uid in name_candidates(payload):
+        known = users.get(uid)
+        if known and known.get("username") and parse_time(known["fetched_at"]) > stale:
+            continue
+        remaining = (client.deadline - time.monotonic()) if getattr(client, "deadline", None) is not None else None
+        if time.monotonic() - started >= USER_NAME_BUDGET_SECONDS or (remaining is not None and remaining < 30):
+            break
+        try:
+            raw = client.call("user.getUserLite", {"userId": uid}, attempts=COMMODITY_TRADE_ATTEMPTS)
+        except (CollectionError, ApiError):
+            # A name that does not arrive is not an outage: the ledger shows the id until
+            # some later run gets it, and the ranking brings it back round.
+            continue
+        name = raw.get("username") if isinstance(raw, dict) else None
+        if not isinstance(name, str) or not name:
+            continue
+        # Only what a ledger shows. The rest of getUserLite is that account's private
+        # bookkeeping - last connection, notification checkpoints - and is none of ours.
+        users[uid] = {"username": name, "country": raw.get("country"), "fetched_at": stamp(now)}
+    return users
+
+
 def collect_commodities(client, previous, now):
     try:
         prices = normalize_prices(client.call("itemTrading.getPrices"))
@@ -919,6 +990,8 @@ def collect(client, previous=None, now=None, max_pages=1000):
     commodities = collect_commodities(client, previous.get("commodities", {}), now)
     results = collect_market(client, manifest, previous.get("categories", {}), now, max_pages)
     collect_commodity_trades_all(client, commodities, now)
+    users = collect_user_names(client, {"commodities": commodities, "categories": results},
+                               previous.get("users", {}), now)
     for code, row in results.items():
         print(f"{code}: {row['status']}, {row['transaction_count']} cached, {row['pages_fetched']} shared pages", flush=True)
     for code, row in commodities.items():
@@ -946,6 +1019,7 @@ def collect(client, previous=None, now=None, max_pages=1000):
                    "failed_commodities": failed_inputs, "degraded_commodities": degraded_inputs, "quality_issue_count": quality_issues,
                    "request_count": client.requests, "transaction_count": sum(row["transaction_count"] for row in results.values())},
         "commodities": commodities, "categories": {cat["item_code"]: results[cat["item_code"]] for cat in manifest},
+        "users": users,
     }
 
 
@@ -1023,10 +1097,25 @@ def build_trades(code, row, payload):
             "sales": rows}
 
 
+def build_users(payload):
+    """The id-to-name map, so a consumer can render a ledger without asking the game.
+
+    Flat and whole rather than sharded: it is one small file, every other artifact refers
+    into it, and a name is the same name whichever item it appears under.
+    """
+    users = payload.get("users") or {}
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "user_count": len(users),
+            "columns": ["username", "country", "fetched_at"],
+            "users": {uid: [row.get("username"), row.get("country"), row.get("fetched_at")]
+                      for uid, row in sorted(users.items())}}
+
+
 def build_index(payload):
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "updated_at": payload["updated_at"], "status": payload["status"],
             "source": payload["source"], "policy": payload["policy"], "health": payload["health"],
+            "user_count": len(payload.get("users") or {}),
             "commodities": {code: {"price": row.get("price"), "status": row["status"],
                                    "name": row["name"],
                                    "trade_count": row.get("trade_count", 0),
@@ -1185,7 +1274,8 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
     atomic_write(public_dir / "summary.json", build_summary(payload))
     atomic_write(public_dir / "commodities.json", build_commodities(payload))
     atomic_write(public_dir / "books.json", build_book_history(books_dir, now))
-    written = 4
+    atomic_write(public_dir / "users.json", build_users(payload))
+    written = 5
     for code, category in payload["categories"].items():
         atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
         written += 1
@@ -1254,6 +1344,7 @@ def migrate(payload):
     the summaries are always rebuilt from the retained rows, which no such change touches,
     rather than the retention window being refetched.
     """
+    payload.setdefault("users", {})
     version = payload.get("schema_version")
     if version == SCHEMA_VERSION:
         return payload
