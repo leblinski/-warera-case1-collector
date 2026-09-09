@@ -88,8 +88,45 @@ def main():
             if rows:
                 tnote += " keys " + str(sorted(rows[0])[:10])
         print(f"  {c:<22}{bnote:<44}{tnote}")
+    census(client)
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def census(client, pages=6):
+    """What is actually in the shared itemMarket stream.
+
+    collect_market pages this stream unfiltered and drops every row whose itemCode is not
+    one of the 36 equipment codes. If commodity fills ride the same stream then charting
+    them costs no extra requests at all - the rows are already being fetched and discarded.
+    This counts them rather than assuming.
+    """
+    from collections import Counter
+    codes, types, rows_seen, cursor = Counter(), Counter(), 0, None
+    for _ in range(pages):
+        params = {"transactionType": "itemMarket", "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        got, err = try_call(client, "transaction.getPaginatedTransactions", params)
+        if err:
+            print("stream REJECTED:", err)
+            return
+        rows, cursor = page_data(got)
+        rows_seen += len(rows)
+        for r in rows:
+            codes[r.get("itemCode")] += 1
+            types[r.get("transactionType")] += 1
+        if not cursor:
+            break
+    print(f"\nShared itemMarket stream: {rows_seen} rows over {pages} pages")
+    print("  transactionType values:", dict(types))
+    equip = sum(n for c, n in codes.items() if c in EQUIPMENT)
+    other = sum(n for c, n in codes.items() if c not in EQUIPMENT)
+    print(f"  {equip} equipment rows, {other} non-equipment rows ({len(codes)} distinct codes)")
+    print("  non-equipment codes in the stream:")
+    for c, n in codes.most_common():
+        if c not in EQUIPMENT:
+            print(f"    {str(c):<22}{n:>5}")
