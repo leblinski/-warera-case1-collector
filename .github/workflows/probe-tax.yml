@@ -1,0 +1,29 @@
+# Answers whether the calculator has to keep asking the reader for tax rates: does a
+# country carry a market tax, what is the spread of it across countries, and can a
+# reader's own country be resolved. Manual only, read-only, never on a schedule.
+name: Probe country tax
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_tax.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
