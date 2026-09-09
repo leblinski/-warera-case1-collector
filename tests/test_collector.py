@@ -567,6 +567,27 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(steel['trades_status'], 'error')
         self.assertEqual(result['status'], 'ok')
 
+    def test_a_three_commodity_cache_migrates_instead_of_being_rejected(self):
+        """The failure this test exists for: schema 5 held three commodities, validate()
+        compares the set, and a widened COMMODITIES made the collector reject its own cache
+        on load and refuse to run at all."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            fresh = c.collect(FullClient(), now=NOW)
+        old = json.loads(json.dumps(fresh))
+        old['schema_version'] = 5
+        old['commodities'] = {k: v for k, v in old['commodities'].items()
+                              if k in ('case1', 'scraps', 'steel')}
+        with self.assertRaises(c.CollectionError):
+            c.validate(old)
+        with contextlib.redirect_stdout(io.StringIO()):
+            migrated = c.migrate(old)
+        c.validate(migrated)
+        self.assertEqual(set(migrated['commodities']), set(c.COMMODITIES))
+        self.assertEqual(migrated['commodities']['ammo']['trades'], [])
+        # The three it already had are untouched.
+        self.assertEqual(migrated['commodities']['steel']['price'],
+                         fresh['commodities']['steel']['price'])
+
     def test_commodity_failure_retains_price_and_timestamp(self):
         previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=1))}}
         client = SequenceClient([c.ApiError('prices down')]

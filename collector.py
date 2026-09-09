@@ -52,7 +52,7 @@ COMMODITIES = {
 # the pages have to be asked for by type or almost nothing survives the filter.
 COMMODITY_TRADE_TYPE = "trading"
 COMMODITY_TRADE_PAGES = 4
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 # How much of the captured book history is served, and how deep. Three days answers the
 # questions a single snapshot cannot - whether the wall under the price is building or
@@ -1163,7 +1163,11 @@ def migrate(payload):
 
     Every version since has changed what aggregate() returns - schema 3 dropped sales off
     long-standing listings, schema 4 added the retained window, schema 5 stopped letting the
-    staleness filter censor the time to sell. validate() recomputes those
+    staleness filter censor the time to sell. Schema 6 widened COMMODITIES from three codes
+    to every tradeable one, which validate() checks as a set, so a cache written before it
+    is short twenty rows and gets rejected on load - the collector refusing to run at all
+    rather than collecting the twenty it is missing. The absent codes are seeded empty here
+    and the next run fills them. validate() recomputes those
     summaries as a tamper check, so any change to aggregate() leaves older caches failing it,
     and the collector rejects its own cache on load and cannot run at all. That is not a
     special case to handle once: it is what every future change to aggregate() will do. So
@@ -1178,6 +1182,14 @@ def migrate(payload):
     if version == 1:
         for category in payload.get("categories", {}).values():
             category["transactions"] = [pack_transaction(tx) for tx in category.get("transactions", [])]
+    # Codes the cache has never seen. Seeded rather than fetched: a migration must not make
+    # network calls, and one run's gap is what the next run is for.
+    for code, name in COMMODITIES.items():
+        payload.setdefault("commodities", {}).setdefault(
+            code, {"item_code": code, "name": name, "status": "error",
+                   "errors": ["never collected"], "attempted_at": payload.get("generated_at"),
+                   "last_success_at": None, "trades": [], "trade_count": 0,
+                   "trades_status": "error"})
     generated_at = payload.get("generated_at")
     if generated_at:
         now = parse_time(generated_at)
