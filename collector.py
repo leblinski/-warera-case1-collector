@@ -51,7 +51,16 @@ COMMODITIES = {
 # and 2 trading - so on a scrap-like item most of a page is other people's crafting, and
 # the pages have to be asked for by type or almost nothing survives the filter.
 COMMODITY_TRADE_TYPE = "trading"
-COMMODITY_TRADE_PAGES = 4
+COMMODITY_TRADE_PAGES = 2
+
+# What the trade pass may spend, and what it must leave behind. A cold cache wants four
+# pages an item across twenty-three items, and on the first run that arithmetic spent the
+# whole budget before the equipment scan had started: 39 requests, nothing collected, all
+# thirty-six categories failed. The equipment history is the thing this collector exists
+# for; the commodity trades are new and incremental, and a commodity that does not get its
+# page this run gets it on the next one. So the trades go last and stop early, and the
+# reserve is what they may not touch.
+COMMODITY_TRADE_RESERVE_SECONDS = 90
 SCHEMA_VERSION = 6
 
 # How much of the captured book history is served, and how deep. Three days answers the
@@ -762,8 +771,12 @@ def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TR
             if sale is None:
                 continue
             sold = parse_time(sale["sold_at"])
-            if sold > now + timedelta(minutes=5):
-                raise CollectionError("Commodity transaction timestamp too far in the future")
+            # `now` is the clock the run started on, and a long run keeps paging while the
+            # market keeps trading, so a sale newer than it is ordinary rather than
+            # suspicious. It belongs to the next run. Raising here aborted the whole item
+            # for a row that was merely early.
+            if sold > now:
+                continue
             oldest = sold if oldest is None or sold < oldest else oldest
             reached_known = reached_known or sale["id"] in known
             if cutoff <= sold <= now:
@@ -778,6 +791,36 @@ def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TR
             break
     return (sorted(kept.values(), key=lambda row: (row["sold_at"], row["id"]), reverse=True),
             pages, stop or f"page_cap_{max_pages}")
+
+
+def collect_commodity_trades_all(client, commodities, now):
+    """Fill in commodity's fills, with whatever run time is left over.
+
+    Runs after the market scan and stops while a reserve remains, because the equipment
+    history is what this collector exists for and the trades are incremental: an item that
+    does not get its page this run gets it on the next one. The first run tried it the other
+    way round and spent the whole budget before the scan began.
+    """
+    for code, row in commodities.items():
+        if getattr(client, "deadline", None) is not None:
+            remaining = client.deadline - time.monotonic()
+            if remaining < COMMODITY_TRADE_RESERVE_SECONDS:
+                row["trades_status"] = "skipped"
+                row["trades_error"] = "no run time left; the next run continues"
+                continue
+        try:
+            trades, pages, stop = collect_commodity_trades(client, code, row, now)
+            row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
+                       trades_pages=pages, trades_stop=stop, trades_status="ok")
+            row.pop("trades_error", None)
+        except (CollectionError, ApiError) as exc:
+            # Keep whatever was already held; a missed page is a gap, not a reason to forget
+            # the week. And it is not an outage either: a commodity row exists to say what
+            # the thing costs and what the book looks like, and both survive a failed page,
+            # so this is recorded where a reader can see it rather than in the run's health.
+            row["trades_status"] = "error"
+            row["trades_error"] = str(exc)
+    return commodities
 
 
 def collect_commodities(client, previous, now):
@@ -807,24 +850,11 @@ def collect_commodities(client, previous, now):
         except CollectionError as exc:
             row["book_status"] = "error"
             row["errors"].append(str(exc))
-        try:
-            trades, pages, stop = collect_commodity_trades(client, code, old, now)
-            row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
-                       trades_pages=pages, trades_stop=stop, trades_status="ok")
-        except (CollectionError, ApiError) as exc:
-            # Keep whatever was already held; a missed page is a gap, not a reason to
-            # forget the week.
-            #
-            # And it is not an outage either. A commodity row exists to answer what the
-            # thing costs and what the book looks like, and both of those survive a failed
-            # trade page. Twenty-three items paging four deep will drop a page from time to
-            # time, and routing that into `errors` would turn every hiccup into a degraded
-            # run and a red workflow - which is how a health signal stops being read. It is
-            # recorded where a reader can see it instead.
-            row.setdefault("trades", old.get("trades", []))
-            row["trade_count"] = len(row["trades"])
-            row["trades_status"] = "error"
-            row["trades_error"] = str(exc)
+        # Trades are collected after the market scan, by collect_commodity_trades_all.
+        # What is already held carries forward until then.
+        row["trades"] = old.get("trades", [])
+        row["trade_count"] = len(row["trades"])
+        row["trades_status"] = old.get("trades_status", "pending")
         row["status"] = "error" if row["errors"] else "ok"
         # Retention applies to commodity observations too; never resurrect old prices.
         row["trades"] = [t for t in row.get("trades", [])
@@ -846,6 +876,7 @@ def collect(client, previous=None, now=None, max_pages=1000):
     manifest = categories()
     commodities = collect_commodities(client, previous.get("commodities", {}), now)
     results = collect_market(client, manifest, previous.get("categories", {}), now, max_pages)
+    collect_commodity_trades_all(client, commodities, now)
     for code, row in results.items():
         print(f"{code}: {row['status']}, {row['transaction_count']} cached, {row['pages_fetched']} shared pages", flush=True)
     for code, row in commodities.items():
