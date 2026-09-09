@@ -79,15 +79,29 @@ def main():
             buys = (book or {}).get("buyOrders") or []
             sells = (book or {}).get("sellOrders") or []
             bnote = f"book ok ({len(buys)} buy / {len(sells)} sell orders)"
-        tx, terr = try_call(client, "transaction.getPaginatedTransactions", {"limit": 20, "itemCode": c})
+        tx, terr = try_call(client, "transaction.getPaginatedTransactions", {"limit": 100, "itemCode": c})
         if terr:
             tnote = f"trades REJECTED: {terr}"
         else:
             rows, _ = page_data(tx)
-            tnote = f"trades ok ({len(rows)} rows)"
-            if rows:
-                tnote += " keys " + str(sorted(rows[0])[:10])
-        print(f"  {c:<22}{bnote:<44}{tnote}")
+            from collections import Counter
+            kinds = Counter(r.get("transactionType") for r in rows)
+            priced = sum(1 for r in rows if r.get("money") is not None)
+            tnote = f"{len(rows)} rows, {priced} with money, types {dict(kinds)}"
+        print(f"  {c:<22}{bnote:<40}{tnote}")
+        # An unfiltered per-item query that mixes transaction types would poison a price
+        # series, so show one row of each type rather than trusting the key list.
+        if not terr:
+            seen = set()
+            for r in rows:
+                k = r.get("transactionType")
+                if k in seen:
+                    continue
+                seen.add(k)
+                slim = {x: r[x] for x in r if x not in ("__v", "_id", "buyerId", "sellerId")}
+                if isinstance(slim.get("item"), dict):
+                    slim["item"] = {"<keys>": sorted(slim["item"])[:8]}
+                print(f"      {k}: {json.dumps(slim, separators=(',', ':'))[:220]}")
     census(client)
     return 0
 
