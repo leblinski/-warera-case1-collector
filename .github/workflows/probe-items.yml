@@ -1,0 +1,28 @@
+# Answers which items trade and whether their trades are readable, so the commodity list
+# can be derived rather than typed. Manual only, read-only, never on a schedule.
+name: Probe tradeable items
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_items.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
