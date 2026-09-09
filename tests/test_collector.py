@@ -617,6 +617,34 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(visited[0], 'ammo')      # never fetched
         self.assertEqual(visited[1], 'bread')     # then the oldest
 
+    def test_a_flaky_book_on_a_supplementary_commodity_does_not_redden_the_run(self):
+        """With three commodities a failed book was worth a red run. With twenty-three one
+        of them fails most runs, and a signal that cries every run stops being read."""
+        class FlakyBook(FullClient):
+            def call(self, procedure, params=None):
+                if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'wood':
+                    raise c.CollectionError('network request failed')
+                return super().call(procedure, params)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = c.collect(FlakyBook(), now=NOW)
+        self.assertEqual(result['commodities']['wood']['status'], 'error')
+        self.assertEqual(result['health']['degraded_commodities'], ['wood'])
+        self.assertEqual(result['health']['failed_commodities'], [])
+        self.assertEqual(result['status'], 'ok')
+
+    def test_a_commodity_the_calculator_needs_still_reddens_the_run(self):
+        class NoScraps(FullClient):
+            def call(self, procedure, params=None):
+                if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'scraps':
+                    raise c.CollectionError('network request failed')
+                return super().call(procedure, params)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = c.collect(NoScraps(), now=NOW)
+        self.assertEqual(result['health']['failed_commodities'], ['scraps'])
+        self.assertEqual(result['status'], 'degraded')
+
     def test_the_trade_pass_never_starves_the_equipment_scan(self):
         """The failure this test exists for: the trades ran first, spent the whole run
         budget on twenty-three cold items, and all thirty-six categories collected nothing.
