@@ -645,6 +645,19 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(result['health']['failed_commodities'], ['scraps'])
         self.assertEqual(result['status'], 'degraded')
 
+    def test_require_healthy_ignores_a_supplementary_commodity_without_a_book(self):
+        """The run said ok and the workflow still went red: --require-healthy demanded a
+        price and a book from all twenty-three."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        payload['commodities']['wood'].update(status='error', errors=['network request failed'])
+        payload['commodities']['wood'].pop('order_book', None)
+        c.validate(payload, require_healthy=True, current_time=NOW)   # does not raise
+
+        payload['commodities']['scraps'].pop('order_book', None)
+        with self.assertRaises(c.CollectionError):
+            c.validate(payload, require_healthy=True, current_time=NOW)
+
     def test_the_trade_pass_never_starves_the_equipment_scan(self):
         """The failure this test exists for: the trades ran first, spent the whole run
         budget on twenty-three cold items, and all thirty-six categories collected nothing.

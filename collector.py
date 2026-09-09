@@ -1288,9 +1288,14 @@ def validate(payload, require_healthy=False, current_time=None):
             raise CollectionError("Output is older than 45 minutes or its clock is incorrect")
         if any(row["status"] != "ok" or not row["history_complete"] for row in payload["categories"].values()):
             raise CollectionError("Incomplete equipment history")
-        for row in payload["commodities"].values():
-            if row["status"] != "ok" or number(row.get("price")) is None or "order_book" not in row:
-                raise CollectionError("Incomplete commodity prices/order books")
+        # The same distinction the run's own status makes, and for the same reason: the
+        # three the calculator reads have to be there, and one of the other twenty missing a
+        # book on a transient error is not an unhealthy collector. This gate was written
+        # when three was all of them, and kept failing the run after the status stopped.
+        for code in REQUIRED_COMMODITIES:
+            row = payload["commodities"].get(code) or {}
+            if row.get("status") != "ok" or number(row.get("price")) is None or "order_book" not in row:
+                raise CollectionError(f"Incomplete prices/order book for {code}")
     return len(seen)
 
 
