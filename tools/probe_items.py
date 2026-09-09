@@ -92,8 +92,6 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
 
 
 def census(client, pages=6):
@@ -130,3 +128,6 @@ def census(client, pages=6):
     for c, n in codes.most_common():
         if c not in EQUIPMENT:
             print(f"    {str(c):<22}{n:>5}")
+
+if __name__ == "__main__":
+    raise SystemExit(main())
