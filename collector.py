@@ -742,7 +742,10 @@ def commodity_sale(raw, code):
     The per-item transaction query is filtered by item, not by transaction type, so it
     returns whatever else happened to that item - loot, production, gifts. Those rows carry
     no money at all, and letting one through would move a median with a price it never had.
-    Everything a candle needs is derived here and nothing else is kept.
+
+    Both counterparties are kept. The game shows them on a fill and the equipment path has
+    always stored them; dropping them here left the commodity side unable to say who traded
+    with whom, which is the whole of a concentration or a spoof question.
     """
     if not isinstance(raw, dict):
         raise CollectionError("Transaction is not an object")
@@ -764,7 +767,8 @@ def commodity_sale(raw, code):
         if 0 <= seconds <= MAX_TIME_ON_MARKET_HOURS * 3600:
             on_market = int(seconds)
     return {"id": txid, "sold_at": stamp(sold), "unit_price": money / quantity,
-            "quantity": quantity, "time_on_market_seconds": on_market}
+            "quantity": quantity, "time_on_market_seconds": on_market,
+            "seller_id": raw.get("sellerId"), "buyer_id": raw.get("buyerId")}
 
 
 def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TRADE_PAGES):
@@ -998,20 +1002,24 @@ def build_summary(payload):
 def build_trades(code, row, payload):
     """One commodity's fills, compact, newest last.
 
-    [unit_price, sold_at, quantity, seconds_on_market] - the same row shape the equipment
-    shards use, plus the quantity, because a commodity trades in size and a candle without
-    volume is half a candle. Bars are the consumer's to build: the window that suits a
-    fifteen-minute collector is not the window that suits a chart, and aggregating here
-    would throw away the choice.
+    [unit_price, sold_at, quantity, seconds_on_market, seller_id, buyer_id] - the same row
+    shape the equipment shards use, plus the quantity, because a commodity trades in size and
+    a candle without volume is half a candle. Bars are the consumer's to build: the window
+    that suits a fifteen-minute collector is not the window that suits a chart, and
+    aggregating here would throw away the choice. The counterparties ride along because a
+    ledger of who traded with whom is what tells a wall from real demand, and a row already
+    carries them.
     """
-    rows = [[t["unit_price"], epoch(t["sold_at"]), t["quantity"], t["time_on_market_seconds"]]
+    rows = [[t["unit_price"], epoch(t["sold_at"]), t["quantity"], t["time_on_market_seconds"],
+             t.get("seller_id"), t.get("buyer_id")]
             for t in row.get("trades", [])]
     rows.sort(key=lambda r: (r[1], r[0]))
     return {"item_code": code, "name": row["name"], "generated_at": payload["generated_at"],
             "status": row.get("trades_status", "error"),
             "trades_fetched_at": row.get("trades_fetched_at"),
             "retention_hours": RETENTION_HOURS,
-            "columns": ["unit_price", "sold_at", "quantity", "seconds_on_market"],
+            "columns": ["unit_price", "sold_at", "quantity", "seconds_on_market",
+                        "seller_id", "buyer_id"],
             "sales": rows}
 
 
