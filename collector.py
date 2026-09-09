@@ -22,7 +22,36 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
-COMMODITIES = {"case1": "Case I", "scraps": "Scrap", "steel": "Steel"}
+# Every code itemTrading.getPrices returns. The call is already made unfiltered on every
+# run; until now all but three of its rows were discarded. The game sends bare numbers with
+# no display name, so the names are ours and have to be kept by hand - a new item appears as
+# its code until it is added here, which is visible rather than silent.
+COMMODITIES = {
+    "ammo": "Ammo", "bread": "Bread", "case1": "Case I", "case2": "Case II",
+    "coca": "Coca", "cocain": "Cocain", "concrete": "Concrete", "cookedFish": "Cooked Fish",
+    "fish": "Fish", "grain": "Grain", "heavyAmmo": "Heavy Ammo", "iron": "Iron",
+    "lead": "Lead", "lightAmmo": "Light Ammo", "limestone": "Limestone",
+    "livestock": "Livestock", "oil": "Oil", "paper": "Paper", "petroleum": "Petroleum",
+    "scraps": "Scrap", "steak": "Steak", "steel": "Steel", "wood": "Wood",
+}
+
+# A commodity's own sales, for candles. The equipment scan reads the shared itemMarket
+# stream and distributes by code, which cannot be reused here: a census of 600 stream rows
+# found 600 equipment rows and no commodities, so commodity fills do not ride it. They come
+# from a per-item query instead, one call each.
+#
+# That query is filtered by item, not by transaction type, so it returns whatever else
+# happened to the item. Only a market sale has a price, and only market sales may reach a
+# price series - see commodity_sale().
+#
+# A commodity sale is "trading", not the "itemMarket" the equipment stream uses. The two
+# halves of the market are different transaction types and the difference is not cosmetic:
+# a filter written for equipment keeps nothing here. Measured on 100 rows an item, steel
+# came back 100 trading, case1 mostly trading, and scraps 72 dismantleItem, 26 craftItem
+# and 2 trading - so on a scrap-like item most of a page is other people's crafting, and
+# the pages have to be asked for by type or almost nothing survives the filter.
+COMMODITY_TRADE_TYPE = "trading"
+COMMODITY_TRADE_PAGES = 4
 SCHEMA_VERSION = 5
 
 # How much of the captured book history is served, and how deep. Three days answers the
@@ -675,6 +704,82 @@ def normalize_book(payload, code):
             "best_ask": sells[0]["price"] if sells else None, "raw": payload}
 
 
+def commodity_sale(raw, code):
+    """One market fill of a commodity, or None for anything else.
+
+    The per-item transaction query is filtered by item, not by transaction type, so it
+    returns whatever else happened to that item - loot, production, gifts. Those rows carry
+    no money at all, and letting one through would move a median with a price it never had.
+    Everything a candle needs is derived here and nothing else is kept.
+    """
+    if not isinstance(raw, dict):
+        raise CollectionError("Transaction is not an object")
+    if raw.get("transactionType") != COMMODITY_TRADE_TYPE or raw.get("itemCode") != code:
+        return None
+    txid = raw.get("_id", raw.get("id"))
+    if not isinstance(txid, str) or not txid:
+        raise CollectionError("Transaction has no stable ID")
+    money, quantity = number(raw.get("money")), number(raw.get("quantity"))
+    if money is None or quantity is None or quantity <= 0 or money <= 0:
+        return None
+    sold = parse_time(raw.get("createdAt"))
+    offered = raw.get("offerCreatedAt")
+    # How long the fill waited. The equipment side calls this time_to_sell; it is the same
+    # measurement and nobody else publishes it for commodities.
+    on_market = None
+    if offered:
+        seconds = (sold - parse_time(offered)).total_seconds()
+        if 0 <= seconds <= MAX_TIME_ON_MARKET_HOURS * 3600:
+            on_market = int(seconds)
+    return {"id": txid, "sold_at": stamp(sold), "unit_price": money / quantity,
+            "quantity": quantity, "time_on_market_seconds": on_market}
+
+
+def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TRADE_PAGES):
+    """Page one commodity's own fills back to the retention boundary.
+
+    Incremental like the equipment scan: stop once a page reaches sales already held, so a
+    steady run reads one page and a cold cache reads to the cap. The type is sent as well as
+    the item: the query may ignore it, and commodity_sale filters regardless, so sending it
+    can only make the pages denser - which matters most on an item like scraps, where two
+    rows in a hundred are sales and the rest is crafting and dismantling.
+    """
+    cutoff = now - timedelta(hours=RETENTION_HOURS)
+    kept = {row["id"]: row for row in previous.get("trades", [])
+            if cutoff <= parse_time(row["sold_at"]) <= now}
+    known = set(kept)
+    cursor, pages, stop = None, 0, None
+    for _ in range(max_pages):
+        params = {"itemCode": code, "transactionType": COMMODITY_TRADE_TYPE, "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+        rows, cursor = page_data(client.call("transaction.getPaginatedTransactions", params))
+        pages += 1
+        reached_known = False
+        oldest = None
+        for raw in rows:
+            sale = commodity_sale(raw, code)
+            if sale is None:
+                continue
+            sold = parse_time(sale["sold_at"])
+            if sold > now + timedelta(minutes=5):
+                raise CollectionError("Commodity transaction timestamp too far in the future")
+            oldest = sold if oldest is None or sold < oldest else oldest
+            reached_known = reached_known or sale["id"] in known
+            if cutoff <= sold <= now:
+                kept[sale["id"]] = sale
+        if not cursor:
+            stop = "end_of_history"
+        elif oldest is not None and oldest < cutoff - timedelta(seconds=1):
+            stop = "retention_boundary"
+        elif reached_known:
+            stop = "known_history"
+        if stop:
+            break
+    return (sorted(kept.values(), key=lambda row: (row["sold_at"], row["id"]), reverse=True),
+            pages, stop or f"page_cap_{max_pages}")
+
+
 def collect_commodities(client, previous, now):
     try:
         prices = normalize_prices(client.call("itemTrading.getPrices"))
@@ -702,8 +807,29 @@ def collect_commodities(client, previous, now):
         except CollectionError as exc:
             row["book_status"] = "error"
             row["errors"].append(str(exc))
+        try:
+            trades, pages, stop = collect_commodity_trades(client, code, old, now)
+            row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
+                       trades_pages=pages, trades_stop=stop, trades_status="ok")
+        except (CollectionError, ApiError) as exc:
+            # Keep whatever was already held; a missed page is a gap, not a reason to
+            # forget the week.
+            #
+            # And it is not an outage either. A commodity row exists to answer what the
+            # thing costs and what the book looks like, and both of those survive a failed
+            # trade page. Twenty-three items paging four deep will drop a page from time to
+            # time, and routing that into `errors` would turn every hiccup into a degraded
+            # run and a red workflow - which is how a health signal stops being read. It is
+            # recorded where a reader can see it instead.
+            row.setdefault("trades", old.get("trades", []))
+            row["trade_count"] = len(row["trades"])
+            row["trades_status"] = "error"
+            row["trades_error"] = str(exc)
         row["status"] = "error" if row["errors"] else "ok"
         # Retention applies to commodity observations too; never resurrect old prices.
+        row["trades"] = [t for t in row.get("trades", [])
+                         if parse_time(t["sold_at"]) >= now - timedelta(hours=RETENTION_HOURS)]
+        row["trade_count"] = len(row["trades"])
         for time_key, value_keys in (("price_fetched_at", ("price", "price_raw")), ("book_fetched_at", ("order_book",))):
             if row.get(time_key) and parse_time(row[time_key]) < now - timedelta(hours=RETENTION_HOURS):
                 for key in value_keys:
@@ -786,7 +912,8 @@ def build_summary(payload):
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "updated_at": payload["updated_at"], "status": payload["status"],
             "policy": payload["policy"],
-            "commodities": {code: {key: value for key, value in row.items() if key not in ("order_book", "price_raw")}
+            "commodities": {code: {key: value for key, value in row.items()
+                                   if key not in ("order_book", "price_raw", "trades")}
                             for code, row in payload["commodities"].items()},
             "categories": {code: {"name": row["name"], "tier": row["tier"], "rarity": row["rarity"],
                                   "slot": row["slot"], "status": row["status"],
@@ -796,11 +923,33 @@ def build_summary(payload):
                            for code, row in payload["categories"].items()}}
 
 
+def build_trades(code, row, payload):
+    """One commodity's fills, compact, newest last.
+
+    [unit_price, sold_at, quantity, seconds_on_market] - the same row shape the equipment
+    shards use, plus the quantity, because a commodity trades in size and a candle without
+    volume is half a candle. Bars are the consumer's to build: the window that suits a
+    fifteen-minute collector is not the window that suits a chart, and aggregating here
+    would throw away the choice.
+    """
+    rows = [[t["unit_price"], epoch(t["sold_at"]), t["quantity"], t["time_on_market_seconds"]]
+            for t in row.get("trades", [])]
+    rows.sort(key=lambda r: (r[1], r[0]))
+    return {"item_code": code, "name": row["name"], "generated_at": payload["generated_at"],
+            "status": row.get("trades_status", "error"),
+            "trades_fetched_at": row.get("trades_fetched_at"),
+            "retention_hours": RETENTION_HOURS,
+            "columns": ["unit_price", "sold_at", "quantity", "seconds_on_market"],
+            "sales": rows}
+
+
 def build_index(payload):
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "updated_at": payload["updated_at"], "status": payload["status"],
             "source": payload["source"], "policy": payload["policy"], "health": payload["health"],
             "commodities": {code: {"price": row.get("price"), "status": row["status"],
+                                   "name": row["name"],
+                                   "trade_count": row.get("trade_count", 0),
                                    "best_bid": (row.get("order_book") or {}).get("best_bid"),
                                    "best_ask": (row.get("order_book") or {}).get("best_ask")}
                             for code, row in payload["commodities"].items()},
@@ -959,6 +1108,9 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
     written = 4
     for code, category in payload["categories"].items():
         atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
+        written += 1
+    for code, row in payload["commodities"].items():
+        atomic_write(public_dir / "trades" / f"{code}.json", build_trades(code, row, payload))
         written += 1
     for day, rows in build_archive(payload, now).items():
         target = archive_dir / f"{day}.json"

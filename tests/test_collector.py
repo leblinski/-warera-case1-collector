@@ -34,6 +34,20 @@ def page(rows, cursor=None):
     return {'items': rows, 'nextCursor': cursor}
 
 
+def trade(txid='trade-1', code='steel', hours=1, money=204.24, quantity=115,
+          on_market=timedelta(minutes=1), kind=c.COMMODITY_TRADE_TYPE):
+    """A commodity fill as the game sends it: type 'trading', with money and a quantity."""
+    sold = NOW - timedelta(hours=hours)
+    row = {'_id': txid, 'transactionType': kind, 'itemCode': code, 'quantity': quantity,
+           'createdAt': c.stamp(sold), 'updatedAt': c.stamp(sold),
+           'sellerId': 'fixture-seller', 'buyerId': 'fixture-buyer'}
+    if money is not None:
+        row['money'] = money
+    if on_market is not None:
+        row['offerCreatedAt'] = c.stamp(sold - on_market)
+    return row
+
+
 def collect_category(client, category, previous, now, max_pages=1000):
     code = category['item_code']
     return c.collect_market(client, [category], {code: previous}, now, max_pages)[code]
@@ -63,10 +77,16 @@ class FullClient:
     def call(self, procedure, params=None):
         self.requests += 1
         if procedure == 'transaction.getPaginatedTransactions':
+            code = (params or {}).get('itemCode')
+            if code in c.COMMODITIES:
+                # The per-item feed is mixed: only the trading rows are sales.
+                return page([trade(code + '-new', code=code),
+                             trade(code + '-craft', code=code, money=None, kind='craftItem'),
+                             trade(code + '-old', code=code, hours=RETAINED_PAST)])
             return page([raw(cat['item_code'] + '-new', code=cat['item_code']) for cat in c.categories()]
                         + [raw('expired', hours=RETAINED_PAST)])
         if procedure == 'itemTrading.getPrices':
-            return {'case1': 3.5, 'scraps': 0.22, 'steel': 1.68}
+            return {code: 1.5 for code in c.COMMODITIES}
         return {'buyOrders': [], 'sellOrders': []}
 
 
@@ -166,7 +186,10 @@ class CollectorTests(unittest.TestCase):
                 return super().call(procedure, params)
         with contextlib.redirect_stdout(io.StringIO()):
             result = c.collect(BrokenMarket(), now=NOW)
+        # Price and book still landed, so the rows stand. The trades share the procedure
+        # that failed, so they are reported broken without condemning the row.
         self.assertTrue(all(row['status'] == 'ok' for row in result['commodities'].values()))
+        self.assertTrue(all(row['trades_status'] == 'error' for row in result['commodities'].values()))
         self.assertEqual(result['status'], 'degraded')
 
     def test_condition_unknown_or_used_excluded_but_retained(self):
@@ -481,9 +504,73 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.normalize_book({'changedSchema': []}, 'case1')
 
+    def test_only_trading_rows_reach_a_commodity_price_series(self):
+        """The per-item feed is mixed. On scraps it is mostly other people's crafting."""
+        rows = [trade('sale', code='scraps', money=11.908, quantity=52),
+                trade('dismantle', code='scraps', money=None, kind='dismantleItem'),
+                trade('craft', code='scraps', money=None, kind='craftItem'),
+                trade('equipment', code='scraps', kind='itemMarket'),
+                trade('free', code='scraps', money=0),
+                trade('other-item', code='steel')]
+        kept = [c.commodity_sale(row, 'scraps') for row in rows]
+        self.assertEqual([k['id'] for k in kept if k], ['sale'])
+        self.assertAlmostEqual(kept[0]['unit_price'], 11.908 / 52)
+        self.assertEqual(kept[0]['quantity'], 52)
+
+    def test_commodity_fill_carries_how_long_it_waited(self):
+        sale = c.commodity_sale(trade(on_market=timedelta(hours=2)), 'steel')
+        self.assertEqual(sale['time_on_market_seconds'], 7200)
+        self.assertIsNone(c.commodity_sale(trade(on_market=None), 'steel')['time_on_market_seconds'])
+
+    def test_commodity_trades_stop_at_known_history_and_prune_the_expired(self):
+        previous = {'trades': [{'id': 'steel-new', 'sold_at': c.stamp(NOW - timedelta(hours=1)),
+                                'unit_price': 1.7, 'quantity': 10, 'time_on_market_seconds': 60}]}
+        client = FullClient()
+        trades, pages, stop = c.collect_commodity_trades(client, 'steel', previous, NOW)
+        self.assertEqual(pages, 1)
+        # One page, and no cursor behind it, so the page itself ended the history.
+        self.assertEqual(stop, 'end_of_history')
+        # The craft row has no price and the old row is past retention; neither is kept.
+        self.assertEqual([row['id'] for row in trades], ['steel-new'])
+
+    def test_commodity_trades_publish_as_bar_rows(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            c.publish(payload, root / 'public', root / 'archive', root / 'books', NOW)
+            shard = json.loads((root / 'public' / 'trades' / 'steel.json').read_text())
+            # Every tradeable item gets one. Inside the block: the directory goes with it.
+            self.assertEqual(len({p.stem for p in (root / 'public' / 'trades').iterdir()}),
+                             len(c.COMMODITIES))
+        self.assertEqual(shard['columns'],
+                         ['unit_price', 'sold_at', 'quantity', 'seconds_on_market'])
+        self.assertEqual(len(shard['sales']), 1)
+        price, sold_at, quantity, waited = shard['sales'][0]
+        self.assertAlmostEqual(price, 204.24 / 115)
+        self.assertEqual(quantity, 115)
+        self.assertEqual(waited, 60)
+        self.assertEqual(sold_at, int((NOW - timedelta(hours=1)).timestamp()))
+        # summary.json stays small by not repeating what the shards carry.
+        self.assertNotIn('trades', c.build_summary(payload)['commodities']['steel'])
+
+    def test_a_failed_trade_page_does_not_condemn_the_commodity(self):
+        class NoTrades(FullClient):
+            def call(self, procedure, params=None):
+                if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
+                    raise c.ApiError('trades down')
+                return super().call(procedure, params)
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = c.collect(NoTrades(), now=NOW)
+        steel = result['commodities']['steel']
+        self.assertEqual(steel['status'], 'ok')
+        self.assertEqual(steel['trades_status'], 'error')
+        self.assertEqual(result['status'], 'ok')
+
     def test_commodity_failure_retains_price_and_timestamp(self):
         previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=1))}}
-        client = SequenceClient([c.ApiError('prices down')] + [c.ApiError('books down')] * 3)
+        client = SequenceClient([c.ApiError('prices down')]
+                                + [c.ApiError('books down'), c.ApiError('trades down')] * len(c.COMMODITIES))
         result = c.collect_commodities(client, previous, NOW)
         self.assertEqual(result['case1']['price'], 3.5)
         self.assertEqual(result['case1']['price_fetched_at'], previous['case1']['price_fetched_at'])
@@ -491,7 +578,8 @@ class CollectorTests(unittest.TestCase):
 
     def test_expired_commodity_price_not_carried_forward(self):
         previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=RETAINED_PAST))}}
-        client = SequenceClient([c.ApiError('prices down')] + [c.ApiError('books down')] * 3)
+        client = SequenceClient([c.ApiError('prices down')]
+                                + [c.ApiError('books down'), c.ApiError('trades down')] * len(c.COMMODITIES))
         self.assertNotIn('price', c.collect_commodities(client, previous, NOW)['case1'])
 
     def test_failed_category_makes_whole_output_degraded(self):
