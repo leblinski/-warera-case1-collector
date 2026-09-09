@@ -6,6 +6,7 @@ import json
 import math
 import os
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -61,7 +62,7 @@ class SequenceClient:
         self.responses = iter(responses)
         self.calls = []
 
-    def call(self, procedure, params=None):
+    def call(self, procedure, params=None, attempts=4):
         self.calls.append((procedure, params))
         self.requests += 1
         result = next(self.responses)
@@ -74,7 +75,7 @@ class FullClient:
     base_url = c.GATEWAY
     requests = 0
 
-    def call(self, procedure, params=None):
+    def call(self, procedure, params=None, attempts=4):
         self.requests += 1
         if procedure == 'transaction.getPaginatedTransactions':
             code = (params or {}).get('itemCode')
@@ -180,10 +181,10 @@ class CollectorTests(unittest.TestCase):
 
     def test_market_failure_keeps_commodity_observations(self):
         class BrokenMarket(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'transaction.getPaginatedTransactions':
                     raise c.ApiError('Run time budget reached')
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
         with contextlib.redirect_stdout(io.StringIO()):
             result = c.collect(BrokenMarket(), now=NOW)
         # Price and book still landed, so the rows stand. The trades share the procedure
@@ -556,10 +557,10 @@ class CollectorTests(unittest.TestCase):
 
     def test_a_failed_trade_page_does_not_condemn_the_commodity(self):
         class NoTrades(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
                     raise c.ApiError('trades down')
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
         with contextlib.redirect_stdout(io.StringIO()):
             result = c.collect(NoTrades(), now=NOW)
         steel = result['commodities']['steel']
@@ -600,11 +601,11 @@ class CollectorTests(unittest.TestCase):
         visited = []
 
         class Once(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 code = (params or {}).get('itemCode')
                 if procedure == 'transaction.getPaginatedTransactions' and code:
                     visited.append(code)
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
 
         with patch.object(c, 'COMMODITY_TRADE_BUDGET_SECONDS', 0.0):
             c.collect_commodity_trades_all(Once(), commodities, NOW)
@@ -617,14 +618,59 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(visited[0], 'ammo')      # never fetched
         self.assertEqual(visited[1], 'bread')     # then the oldest
 
+    def test_a_slow_item_does_not_spend_the_whole_trade_slice(self):
+        """What the live run did: two items timed out, four attempts each at a thirty
+        second timeout plus backoff, and the slice was gone before a third was reached."""
+        seen = []
+
+        class Slow(FullClient):
+            def call(self, procedure, params=None, attempts=4):
+                if procedure == 'transaction.getPaginatedTransactions':
+                    seen.append(attempts)
+                return super().call(procedure, params, attempts)
+
+        c.collect_commodity_trades_all(Slow(), {'ammo': {}}, NOW)
+        self.assertTrue(seen)
+        self.assertTrue(all(a == c.COMMODITY_TRADE_ATTEMPTS for a in seen))
+        self.assertLess(c.COMMODITY_TRADE_ATTEMPTS, 4)
+
+    def test_a_failing_item_gives_up_its_place_at_the_head_of_the_queue(self):
+        """The live shape: the first item times out, the slice is gone, and the rest are
+        skipped. Ordering on the last success left the timing-out item first the next run
+        too, so it spent the slice again and nothing behind it was ever reached."""
+        commodities = {'ammo': {}, 'bread': {}, 'steel': {}}
+        visited = []
+
+        class Slow(FullClient):
+            def call(self, procedure, params=None, attempts=4):
+                code = (params or {}).get('itemCode')
+                if procedure == 'transaction.getPaginatedTransactions':
+                    visited.append(code)
+                    time.sleep(0.02)
+                    if code == 'ammo':
+                        raise c.ApiError('transaction.getPaginatedTransactions: network '
+                                         'request failed (TimeoutError)', 503)
+                return super().call(procedure, params, attempts)
+
+        with patch.object(c, 'COMMODITY_TRADE_BUDGET_SECONDS', 0.01):
+            c.collect_commodity_trades_all(Slow(), commodities, NOW)
+        self.assertEqual(visited, ['ammo'])       # the slice bought exactly one attempt
+        self.assertEqual(commodities['ammo']['trades_status'], 'error')
+        self.assertEqual(commodities['bread']['trades_status'], 'skipped')
+
+        visited.clear()
+        with patch.object(c, 'COMMODITY_TRADE_BUDGET_SECONDS', 0.01):
+            c.collect_commodity_trades_all(Slow(), commodities, NOW)
+        self.assertEqual(visited, ['bread'])      # the next run continues, it does not restart
+
     def test_a_flaky_book_on_a_supplementary_commodity_does_not_redden_the_run(self):
         """With three commodities a failed book was worth a red run. With twenty-three one
         of them fails most runs, and a signal that cries every run stops being read."""
         class FlakyBook(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'wood':
                     raise c.CollectionError('network request failed')
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
 
         with contextlib.redirect_stdout(io.StringIO()):
             result = c.collect(FlakyBook(), now=NOW)
@@ -635,10 +681,10 @@ class CollectorTests(unittest.TestCase):
 
     def test_a_commodity_the_calculator_needs_still_reddens_the_run(self):
         class NoScraps(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'scraps':
                     raise c.CollectionError('network request failed')
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
 
         with contextlib.redirect_stdout(io.StringIO()):
             result = c.collect(NoScraps(), now=NOW)
@@ -677,11 +723,11 @@ class CollectorTests(unittest.TestCase):
         """A long run keeps paging while the market keeps trading. Raising on that aborted
         the whole item for a row that was merely early."""
         class Early(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
                     return page([trade('future', code='steel', hours=-1),
                                  trade('steel-now', code='steel', hours=1)])
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
 
         trades, _, _ = c.collect_commodity_trades(Early(), 'steel', {}, NOW)
         self.assertEqual([row['id'] for row in trades], ['steel-now'])
@@ -703,10 +749,10 @@ class CollectorTests(unittest.TestCase):
 
     def test_failed_category_makes_whole_output_degraded(self):
         class BrokenClient(FullClient):
-            def call(self, procedure, params=None):
+            def call(self, procedure, params=None, attempts=4):
                 if procedure == 'transaction.getPaginatedTransactions':
                     raise c.ApiError('outage')
-                return super().call(procedure, params)
+                return super().call(procedure, params, attempts)
         with contextlib.redirect_stdout(io.StringIO()):
             output = c.collect(BrokenClient(), now=NOW)
         self.assertEqual(output['status'], 'degraded')
