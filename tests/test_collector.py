@@ -588,6 +588,35 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(migrated['commodities']['steel']['price'],
                          fresh['commodities']['steel']['price'])
 
+    def test_the_trade_pass_takes_the_longest_waiting_items_first(self):
+        """A per-item trade query costs about fifteen seconds, so one run cannot visit
+        twenty-three items. Ordering by how long each has waited is what makes the coverage
+        come round without keeping a cursor."""
+        commodities = {
+            'steel': {'trades_fetched_at': '2026-09-09T12:00:00.000Z'},
+            'ammo': {},                                    # never fetched: goes first
+            'bread': {'trades_fetched_at': '2026-09-09T10:00:00.000Z'},
+        }
+        visited = []
+
+        class Once(FullClient):
+            def call(self, procedure, params=None):
+                code = (params or {}).get('itemCode')
+                if procedure == 'transaction.getPaginatedTransactions' and code:
+                    visited.append(code)
+                return super().call(procedure, params)
+
+        with patch.object(c, 'COMMODITY_TRADE_BUDGET_SECONDS', 0.0):
+            c.collect_commodity_trades_all(Once(), commodities, NOW)
+        # Nothing had time, but the skip is honest and the run is unharmed.
+        self.assertEqual(visited, [])
+        self.assertTrue(all(row['trades_status'] == 'skipped' for row in commodities.values()))
+
+        visited.clear()
+        c.collect_commodity_trades_all(Once(), commodities, NOW)
+        self.assertEqual(visited[0], 'ammo')      # never fetched
+        self.assertEqual(visited[1], 'bread')     # then the oldest
+
     def test_the_trade_pass_never_starves_the_equipment_scan(self):
         """The failure this test exists for: the trades ran first, spent the whole run
         budget on twenty-three cold items, and all thirty-six categories collected nothing.

@@ -53,13 +53,20 @@ COMMODITIES = {
 COMMODITY_TRADE_TYPE = "trading"
 COMMODITY_TRADE_PAGES = 2
 
-# What the trade pass may spend, and what it must leave behind. A cold cache wants four
-# pages an item across twenty-three items, and on the first run that arithmetic spent the
-# whole budget before the equipment scan had started: 39 requests, nothing collected, all
-# thirty-six categories failed. The equipment history is the thing this collector exists
-# for; the commodity trades are new and incremental, and a commodity that does not get its
-# page this run gets it on the next one. So the trades go last and stop early, and the
-# reserve is what they may not touch.
+# What the trade pass may spend. A cold cache wants several pages an item across
+# twenty-three items, and on the first run that arithmetic spent the whole budget before the
+# equipment scan had started: 39 requests, nothing collected, all thirty-six categories
+# failed. Moving it after the scan fixed the starvation but not the length - the run still
+# took a quarter of an hour, which is longer than the interval it is scheduled on, so runs
+# began stacking behind each other.
+#
+# The reason is latency rather than volume: those 39 requests took 600 seconds, about
+# fifteen seconds each, because a per-item transaction query is not something the Gateway
+# serves from cache. So the pass gets a fixed slice of wall clock rather than a page count,
+# and visits the items that waited longest first. Coverage comes round over several runs,
+# which is what an incremental collector is for, and a run stays short enough that the next
+# one starts on time.
+COMMODITY_TRADE_BUDGET_SECONDS = 150
 COMMODITY_TRADE_RESERVE_SECONDS = 90
 SCHEMA_VERSION = 6
 
@@ -796,18 +803,23 @@ def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TR
 def collect_commodity_trades_all(client, commodities, now):
     """Fill in commodity's fills, with whatever run time is left over.
 
-    Runs after the market scan and stops while a reserve remains, because the equipment
-    history is what this collector exists for and the trades are incremental: an item that
-    does not get its page this run gets it on the next one. The first run tried it the other
-    way round and spent the whole budget before the scan began.
+    Runs after the market scan, on a fixed slice of wall clock, longest-waiting item first.
+    The equipment history is what this collector exists for and the trades are incremental:
+    an item that does not get its page this run gets it on the next one. Ordering by how
+    long each has waited is what makes that fair without keeping a cursor - a run picks up
+    where the last one ran out.
     """
-    for code, row in commodities.items():
-        if getattr(client, "deadline", None) is not None:
-            remaining = client.deadline - time.monotonic()
-            if remaining < COMMODITY_TRADE_RESERVE_SECONDS:
-                row["trades_status"] = "skipped"
-                row["trades_error"] = "no run time left; the next run continues"
-                continue
+    started = time.monotonic()
+    # Never fetched sorts first; after that, oldest first.
+    order = sorted(commodities, key=lambda code: commodities[code].get("trades_fetched_at") or "")
+    for code in order:
+        row = commodities[code]
+        spent = time.monotonic() - started
+        remaining = (client.deadline - time.monotonic()) if getattr(client, "deadline", None) is not None else None
+        if spent >= COMMODITY_TRADE_BUDGET_SECONDS or (remaining is not None and remaining < COMMODITY_TRADE_RESERVE_SECONDS):
+            row["trades_status"] = "skipped"
+            row["trades_error"] = "out of time this run; the next run continues"
+            continue
         try:
             trades, pages, stop = collect_commodity_trades(client, code, row, now)
             row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
