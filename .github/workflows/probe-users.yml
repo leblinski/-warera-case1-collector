@@ -1,0 +1,31 @@
+# Answers whether a player's name can be read from the id a trade row carries, so a coin
+# ledger can show names rather than hex. Manual only, read-only, never on a schedule.
+name: Probe user names
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+        run: |
+          # Without pipefail the pipeline reports tee's status, so a probe that dies
+          # reports success and prints nothing. It did exactly that once.
+          set -o pipefail
+          {
+            echo '```'
+            python tools/probe_users.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
