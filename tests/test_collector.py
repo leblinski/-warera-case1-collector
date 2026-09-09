@@ -545,13 +545,17 @@ class CollectorTests(unittest.TestCase):
             self.assertEqual(len({p.stem for p in (root / 'public' / 'trades').iterdir()}),
                              len(c.COMMODITIES))
         self.assertEqual(shard['columns'],
-                         ['unit_price', 'sold_at', 'quantity', 'seconds_on_market'])
+                         ['unit_price', 'sold_at', 'quantity', 'seconds_on_market',
+                          'seller_id', 'buyer_id'])
         self.assertEqual(len(shard['sales']), 1)
-        price, sold_at, quantity, waited = shard['sales'][0]
+        price, sold_at, quantity, waited, seller, buyer = shard['sales'][0]
         self.assertAlmostEqual(price, 204.24 / 115)
         self.assertEqual(quantity, 115)
         self.assertEqual(waited, 60)
         self.assertEqual(sold_at, int((NOW - timedelta(hours=1)).timestamp()))
+        # Both sides of the fill. The game shows them and the equipment shards keep them;
+        # a ledger of who traded with whom is what tells a wall from real demand.
+        self.assertEqual((seller, buyer), ('fixture-seller', 'fixture-buyer'))
         # summary.json stays small by not repeating what the shards carry.
         self.assertNotIn('trades', c.build_summary(payload)['commodities']['steel'])
 
