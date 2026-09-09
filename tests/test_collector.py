@@ -588,6 +588,34 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(migrated['commodities']['steel']['price'],
                          fresh['commodities']['steel']['price'])
 
+    def test_the_trade_pass_never_starves_the_equipment_scan(self):
+        """The failure this test exists for: the trades ran first, spent the whole run
+        budget on twenty-three cold items, and all thirty-six categories collected nothing.
+        The trades go last now, and stop while a reserve remains."""
+        class Timed(FullClient):
+            deadline = 0.0  # already past: no run time left at all
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = c.collect(Timed(), now=NOW)
+        self.assertEqual(result['health']['categories_ok'], 36)
+        self.assertTrue(all(row['trades_status'] == 'skipped'
+                            for row in result['commodities'].values()))
+        # Skipping is not an outage: prices and books landed, so the run is healthy.
+        self.assertEqual(result['status'], 'ok')
+
+    def test_a_sale_newer_than_the_run_clock_is_left_for_the_next_run(self):
+        """A long run keeps paging while the market keeps trading. Raising on that aborted
+        the whole item for a row that was merely early."""
+        class Early(FullClient):
+            def call(self, procedure, params=None):
+                if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
+                    return page([trade('future', code='steel', hours=-1),
+                                 trade('steel-now', code='steel', hours=1)])
+                return super().call(procedure, params)
+
+        trades, _, _ = c.collect_commodity_trades(Early(), 'steel', {}, NOW)
+        self.assertEqual([row['id'] for row in trades], ['steel-now'])
+
     def test_commodity_failure_retains_price_and_timestamp(self):
         previous = {'case1': {'price': 3.5, 'price_fetched_at': c.stamp(NOW - timedelta(hours=1))}}
         client = SequenceClient([c.ApiError('prices down')]
