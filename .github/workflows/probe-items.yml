@@ -21,6 +21,9 @@ jobs:
         env:
           WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
         run: |
+          # Without pipefail the pipeline reports tee's status, so a probe that dies
+          # reports success and prints nothing. It did exactly that once.
+          set -o pipefail
           {
             echo '```'
             python tools/probe_items.py
