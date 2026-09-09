@@ -50,6 +50,14 @@ COMMODITIES = {
 # came back 100 trading, case1 mostly trading, and scraps 72 dismantleItem, 26 craftItem
 # and 2 trading - so on a scrap-like item most of a page is other people's crafting, and
 # the pages have to be asked for by type or almost nothing survives the filter.
+# The three the calculator actually reads: it prices a craft off scraps and steel, and a
+# case off case1. Those failing is a fault worth a red run. The other twenty are collected
+# because a chart wants them, and one of them missing a book on a transient network error is
+# not a reason to call the run bad - with three commodities that almost never happened, with
+# twenty-three it happens most runs, and a health signal that cries every run stops being
+# read. They are still reported; they just do not condemn the run.
+REQUIRED_COMMODITIES = ("case1", "scraps", "steel")
+
 COMMODITY_TRADE_TYPE = "trading"
 COMMODITY_TRADE_PAGES = 2
 
@@ -895,7 +903,10 @@ def collect(client, previous=None, now=None, max_pages=1000):
         if row["errors"]:
             print(f"{code}: {'; '.join(row['errors'])}", flush=True)
     failed = [code for code, row in results.items() if row["status"] != "ok"]
-    failed_inputs = [code for code, row in commodities.items() if row["status"] != "ok"]
+    failed_inputs = [code for code, row in commodities.items()
+                     if row["status"] != "ok" and code in REQUIRED_COMMODITIES]
+    degraded_inputs = [code for code, row in commodities.items()
+                       if row["status"] != "ok" and code not in REQUIRED_COMMODITIES]
     quality_issues = sum(row["quality_issue_count"] for row in results.values())
     status = "ok" if not failed and not failed_inputs and not quality_issues else "degraded"
     return {
@@ -910,7 +921,7 @@ def collect(client, previous=None, now=None, max_pages=1000):
                    "backstop_hours": BACKSTOP_HOURS,
                    "scan_mode": "shared_itemMarket_stream"},
         "health": {"category_count": 36, "categories_ok": 36 - len(failed), "failed_categories": failed,
-                   "failed_commodities": failed_inputs, "quality_issue_count": quality_issues,
+                   "failed_commodities": failed_inputs, "degraded_commodities": degraded_inputs, "quality_issue_count": quality_issues,
                    "request_count": client.requests, "transaction_count": sum(row["transaction_count"] for row in results.values())},
         "commodities": commodities, "categories": {cat["item_code"]: results[cat["item_code"]] for cat in manifest},
     }
