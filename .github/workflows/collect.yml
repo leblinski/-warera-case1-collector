@@ -47,6 +47,17 @@ jobs:
           python-version: '3.12'
       - name: Test collection and cache safety
         run: python -m unittest discover -s tests -v
+      # The rolling cache is state between runs, not source. Committing it grew the
+      # repository by an 87MB blob every fifteen minutes - a JSON file that changes
+      # throughout does not delta-compress - until GitHub refused the push outright. It
+      # lives in the Actions cache instead, where a new key per run plus a prefix restore
+      # gives "read the newest, write a fresh one" without an overwrite.
+      - name: Restore the rolling cache from the last run
+        uses: actions/cache/restore@v4
+        with:
+          path: data/warera_case1_market.json
+          key: warera-case1-state-${{ github.run_id }}
+          restore-keys: warera-case1-state-
       - name: Collect transactions and input prices
         id: collect
         continue-on-error: true
@@ -57,16 +68,26 @@ jobs:
         id: validate
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
         run: python collector.py --validate
-      # The rolling state file and the write-once archive are committed; the served
-      # artifacts under public/ are not, which is what keeps repository growth flat.
-      - name: Commit rolling cache and archive
+      # Saved before anything that can fail, so a run that collected well still hands its
+      # state to the next one. A cache key is write-once, so each run writes its own and
+      # the prefix restore above picks up the newest.
+      - name: Hand the rolling cache to the next run
+        if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
+        uses: actions/cache/save@v4
+        with:
+          path: data/warera_case1_market.json
+          key: warera-case1-state-${{ github.run_id }}
+      # The write-once archive and the daily book snapshots are committed; the rolling
+      # cache is not - see the restore step above - and neither are the served artifacts
+      # under public/. Both exclusions are what keeps repository growth flat.
+      - name: Commit archive and book history
         if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/warera_case1_market.json data/archive data/books
+          git add data/archive data/books
           if ! git diff --cached --quiet; then
-            git commit -m 'Update rolling WarEra Case I market cache'
+            git commit -m 'Update WarEra Case I archive and book history'
             git push origin HEAD:main
           fi
       - name: Package price shards for Pages
