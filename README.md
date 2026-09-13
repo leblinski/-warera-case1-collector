@@ -1,8 +1,8 @@
 # WarEra Case I collector
 
 Standalone, read-only collector for the 36 Case I equipment categories. Every 10 minutes it
-commits a rolling cache plus a write-once daily archive, and publishes per-item price files to
-GitHub Pages for browser clients to read directly.
+commits a write-once daily archive, carries a rolling cache forward in the Actions cache, and
+publishes per-item price files to GitHub Pages for browser clients to read directly.
 Supported by [warerastats.io](https://warerastats.io/).
 
 ## Setup
@@ -14,8 +14,8 @@ Supported by [warerastats.io](https://warerastats.io/).
 2. Push the project to `main`. Changes to the collector, config, tests, or workflow
    automatically start collection. You can also select **Run workflow** under
    [Actions](https://github.com/leblinski/-warera-case1-collector/actions).
-3. A successful run commits the rolling JSON to `main`. The workflow's job requests
-   `contents: write`; repository rules must permit its bot to update `main`.
+3. A successful run commits the daily archive and book snapshots to `main`. The workflow's
+   job requests `contents: write`; repository rules must permit its bot to update `main`.
 
 Collection is driven by an external scheduler calling `workflow_dispatch`, not by
 `schedule`. Three cron expressions - `*/10`, the same cadence offset off the round minutes,
@@ -204,12 +204,12 @@ handled explicitly.
   validation recomputes roll statistics and checks IDs, age limits, raw/normalized
   consistency, and all 36 category keys.
 - The workflow commits valid partial results and then fails visibly if collection
-  was degraded. An invalid cache is never committed. An artifact is retained for
-  two days when a JSON file exists. Code tests never use a real API key.
+  was degraded. An invalid cache is never saved or committed. An artifact is retained
+  for two days when a JSON file exists. Code tests never use a real API key.
 
 ## Published files
 
-Consumers read these from GitHub Pages; only the rolling cache and the archive are committed.
+Consumers read these from GitHub Pages; only the archive and the book history are committed.
 
 | Path | Size | Contents |
 | --- | --- | --- |
@@ -233,14 +233,23 @@ in about 69 KB - and pulls an item's sale rows only when it needs the underlying
 Sale rows are `[unit_price, sold_at_epoch_seconds, time_to_sell_seconds, roll_index]` against
 the file's own `rolls` array.
 
-The rolling cache and archive are committed; the served files are rebuilt every run and never
-committed, so republishing them costs no repository growth. Archive files cover only completed
-days - today is still accumulating - so once written a day file does not change again, and
-contributes no further delta. Expect roughly 315 MB of archive per year at current volume.
+The archive is committed; the rolling cache and the served files are not, so neither costs
+repository growth. Archive files cover only completed days - today is still accumulating - so
+once written a day file does not change again, and contributes no further delta. Expect roughly
+315 MB of archive per year at current volume.
+
+The rolling cache is state between runs rather than source, and committing it was a mistake
+that took two weeks to become fatal. It is a single JSON that changes throughout, so every
+commit stored a whole fresh blob: 87 MB by the time it broke, pushed every fifteen minutes,
+half a gigabyte of repository in a fortnight, until GitHub rejected the push with
+`fatal error in commit_refs` and collection stopped advancing. It now rides the Actions cache,
+written under a fresh key each run and restored by key prefix, so the newest wins without ever
+overwriting an entry. A cache miss is survivable rather than free: the run rebuilds from an
+empty cache, which is what the very first run did, and costs one degraded cycle.
 
 The 168-hour limit applies to the current JSON's transactions and commodity
-observations. The daily archive retains everything older, and git commit history retains
-older snapshots; this is not a historical data deletion policy. The collector cannot guarantee the upstream Gateway's
+observations. The daily archive retains everything older; this is not a historical data
+deletion policy. The collector cannot guarantee the upstream Gateway's
 database is complete; `history_complete` means pagination reached the requested
 boundary or the source reported its end of history. Sparse categories may have
 zero trades even when fetched successfully.
