@@ -749,6 +749,47 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(country, 'ct-1')
         self.assertEqual(fetched, c.stamp(NOW))
 
+    def test_the_flow_summary_is_small_enough_to_be_read_on_load(self):
+        """The trade shards are the whole truth and thirteen megabytes of it. A page drawing
+        one row per good should not have to read them."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        flow = c.build_flow(payload, NOW)
+        self.assertEqual(set(flow['goods']), set(c.COMMODITIES))
+        self.assertEqual(flow['windows'], list(c.FLOW_WINDOWS))
+        steel = flow['goods']['steel']
+        self.assertEqual(steel['windows']['48']['fills'], 1)
+        self.assertEqual(steel['windows']['48']['units'], 115)
+        # The fixture's fill sits exactly an hour back, so it is inside the hour window and
+        # every wider one: the windows nest rather than partition.
+        self.assertEqual(steel['windows']['1']['fills'], 1)
+        self.assertEqual(steel['windows']['6']['fills'], 1)
+        self.assertLessEqual(steel['span_hours'], max(c.FLOW_WINDOWS))
+
+    def test_a_one_off_counterparty_is_not_a_whale(self):
+        """Rank purely by gold and whoever happened to be on the other side of one large
+        fill outranks the people who trade all day."""
+        rows = [{'code': 'steel', 'gold': 9000.0, 'qty': 1, 'seller_id': 'regular',
+                 'buyer_id': 'passer-by', 't': NOW}]
+        for i in range(4):
+            rows.append({'code': 'scraps' if i % 2 else 'steel', 'gold': 100.0, 'qty': 1,
+                         'seller_id': 'regular', 'buyer_id': 'other-' + str(i), 't': NOW})
+        members, qualified, take = c.whale_ranking(rows, 50)
+        self.assertIn('regular', members)
+        self.assertNotIn('passer-by', members)
+        self.assertEqual(qualified, 1)
+
+    def test_the_span_is_the_history_held_not_the_window_asked_for(self):
+        """Dividing one hour of rows by forty-eight made a fresh cache read as a market on
+        fire."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        for row in payload['commodities'].values():
+            for trade in row.get('trades') or []:
+                trade['sold_at'] = c.stamp(NOW - timedelta(minutes=30))
+        flow = c.build_flow(payload, NOW)
+        self.assertEqual(flow['goods']['steel']['span_hours'], 1.0)
+
     def test_a_flaky_book_on_a_supplementary_commodity_does_not_redden_the_run(self):
         """With three commodities a failed book was worth a red run. With twenty-three one
         of them fails most runs, and a signal that cries every run stops being read."""
