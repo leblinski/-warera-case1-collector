@@ -34,6 +34,7 @@ COMMODITIES = {
     "lead": "Lead", "lightAmmo": "Light Ammo", "limestone": "Limestone",
     "livestock": "Livestock", "oil": "Oil", "paper": "Paper", "petroleum": "Petroleum",
     "scraps": "Scrap", "steak": "Steak", "steel": "Steel", "wood": "Wood",
+    "woodenCase": "Wooden Case",
 }
 
 # A commodity's own sales, for candles. The equipment scan reads the shared itemMarket
@@ -86,7 +87,7 @@ USER_NAME_REFRESH_DAYS = 14
 OFF_MARKET_BAND = 2.0
 COMMODITY_TRADE_BUDGET_SECONDS = 150
 COMMODITY_TRADE_RESERVE_SECONDS = 90
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 # How much of the captured book history is served, and how deep. Three days answers the
 # questions a single snapshot cannot - whether the wall under the price is building or
@@ -1534,6 +1535,11 @@ def migrate(payload):
 
     Schema 1 stored `raw`, `equipment` and `exact_roll` alongside the fields they duplicated.
     Every primitive field schema 2 needs is already present, so each record re-derives locally.
+
+    Schema 7 adds woodenCase, which the game introduced after the list was written. The
+    version has to move for it: validate() checks the commodity set exactly, so a cache
+    written before the code existed is short a row and gets rejected on load unless a
+    migration seeds it.
 
     Every version since has changed what aggregate() returns - schema 3 dropped sales off
     long-standing listings, schema 4 added the retained window, schema 5 stopped letting the

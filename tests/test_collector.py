@@ -781,6 +781,22 @@ class CollectorTests(unittest.TestCase):
         narrow = flow['whale_accounts'][str(min(c.FLOW_PERCENTILES))]['whales']
         self.assertLessEqual(narrow, len(roster['ranked']))
 
+    def test_a_cache_written_before_wooden_case_existed_still_loads(self):
+        """The game added woodenCase after the list was written. validate() checks the
+        commodity set exactly, so without a version bump and a seed the collector would
+        reject its own cache and stop rather than collect the one it is missing."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        self.assertIn('woodenCase', payload['commodities'])
+        older = copy.deepcopy(payload)
+        older['schema_version'] = 6
+        del older['commodities']['woodenCase']
+        with contextlib.redirect_stdout(io.StringIO()):
+            migrated = c.migrate(older)
+        self.assertIn('woodenCase', migrated['commodities'])
+        self.assertEqual(migrated['commodities']['woodenCase']['name'], 'Wooden Case')
+        c.validate(migrated)
+
     def test_a_one_off_counterparty_is_not_a_whale(self):
         """Rank purely by gold and whoever happened to be on the other side of one large
         fill outranks the people who trade all day."""
