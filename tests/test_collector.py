@@ -790,6 +790,56 @@ class CollectorTests(unittest.TestCase):
         flow = c.build_flow(payload, NOW)
         self.assertEqual(flow['goods']['steel']['span_hours'], 1.0)
 
+    def aged_payload(self):
+        """The fixture's only fill is an hour old, so it belongs to today and is correctly
+        skipped. Archiving is about completed days, so the fill is moved back into one."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        when = NOW - timedelta(days=1)
+        for row in payload['commodities'].values():
+            for trade in row.get('trades') or []:
+                trade['sold_at'] = c.stamp(when)
+        return payload, when.date().isoformat()
+
+    def test_commodity_fills_survive_the_rolling_window(self):
+        """The window forgets: seven days back a fill is gone from the cache and from the
+        shard, and until now nothing kept it."""
+        payload, yesterday = self.aged_payload()
+        days = c.build_trade_archive(payload, NOW)
+        self.assertIn(yesterday, days)
+        # Today is still accumulating, so it is never written.
+        self.assertNotIn(NOW.date().isoformat(), days)
+        record = days[yesterday]
+        self.assertEqual(record['columns'], list(c.TRADE_ARCHIVE_COLUMNS))
+        self.assertEqual(record['sale_count'], len(record['sales']))
+        row = record['sales'][0]
+        self.assertIn(record['items'][row[0]], c.COMMODITIES)
+        self.assertEqual(record['users'][row[5]], 'fixture-seller')
+        self.assertEqual(record['users'][row[6]], 'fixture-buyer')
+        self.assertTrue(0 <= row[2] < 86400)
+
+    def test_a_written_day_is_never_written_again(self):
+        """An archive that rewrites is not an archive. Sorting on a precision the file does
+        not keep made the same day come out in a different order every run."""
+        payload, _ = self.aged_payload()
+        with tempfile.TemporaryDirectory() as tmp:
+            first = c.write_trade_archive(payload, tmp, NOW)
+            self.assertTrue(first)
+            self.assertEqual(c.write_trade_archive(payload, tmp, NOW), 0)
+            self.assertEqual(c.write_trade_archive(payload, tmp, NOW), 0)
+
+    def test_merging_a_day_keeps_every_fill_from_both_halves(self):
+        """A run that missed rows should be able to fill them in later without losing what
+        is already there."""
+        payload, yesterday = self.aged_payload()
+        day = c.build_trade_archive(payload, NOW)[yesterday]
+        half = len(day['sales']) // 2 or 1
+        left = dict(day, sales=day['sales'][:half], sale_count=half)
+        right = dict(day, sales=day['sales'][half:], sale_count=len(day['sales']) - half)
+        merged = c.merge_trade_days(left, right)
+        self.assertEqual(merged['sale_count'], len(day['sales']))
+        self.assertEqual({r[-1] for r in merged['sales']}, {r[-1] for r in day['sales']})
+
     def test_a_flaky_book_on_a_supplementary_commodity_does_not_redden_the_run(self):
         """With three commodities a failed book was worth a red run. With twenty-three one
         of them fails most runs, and a signal that cries every run stops being read."""

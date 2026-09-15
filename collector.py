@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import gzip
 import json
 import math
 import os
@@ -1199,6 +1200,98 @@ def build_flow(payload, now=None):
             "fills": len(rows), "goods": goods}
 
 
+TRADE_ARCHIVE_COLUMNS = ("item", "unit_price", "second_of_day", "quantity",
+                         "seconds_on_market", "seller", "buyer", "id")
+
+
+def build_trade_archive(payload, now):
+    """Commodity fills grouped into whole UTC days, the way equipment sales already are.
+
+    The rolling window forgets: seven days back, a fill is gone from the cache and from the
+    published shard, and nothing kept it. Whose money moved through a market is the kind of
+    question that gets asked about last month, so it has to survive somewhere that does not
+    depend on a browser being open at the right moment.
+
+    Written columnar, with the accounts and item codes lifted into their own tables and the
+    timestamp reduced to a second of the day. A day is about fifty thousand fills: eleven
+    megabytes written plainly, two like this, and gzip takes it to under one. The equipment
+    archive costs about three hundred megabytes a year and this costs about two hundred,
+    which is the difference between a record worth keeping and a second size problem.
+    """
+    today = now.date()
+    days = defaultdict(list)
+    for code, row in payload["commodities"].items():
+        for trade in row.get("trades") or []:
+            sold = parse_time(trade["sold_at"])
+            if sold.date() < today:
+                days[sold.date().isoformat()].append((code, sold, trade))
+    out = {}
+    for day, rows in days.items():
+        midnight = parse_time(day + "T00:00:00.000Z")
+        # Ordered by the second that is stored, not by the millisecond that is not: sorting
+        # on a precision the file does not keep makes a rewrite of the same day come out in
+        # a different order every run, and an archive that rewrites is not an archive.
+        placed = sorted(((code, int((sold - midnight).total_seconds()), t) for code, sold, t in rows),
+                        key=lambda item: (item[1], item[2]["id"]))
+        users = sorted({u for _, _, t in placed for u in (t.get("seller_id"), t.get("buyer_id")) if u})
+        codes = sorted({code for code, _, _ in placed})
+        seat = {user: index for index, user in enumerate(users)}
+        slot = {code: index for index, code in enumerate(codes)}
+        out[day] = {"schema_version": SCHEMA_VERSION, "date": day, "sale_count": len(placed),
+                    "items": codes, "users": users,
+                    "columns": list(TRADE_ARCHIVE_COLUMNS),
+                    "sales": [[slot[code], t["unit_price"], second, t["quantity"],
+                               t.get("time_on_market_seconds"),
+                               seat.get(t.get("seller_id"), -1), seat.get(t.get("buyer_id"), -1),
+                               t["id"]]
+                              for code, second, t in placed]}
+    return out
+
+
+def write_trade_archive(payload, archive_dir, now):
+    """Write-once per day, merged by fill id so a run that missed rows can still fill them in."""
+    written = 0
+    for day, record in build_trade_archive(payload, now).items():
+        target = Path(archive_dir) / "trades" / f"{day}.json.gz"
+        existing = None
+        if target.exists():
+            with gzip.open(target, "rt", encoding="utf-8") as handle:
+                existing = json.load(handle)
+        if existing:
+            record = merge_trade_days(existing, record)
+        if record != existing:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            body = json.dumps(record, separators=(",", ":"), sort_keys=True).encode("utf-8")
+            temporary = target.with_suffix(".tmp")
+            with gzip.open(temporary, "wb", compresslevel=9) as handle:
+                handle.write(body)
+            temporary.replace(target)
+            written += 1
+    return written
+
+
+def merge_trade_days(existing, fresh):
+    """Two days of the same shape, joined on the fill id, rebuilt against one set of tables."""
+    def expand(record):
+        items, users = record.get("items", []), record.get("users", [])
+        for row in record.get("sales", []):
+            yield row[-1], (items[row[0]] if 0 <= row[0] < len(items) else None,
+                            row[1], row[2], row[3], row[4],
+                            users[row[5]] if 0 <= row[5] < len(users) else None,
+                            users[row[6]] if 0 <= row[6] < len(users) else None)
+    joined = dict(expand(existing))
+    joined.update(dict(expand(fresh)))
+    rows = sorted(joined.items(), key=lambda pair: (pair[1][2], pair[0]))
+    items = sorted({r[0] for _, r in rows if r[0]})
+    users = sorted({u for _, r in rows for u in (r[5], r[6]) if u})
+    slot = {code: index for index, code in enumerate(items)}
+    seat = {user: index for index, user in enumerate(users)}
+    return {"schema_version": SCHEMA_VERSION, "date": fresh["date"], "sale_count": len(rows),
+            "items": items, "users": users, "columns": list(TRADE_ARCHIVE_COLUMNS),
+            "sales": [[slot.get(r[0], -1), r[1], r[2], r[3], r[4],
+                       seat.get(r[5], -1), seat.get(r[6], -1), key] for key, r in rows]}
+
+
 def build_users(payload):
     """The id-to-name map, so a consumer can render a ledger without asking the game.
 
@@ -1395,6 +1488,7 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
         if record != existing:
             atomic_write(target, record)
             written += 1
+    written += write_trade_archive(payload, archive_dir, now)
     return written
 
 
