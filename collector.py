@@ -1097,6 +1097,108 @@ def build_trades(code, row, payload):
             "sales": rows}
 
 
+FLOW_WINDOWS = (1, 6, 24, 48)
+FLOW_PERCENTILES = (1, 2, 5, 10)
+
+
+def whale_ranking(rows, percentile):
+    """Accounts ranked by the gold they moved, and the top slice of them.
+
+    Ranked across every good rather than within one, because that is what makes an account
+    a whale rather than a regular of a thin market. An account qualifies only with three
+    trades or two different goods: without that, whoever happened to be on the other side
+    of one large fill ranks alongside the people who trade all day.
+    """
+    accounts = {}
+    for row in rows:
+        for user in (row.get("seller_id"), row.get("buyer_id")):
+            if not user:
+                continue
+            held = accounts.setdefault(user, {"gold": 0.0, "trades": 0, "goods": set()})
+            held["gold"] += row["gold"]
+            held["trades"] += 1
+            held["goods"].add(row["code"])
+    ranked = sorted((uid for uid, a in accounts.items()
+                     if a["trades"] >= 3 or len(a["goods"]) >= 2),
+                    key=lambda uid: -accounts[uid]["gold"])
+    take = max(1, round(len(ranked) * percentile / 100)) if ranked else 0
+    return set(ranked[:take]), len(ranked), take
+
+
+def flow_rows(payload, now):
+    """Every retained commodity fill, flattened, newest window first."""
+    cutoff = now - timedelta(hours=max(FLOW_WINDOWS))
+    rows = []
+    for code, row in payload["commodities"].items():
+        for trade in row.get("trades") or []:
+            sold = parse_time(trade["sold_at"])
+            if sold < cutoff:
+                continue
+            rows.append({"code": code, "t": sold,
+                         "gold": trade["unit_price"] * trade["quantity"],
+                         "qty": trade["quantity"],
+                         "seller_id": trade.get("seller_id"),
+                         "buyer_id": trade.get("buyer_id")})
+    return rows
+
+
+def build_flow(payload, now=None):
+    """What is clearing, how fast, and whose money is behind it - as one small file.
+
+    The trade shards hold every fill and come to thirteen megabytes across the twenty-three
+    goods, which is not something a page can read on load just to draw a summary row. The
+    arithmetic belongs here anyway: the collector already has every row in memory, and doing
+    it once a run beats every reader doing it again.
+    """
+    now = now or parse_time(payload["generated_at"])
+    rows = flow_rows(payload, now)
+    whales = {}
+    for pct in FLOW_PERCENTILES:
+        members, qualified, take = whale_ranking(rows, pct)
+        whales[pct] = {"members": members, "qualified": qualified, "take": take}
+
+    goods = {}
+    for code, row in payload["commodities"].items():
+        mine = [r for r in rows if r["code"] == code]
+        book = row.get("order_book") or {}
+        bid, ask = book.get("best_bid"), book.get("best_ask")
+        windows = {}
+        for hours in FLOW_WINDOWS:
+            since = now - timedelta(hours=hours)
+            slice_ = [r for r in mine if r["t"] >= since]
+            windows[str(hours)] = {"gold": round(sum(r["gold"] for r in slice_), 3),
+                                   "units": sum(r["qty"] for r in slice_),
+                                   "fills": len(slice_)}
+        # Against the history actually held: a good first collected an hour ago has an hour
+        # of rows, and dividing those by forty-eight would read as a market on fire.
+        oldest = min((r["t"] for r in mine), default=now)
+        span = max(1.0, min(float(max(FLOW_WINDOWS)), (now - oldest).total_seconds() / 3600))
+        share = {}
+        for pct in FLOW_PERCENTILES:
+            members = whales[pct]["members"]
+            day = [r for r in mine if r["t"] >= now - timedelta(hours=24)]
+            total = sum(r["gold"] for r in day)
+            touched = sum(r["gold"] for r in day if r["seller_id"] in members or r["buyer_id"] in members)
+            bought = sum(r["gold"] for r in day if r["buyer_id"] in members)
+            sold = sum(r["gold"] for r in day if r["seller_id"] in members)
+            share[str(pct)] = {"share": round(touched / total * 100, 2) if total else None,
+                               "net": round(bought - sold, 3)}
+        goods[code] = {"item_code": code, "name": row["name"], "status": row["status"],
+                       "price": row.get("price"), "bid": bid, "ask": ask,
+                       "spread_pct": round((ask - bid) / bid * 100, 4) if bid and ask else None,
+                       "bid_orders": len(book.get("buy_orders") or []),
+                       "ask_orders": len(book.get("sell_orders") or []),
+                       "bid_levels": len({o["price"] for o in (book.get("buy_orders") or [])}),
+                       "ask_levels": len({o["price"] for o in (book.get("sell_orders") or [])}),
+                       "span_hours": round(span, 2), "windows": windows, "whales": share}
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "status": payload["status"],
+            "windows": list(FLOW_WINDOWS), "percentiles": list(FLOW_PERCENTILES),
+            "whale_accounts": {str(p): {"qualified": whales[p]["qualified"], "whales": whales[p]["take"]}
+                               for p in FLOW_PERCENTILES},
+            "fills": len(rows), "goods": goods}
+
+
 def build_users(payload):
     """The id-to-name map, so a consumer can render a ledger without asking the game.
 
@@ -1275,7 +1377,8 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
     atomic_write(public_dir / "commodities.json", build_commodities(payload))
     atomic_write(public_dir / "books.json", build_book_history(books_dir, now))
     atomic_write(public_dir / "users.json", build_users(payload))
-    written = 5
+    atomic_write(public_dir / "flow.json", build_flow(payload, now))
+    written = 6
     for code, category in payload["categories"].items():
         atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
         written += 1
