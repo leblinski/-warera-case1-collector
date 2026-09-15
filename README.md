@@ -248,8 +248,15 @@ overwriting an entry. A cache miss is survivable rather than free: the run rebui
 empty cache, which is what the very first run did, and costs one degraded cycle.
 
 The 168-hour limit applies to the current JSON's transactions and commodity
-observations. The daily archive retains everything older; this is not a historical data
-deletion policy. The collector cannot guarantee the upstream Gateway's
+observations. The daily archive retains everything older, equipment sales as
+`data/archive/<day>.json` and commodity fills as `data/archive/trades/<day>.json.gz`;
+this is not a historical data deletion policy.
+
+Commodity fills are archived columnar and gzipped, with the accounts and item codes lifted
+into their own tables and the timestamp reduced to a second of the day. A day is about
+fifty thousand fills: eleven megabytes written plainly, two like this, one once gzipped.
+Whose money moved through a market is a question asked about last month, so it cannot
+depend on a reader having had a browser open at the right moment. The collector cannot guarantee the upstream Gateway's
 database is complete; `history_complete` means pagination reached the requested
 boundary or the source reported its end of history. Sparse categories may have
 zero trades even when fetched successfully.
