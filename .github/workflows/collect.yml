@@ -107,6 +107,17 @@ jobs:
           path: data/warera_case1_market.json
           if-no-files-found: warn
           retention-days: 2
+      # Last, and never a reason to fail the run: a notification that breaks the job it is
+      # reporting on is worse than no notification. Silent when the secret is absent, so a
+      # fork or a clone needs no setup.
+      - name: Say how it went on Discord
+        if: ${{ always() }}
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_ONLY_WHEN_WRONG: ${{ vars.DISCORD_ONLY_WHEN_WRONG }}
+          COLLECT_OUTCOME: ${{ steps.collect.outcome }}
+        run: python tools/notify.py
       - name: Require healthy live collection
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
         env:

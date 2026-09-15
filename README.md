@@ -11,6 +11,12 @@ Supported by [warerastats.io](https://warerastats.io/).
    [repository secrets](https://github.com/leblinski/-warera-case1-collector/settings/secrets/actions).
    Use an API key issued through your WarEra account, never a session cookie or password.
    Do not commit the key or paste it into source files.
+
+   Optionally add a `DISCORD_WEBHOOK` secret to have each run say how it went in a channel.
+   A webhook URL is a bearer credential - anyone holding it can post - so it belongs in the
+   repository's secrets and nowhere else, least of all in a page served from Pages. Set the
+   repository variable `DISCORD_ONLY_WHEN_WRONG` to `true` to hear only about runs that
+   failed or finished degraded.
 2. Push the project to `main`. Changes to the collector, config, tests, or workflow
    automatically start collection. You can also select **Run workflow** under
    [Actions](https://github.com/leblinski/-warera-case1-collector/actions).
