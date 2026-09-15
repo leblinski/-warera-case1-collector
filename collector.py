@@ -1123,7 +1123,7 @@ def whale_ranking(rows, percentile):
                      if a["trades"] >= 3 or len(a["goods"]) >= 2),
                     key=lambda uid: -accounts[uid]["gold"])
     take = max(1, round(len(ranked) * percentile / 100)) if ranked else 0
-    return set(ranked[:take]), len(ranked), take
+    return set(ranked[:take]), len(ranked), take, ranked, accounts
 
 
 def flow_rows(payload, now):
@@ -1154,9 +1154,15 @@ def build_flow(payload, now=None):
     now = now or parse_time(payload["generated_at"])
     rows = flow_rows(payload, now)
     whales = {}
+    ranked, accounts = [], {}
     for pct in FLOW_PERCENTILES:
-        members, qualified, take = whale_ranking(rows, pct)
+        members, qualified, take, ranked, accounts = whale_ranking(rows, pct)
         whales[pct] = {"members": members, "qualified": qualified, "take": take}
+    # The widest slice, published in rank order so a reader can cut it narrower without
+    # asking again. Names are not included: users.json already has them, and most of these
+    # accounts are never looked at.
+    widest = whales[max(FLOW_PERCENTILES)]["take"]
+    roster = [[uid, round(accounts[uid]["gold"], 2)] for uid in ranked[:widest]]
 
     goods = {}
     for code, row in payload["commodities"].items():
@@ -1197,6 +1203,7 @@ def build_flow(payload, now=None):
             "windows": list(FLOW_WINDOWS), "percentiles": list(FLOW_PERCENTILES),
             "whale_accounts": {str(p): {"qualified": whales[p]["qualified"], "whales": whales[p]["take"]}
                                for p in FLOW_PERCENTILES},
+            "whale_roster": {"columns": ["user", "gold"], "ranked": roster},
             "fills": len(rows), "goods": goods}
 
 

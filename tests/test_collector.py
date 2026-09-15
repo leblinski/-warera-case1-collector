@@ -766,6 +766,21 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(steel['windows']['6']['fills'], 1)
         self.assertLessEqual(steel['span_hours'], max(c.FLOW_WINDOWS))
 
+    def test_the_roster_lets_a_reader_cut_the_percentile_themselves(self):
+        """A page marking orders in a live book needs the accounts, not just how many there
+        are, and should not have to ask again to narrow from the tenth to the first."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        flow = c.build_flow(payload, NOW)
+        roster = flow['whale_roster']
+        self.assertEqual(roster['columns'], ['user', 'gold'])
+        self.assertEqual(len(roster['ranked']), flow['whale_accounts'][str(max(c.FLOW_PERCENTILES))]['whales'])
+        gold = [row[1] for row in roster['ranked']]
+        self.assertEqual(gold, sorted(gold, reverse=True))
+        # Narrowing is a slice of the same list, not a different set.
+        narrow = flow['whale_accounts'][str(min(c.FLOW_PERCENTILES))]['whales']
+        self.assertLessEqual(narrow, len(roster['ranked']))
+
     def test_a_one_off_counterparty_is_not_a_whale(self):
         """Rank purely by gold and whoever happened to be on the other side of one large
         fill outranks the people who trade all day."""
@@ -774,10 +789,12 @@ class CollectorTests(unittest.TestCase):
         for i in range(4):
             rows.append({'code': 'scraps' if i % 2 else 'steel', 'gold': 100.0, 'qty': 1,
                          'seller_id': 'regular', 'buyer_id': 'other-' + str(i), 't': NOW})
-        members, qualified, take = c.whale_ranking(rows, 50)
+        members, qualified, take, ranked, accounts = c.whale_ranking(rows, 50)
         self.assertIn('regular', members)
         self.assertNotIn('passer-by', members)
         self.assertEqual(qualified, 1)
+        self.assertEqual(ranked, ['regular'])
+        self.assertGreater(accounts['passer-by']['gold'], accounts['regular']['gold'] / 2)
 
     def test_the_span_is_the_history_held_not_the_window_asked_for(self):
         """Dividing one hour of rows by forty-eight made a fresh cache read as a market on
