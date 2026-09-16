@@ -766,6 +766,45 @@ class CollectorTests(unittest.TestCase):
         self.assertEqual(steel['windows']['6']['fills'], 1)
         self.assertLessEqual(steel['span_hours'], max(c.FLOW_WINDOWS))
 
+    def test_the_flow_summary_dates_the_fills_apart_from_the_file(self):
+        """Prices and the book are re-read every run; fills are read a few goods at a time.
+        So the file's own timestamp is the freshness of half of what it carries, and a
+        reader shown only that draws hour-old velocity under a five-minute-old heading."""
+        with contextlib.redirect_stdout(io.StringIO()):
+            payload = c.collect(FullClient(), now=NOW)
+        # One good measured this run, one measured two hours ago, one never measured at all.
+        payload['commodities']['steel']['trades_fetched_at'] = c.stamp(NOW)
+        payload['commodities']['iron'].update(trades_status='skipped',
+                                              trades_fetched_at=c.stamp(NOW - timedelta(hours=2)))
+        payload['commodities']['coca'].update(trades_status='error', trades_fetched_at=None)
+        flow = c.build_flow(payload, NOW)
+        self.assertEqual(flow['goods']['steel']['trades_age_minutes'], 0)
+        self.assertEqual(flow['goods']['iron']['trades_age_minutes'], 120)
+        self.assertEqual(flow['goods']['iron']['trades_status'], 'skipped')
+        # Never measured is not "measured, and zero": a reader has to be able to tell a
+        # quiet market from one nobody has looked at.
+        self.assertIsNone(flow['goods']['coca']['trades_age_minutes'])
+        fresh = flow['trades_freshness']
+        self.assertEqual(fresh['goods'], len(c.COMMODITIES))
+        self.assertLess(fresh['measured'], fresh['goods'])
+        self.assertEqual(fresh['newest_minutes'], 0)
+        self.assertGreaterEqual(fresh['oldest_minutes'], 120)
+
+    def test_running_out_of_time_does_not_erase_why_an_item_failed(self):
+        """A good that never returns a page publishes a zero, which reads as a quiet market.
+        The reason used to be written into trades_error and then overwritten by the next
+        run's "out of time", so nothing survived to say the item was broken rather than
+        idle."""
+        commodities = {'steel': {'trades_status': 'error', 'trades_error': 'HTTP 500',
+                                 'trades_turn': 4}}
+        client = FullClient()
+        client.deadline = time.monotonic()  # No time at all: every good is skipped.
+        with contextlib.redirect_stdout(io.StringIO()):
+            c.collect_commodity_trades_all(client, commodities, NOW)
+        self.assertEqual(commodities['steel']['trades_status'], 'skipped')
+        self.assertEqual(commodities['steel']['trades_error'], 'HTTP 500')
+        self.assertIn('next run', commodities['steel']['trades_skip_reason'])
+
     def test_the_roster_lets_a_reader_cut_the_percentile_themselves(self):
         """A page marking orders in a live book needs the accounts, not just how many there
         are, and should not have to ask again to narrow from the tenth to the first."""
