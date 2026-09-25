@@ -85,7 +85,13 @@ USER_NAME_REFRESH_DAYS = 14
 # An order priced far away from the item is not a position, it is a placeholder. One unit of
 # fish at 999999 outweighed every real order in the game when weighted by notional.
 OFF_MARKET_BAND = 2.0
-COMMODITY_TRADE_BUDGET_SECONDS = 150
+# The slice was 150 seconds against a 600 second run, and the run finishes in 255: the
+# trade pass was rationed against time nothing else was spending. Three items a turn over
+# twenty-four items is a two hour rotation, so a page reading "updated 5 minutes ago" was
+# drawing hour-old velocity, and a chronically failing item pushed that to days. Taking the
+# idle 180 seconds puts the run near 435 of its 600, still inside the job's fourteen
+# minutes, and turns the rotation over in well under an hour.
+COMMODITY_TRADE_BUDGET_SECONDS = 330
 COMMODITY_TRADE_RESERVE_SECONDS = 90
 SCHEMA_VERSION = 7
 
@@ -841,6 +847,7 @@ def collect_commodity_trades_all(client, commodities, now):
     where the last one ran out.
     """
     started = time.monotonic()
+    fetched, failed, skipped = [], [], []
     # A counter rather than a clock: every item attempted in one run would share a timestamp,
     # and the rotation would collapse back to alphabetical. Never attempted sorts first, then
     # least recently attempted.
@@ -851,8 +858,13 @@ def collect_commodity_trades_all(client, commodities, now):
         spent = time.monotonic() - started
         remaining = (client.deadline - time.monotonic()) if getattr(client, "deadline", None) is not None else None
         if spent >= COMMODITY_TRADE_BUDGET_SECONDS or (remaining is not None and remaining < COMMODITY_TRADE_RESERVE_SECONDS):
+            skipped.append(code)
             row["trades_status"] = "skipped"
-            row["trades_error"] = "out of time this run; the next run continues"
+            # Not into trades_error: running out of time is this run's news, and writing it
+            # there erased why the item failed the last time it was actually tried. An item
+            # that has never once returned a page looks identical to a quiet one unless the
+            # reason survives the runs in between.
+            row["trades_skip_reason"] = "out of time this run; the next run continues"
             continue
         # Taken before the attempt, not after it: ordering on the last success sent a
         # chronically failing item back to the head of the queue every run, and it spent the
@@ -865,6 +877,8 @@ def collect_commodity_trades_all(client, commodities, now):
             row.update(trades=trades, trade_count=len(trades), trades_fetched_at=stamp(now),
                        trades_pages=pages, trades_stop=stop, trades_status="ok")
             row.pop("trades_error", None)
+            row.pop("trades_skip_reason", None)
+            fetched.append(f"{code} {len(trades)} ({stop})")
         except (CollectionError, ApiError) as exc:
             # Keep whatever was already held; a missed page is a gap, not a reason to forget
             # the week. And it is not an outage either: a commodity row exists to say what
@@ -872,6 +886,16 @@ def collect_commodity_trades_all(client, commodities, now):
             # so this is recorded where a reader can see it rather than in the run's health.
             row["trades_status"] = "error"
             row["trades_error"] = str(exc)
+            row["trades_failed_at"] = stamp(now)
+            row.pop("trades_skip_reason", None)
+            failed.append(f"{code}: {exc}")
+    # The pass used to run silently, so the only evidence of an item that never returns a
+    # page was a zero in the published feed, which reads as a quiet market rather than a
+    # missing one.
+    print(f"Commodity trades: {len(fetched)} fetched, {len(failed)} failed, "
+          f"{len(skipped)} left for the next run", flush=True)
+    for line in fetched + failed:
+        print(f"  {line}", flush=True)
     return commodities
 
 
@@ -1144,6 +1168,13 @@ def flow_rows(payload, now):
     return rows
 
 
+def age_minutes(stamped, now):
+    """How long ago a stamp was, in whole minutes, or None if it never happened."""
+    if not stamped:
+        return None
+    return max(0, round((now - parse_time(stamped)).total_seconds() / 60))
+
+
 def build_flow(payload, now=None):
     """What is clearing, how fast, and whose money is behind it - as one small file.
 
@@ -1198,9 +1229,23 @@ def build_flow(payload, now=None):
                        "ask_orders": len(book.get("sell_orders") or []),
                        "bid_levels": len({o["price"] for o in (book.get("buy_orders") or [])}),
                        "ask_levels": len({o["price"] for o in (book.get("sell_orders") or [])}),
-                       "span_hours": round(span, 2), "windows": windows, "whales": share}
+                       "span_hours": round(span, 2), "windows": windows, "whales": share,
+                       # When these velocity numbers were last measured, which is not when
+                       # this file was written. Prices and the book are re-read every run;
+                       # fills are read a few items at a time in rotation, so a good's
+                       # windows can be an hour old under a five minute old file. A reader
+                       # that shows the file's age for both reports the fresh half.
+                       "trades_status": row.get("trades_status"),
+                       "trades_fetched_at": row.get("trades_fetched_at"),
+                       "trades_age_minutes": age_minutes(row.get("trades_fetched_at"), now)}
+    measured = [g["trades_age_minutes"] for g in goods.values() if g["trades_age_minutes"] is not None]
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "status": payload["status"],
+            # The headline freshness of the fills, so a page can say how old the oldest
+            # thing it is drawing is without walking every good itself.
+            "trades_freshness": {"measured": len(measured), "goods": len(goods),
+                                 "newest_minutes": min(measured) if measured else None,
+                                 "oldest_minutes": max(measured) if measured else None},
             "windows": list(FLOW_WINDOWS), "percentiles": list(FLOW_PERCENTILES),
             "whale_accounts": {str(p): {"qualified": whales[p]["qualified"], "whales": whales[p]["take"]}
                                for p in FLOW_PERCENTILES},

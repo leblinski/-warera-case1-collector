@@ -86,10 +86,28 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/archive data/books
-          if ! git diff --cached --quiet; then
-            git commit -m 'Update WarEra Case I archive and book history'
-            git push origin HEAD:main
-          fi
+          git diff --cached --quiet && exit 0
+          git commit -m 'Update WarEra Case I archive and book history'
+          # A single push with no rebase and no retry made every lost race a failed run,
+          # and the run it failed had already collected, validated and deployed the feed:
+          # the history commit is bookkeeping, and reporting it as "collector failed" sends
+          # everyone looking at a collector that worked. Rebase onto whatever landed first
+          # and try again; only a push that keeps failing is worth waking someone for.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Push $attempt was beaten to main; rebasing onto it and retrying."
+            sleep $(( attempt * 5 ))
+            # Only rebase on a fetch that actually told us something. A push that failed
+            # because the network blinked has nothing to replay onto, and rebasing a stale
+            # FETCH_HEAD there spent the remaining attempts on a false diagnosis.
+            if git fetch origin main; then
+              # Ours is one commit of append-only data on top of theirs. If it will not
+              # replay cleanly something is wrong that a retry will not fix.
+              git rebase FETCH_HEAD || { git rebase --abort || true; break; }
+            fi
+          done
+          echo 'Could not push the archive and book history. The feed was still published.'
+          exit 1
       - name: Package price shards for Pages
         if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
         uses: actions/upload-pages-artifact@v3
