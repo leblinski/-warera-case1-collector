@@ -60,8 +60,27 @@ COMMODITIES = {
 # read. They are still reported; they just do not condemn the run.
 REQUIRED_COMMODITIES = ("case1", "scraps", "steel")
 
+# What a request is given before it is called dead. Callers working inside a slice of the
+# run pass less; see COMMODITY_TRADE_TIMEOUT_SECONDS.
+REQUEST_TIMEOUT_SECONDS = 30
+
 COMMODITY_TRADE_TYPE = "trading"
-COMMODITY_TRADE_PAGES = 2
+# A hundred rows an item was what the thin goods died on. The query asks the API for one
+# item's trading rows, and a busy item fills a hundred of them out of recent history while
+# a quiet one makes the server walk the whole week to find that many - so oil, paper, wood,
+# ammo, coca, fish, lead and livestock timed out at thirty seconds on every single run, and
+# the market page drew their silence as a quiet market rather than a missing one.
+#
+# Twenty-five rows a page over eight pages keeps the same two hundred row ceiling, which is
+# what a fifteen minute gap needs on the busiest item, while each request asks for little
+# enough to come back. The incremental stop still ends a healthy item after a page or two.
+COMMODITY_TRADE_LIMIT = 25
+COMMODITY_TRADE_PAGES = 8
+# And when one still does not come back, it should cost the slice a fraction of what it did.
+# A failed call aborts its item, so the bill for a dead item is attempts times this rather
+# than the thirty second default: twenty-five seconds instead of seventy, which is the
+# difference between five bad items eating the whole pass and leaving most of it intact.
+COMMODITY_TRADE_TIMEOUT_SECONDS = 10
 
 # What the trade pass may spend. A cold cache wants several pages an item across
 # twenty-three items, and on the first run that arithmetic spent the whole budget before the
@@ -277,7 +296,7 @@ class Client:
                     return
             time.sleep(min(delay, 1))
 
-    def call(self, procedure, params=None, attempts=4):
+    def call(self, procedure, params=None, attempts=4, timeout=REQUEST_TIMEOUT_SECONDS):
         """attempts is how many times a retryable failure is worth paying for.
 
         The default suits the equipment scan, where a lost page is a hole in the history.
@@ -293,7 +312,7 @@ class Client:
             self._throttle()
             try:
                 remaining = self.deadline - time.monotonic()
-                with build_opener(NoRedirect()).open(Request(url, headers=headers), timeout=max(0.1, min(30, remaining))) as response:
+                with build_opener(NoRedirect()).open(Request(url, headers=headers), timeout=max(0.1, min(timeout, remaining))) as response:
                     return unwrap(json.load(response))
             except HTTPError as exc:
                 reason = " (valid WARERA_API_KEY required)" if exc.code in (401, 403) else ""
@@ -802,11 +821,13 @@ def collect_commodity_trades(client, code, previous, now, max_pages=COMMODITY_TR
     known = set(kept)
     cursor, pages, stop = None, 0, None
     for _ in range(max_pages):
-        params = {"itemCode": code, "transactionType": COMMODITY_TRADE_TYPE, "limit": 100}
+        params = {"itemCode": code, "transactionType": COMMODITY_TRADE_TYPE,
+                  "limit": COMMODITY_TRADE_LIMIT}
         if cursor:
             params["cursor"] = cursor
         rows, cursor = page_data(client.call("transaction.getPaginatedTransactions", params,
-                                            attempts=COMMODITY_TRADE_ATTEMPTS))
+                                            attempts=COMMODITY_TRADE_ATTEMPTS,
+                                            timeout=COMMODITY_TRADE_TIMEOUT_SECONDS))
         pages += 1
         reached_known = False
         oldest = None
