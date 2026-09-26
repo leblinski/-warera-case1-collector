@@ -62,7 +62,7 @@ class SequenceClient:
         self.responses = iter(responses)
         self.calls = []
 
-    def call(self, procedure, params=None, attempts=4):
+    def call(self, procedure, params=None, attempts=4, timeout=None):
         self.calls.append((procedure, params))
         self.requests += 1
         result = next(self.responses)
@@ -75,7 +75,7 @@ class FullClient:
     base_url = c.GATEWAY
     requests = 0
 
-    def call(self, procedure, params=None, attempts=4):
+    def call(self, procedure, params=None, attempts=4, timeout=None):
         self.requests += 1
         if procedure == 'transaction.getPaginatedTransactions':
             code = (params or {}).get('itemCode')
@@ -185,7 +185,7 @@ class CollectorTests(unittest.TestCase):
 
     def test_market_failure_keeps_commodity_observations(self):
         class BrokenMarket(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'transaction.getPaginatedTransactions':
                     raise c.ApiError('Run time budget reached')
                 return super().call(procedure, params, attempts)
@@ -565,7 +565,7 @@ class CollectorTests(unittest.TestCase):
 
     def test_a_failed_trade_page_does_not_condemn_the_commodity(self):
         class NoTrades(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
                     raise c.ApiError('trades down')
                 return super().call(procedure, params, attempts)
@@ -609,7 +609,7 @@ class CollectorTests(unittest.TestCase):
         visited = []
 
         class Once(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 code = (params or {}).get('itemCode')
                 if procedure == 'transaction.getPaginatedTransactions' and code:
                     visited.append(code)
@@ -632,7 +632,7 @@ class CollectorTests(unittest.TestCase):
         seen = []
 
         class Slow(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'transaction.getPaginatedTransactions':
                     seen.append(attempts)
                 return super().call(procedure, params, attempts)
@@ -650,7 +650,7 @@ class CollectorTests(unittest.TestCase):
         visited = []
 
         class Slow(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 code = (params or {}).get('itemCode')
                 if procedure == 'transaction.getPaginatedTransactions':
                     visited.append(code)
@@ -688,7 +688,7 @@ class CollectorTests(unittest.TestCase):
         asked = []
 
         class Counting(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'user.getUserLite':
                     asked.append((params or {}).get('userId'))
                 return super().call(procedure, params, attempts)
@@ -724,7 +724,7 @@ class CollectorTests(unittest.TestCase):
         """A name that does not arrive is not an outage; the ledger shows the id until a
         later run gets it."""
         class Broken(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'user.getUserLite':
                     raise c.ApiError('user.getUserLite: network request failed', 503)
                 return super().call(procedure, params, attempts)
@@ -789,6 +789,54 @@ class CollectorTests(unittest.TestCase):
         self.assertLess(fresh['measured'], fresh['goods'])
         self.assertEqual(fresh['newest_minutes'], 0)
         self.assertGreaterEqual(fresh['oldest_minutes'], 120)
+
+    def test_a_thin_item_asks_for_a_page_it_can_actually_be_sent(self):
+        """A hundred rows an item is what the quiet goods died on: the server walks the
+        whole week to find that many trading rows for oil or paper, and the request timed
+        out on every run, so the market page drew their silence as a quiet market. Smaller
+        pages, more of them, and a shorter clock on each so a dead item costs the pass a
+        fraction of what it did."""
+        seen = []
+
+        class Watcher(FullClient):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
+                if procedure == 'transaction.getPaginatedTransactions' and \
+                        (params or {}).get('itemCode') in c.COMMODITIES:
+                    seen.append((params.get('limit'), attempts, timeout))
+                return FullClient.call(self, procedure, params, attempts, timeout)
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            c.collect(Watcher(), now=NOW)
+        self.assertTrue(seen)
+        limits = {row[0] for row in seen}
+        self.assertEqual(limits, {c.COMMODITY_TRADE_LIMIT})
+        self.assertLess(c.COMMODITY_TRADE_LIMIT, 100)
+        # The ceiling stays where a fifteen minute gap on the busiest item needs it.
+        self.assertGreaterEqual(c.COMMODITY_TRADE_LIMIT * c.COMMODITY_TRADE_PAGES, 200)
+        for _, attempts, timeout in seen:
+            self.assertEqual(attempts, c.COMMODITY_TRADE_ATTEMPTS)
+            self.assertEqual(timeout, c.COMMODITY_TRADE_TIMEOUT_SECONDS)
+        # What one dead item may cost the slice, against a 330 second pass.
+        self.assertLess(c.COMMODITY_TRADE_ATTEMPTS * c.COMMODITY_TRADE_TIMEOUT_SECONDS,
+                        c.COMMODITY_TRADE_BUDGET_SECONDS / 8)
+
+    def test_a_request_may_be_given_a_shorter_clock_than_the_default(self):
+        """The slice-bound callers need their own timeout; everyone else keeps thirty
+        seconds, and a request never outlives the run's own deadline."""
+        client = c.Client(c.GATEWAY, max_seconds=600)
+        captured = []
+
+        class Opener:
+            def open(self, request, timeout=None):
+                captured.append(timeout)
+                raise TimeoutError('no')
+
+        with patch.object(c, 'build_opener', lambda *a: Opener()):
+            for kwargs in ({}, {'timeout': 10}):
+                with self.assertRaises(c.ApiError):
+                    client.call('itemTrading.getPrices', attempts=1, **kwargs)
+        self.assertEqual(captured[0], c.REQUEST_TIMEOUT_SECONDS)
+        self.assertEqual(captured[1], 10)
 
     def test_running_out_of_time_does_not_erase_why_an_item_failed(self):
         """A good that never returns a page publishes a zero, which reads as a quiet market.
@@ -916,7 +964,7 @@ class CollectorTests(unittest.TestCase):
         """With three commodities a failed book was worth a red run. With twenty-three one
         of them fails most runs, and a signal that cries every run stops being read."""
         class FlakyBook(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'wood':
                     raise c.CollectionError('network request failed')
                 return super().call(procedure, params, attempts)
@@ -930,7 +978,7 @@ class CollectorTests(unittest.TestCase):
 
     def test_a_commodity_the_calculator_needs_still_reddens_the_run(self):
         class NoScraps(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'tradingOrder.getTopOrders' and (params or {}).get('itemCode') == 'scraps':
                     raise c.CollectionError('network request failed')
                 return super().call(procedure, params, attempts)
@@ -972,7 +1020,7 @@ class CollectorTests(unittest.TestCase):
         """A long run keeps paging while the market keeps trading. Raising on that aborted
         the whole item for a row that was merely early."""
         class Early(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'transaction.getPaginatedTransactions' and (params or {}).get('itemCode'):
                     return page([trade('future', code='steel', hours=-1),
                                  trade('steel-now', code='steel', hours=1)])
@@ -998,7 +1046,7 @@ class CollectorTests(unittest.TestCase):
 
     def test_failed_category_makes_whole_output_degraded(self):
         class BrokenClient(FullClient):
-            def call(self, procedure, params=None, attempts=4):
+            def call(self, procedure, params=None, attempts=4, timeout=None):
                 if procedure == 'transaction.getPaginatedTransactions':
                     raise c.ApiError('outage')
                 return super().call(procedure, params, attempts)
