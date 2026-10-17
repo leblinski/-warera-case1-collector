@@ -17,7 +17,8 @@ it never prints the key.
 import argparse, json, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from collector import GATEWAY, OFFICIAL, Client, CollectionError, ApiError, page_data
+from collector import (GATEWAY, OFFICIAL, Client, CollectionError, ApiError, page_data,
+                       ROOT, number, parse_time)
 
 PROCEDURE = "transaction.getPaginatedTransactions"
 
@@ -58,9 +59,63 @@ def ask(client, params, timeout, procedure=PROCEDURE):
             "ms": int((time.monotonic() - started) * 1000)}
 
 
+def archived_sales(codes):
+    """Every archived sale for these codes, by transaction id.
+
+    The archive was built entirely through the Gateway. If the official base hands back
+    the same ids for the same sales, the two are the same records and the collector can
+    change base without double-counting a single fill. If it re-ids them, it cannot.
+    """
+    held = {}
+    for path in sorted((ROOT / "data/archive").glob("20??-??-??.json")):
+        day = json.loads(path.read_text(encoding="utf-8"))
+        for sale in day.get("sales", []):
+            if sale.get("item_code") in codes:
+                held[sale.get("id")] = sale
+    return held
+
+
+def check_identity(client, codes, timeout):
+    held = archived_sales(set(codes))
+    print(f"Archived sales for {', '.join(codes)}: {len(held)}, all collected through the Gateway.")
+    if not held:
+        print("Nothing archived for these codes, so identity cannot be checked here.")
+        return
+    for code in codes:
+        try:
+            rows, _ = page_data(client.call(PROCEDURE, {"itemCode": code, "limit": 100},
+                                            attempts=1, timeout=timeout))
+        except (CollectionError, ApiError) as exc:
+            print(f"  {code:<10} could not be read: {str(exc)[:60]}")
+            continue
+        ids = [r.get("_id") or r.get("id") for r in rows if isinstance(r, dict)]
+        hits = [i for i in ids if i in held]
+        oldest = min((parse_time(r["createdAt"]) for r in rows if r.get("createdAt")), default=None)
+        reach = f"reaches {oldest:%m-%d %H:%M}" if oldest else "no timestamps"
+        print(f"  {code:<10} {len(ids):>3} rows, {reach}, {len(hits):>3} ids already archived")
+        # A matching id is only reassuring if the sale under it matches too.
+        for row in rows:
+            txid = row.get("_id") or row.get("id")
+            if txid in held:
+                mine = held[txid]
+                fields = [("money", number(row.get("money"))),
+                          ("quantity", number(row.get("quantity"))),
+                          ("sold_at", row.get("createdAt"))]
+                same = all(mine.get(k) == v or (isinstance(v, float) and v is not None
+                           and number(mine.get(k)) is not None
+                           and abs(number(mine.get(k)) - v) < 1e-6)
+                           for k, v in fields)
+                print(f"    sample {txid[:10]}: archive {[mine.get(k) for k, _ in fields]} "
+                      f"vs official {[v for _, v in fields]} - "
+                      f"{'same sale' if same else 'DIFFERENT'}")
+                break
+    print()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=float, default=20.0)
+    ap.add_argument("--identity-codes", default="sniper,jet,tank")
     args = ap.parse_args()
 
     key = os.environ.get("WARERA_API_KEY", "").strip()
@@ -114,7 +169,13 @@ def main():
             shapes = [r["shape"] for r in working if r["base"] == base_name]
             print(f"{base_name} answered for: {', '.join(shapes)}")
         print("\nThe collector can be pointed at whichever base and shape above returned rows.")
-    print("\nRaw:", json.dumps(results, separators=(",", ":")))
+    official_works = any(r["ok"] and r.get("rows") and r["base"] == "official" for r in results)
+    if official_works:
+        print("Do the two bases agree on what a sale is?")
+        codes = [c.strip() for c in args.identity_codes.split(",") if c.strip()]
+        check_identity(Client(OFFICIAL, key, max_seconds=120), codes, args.timeout)
+
+    print("Raw:", json.dumps(results, separators=(",", ":")))
     return 0
 
 
