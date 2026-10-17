@@ -2,6 +2,19 @@ name: Collect WarEra Case I market
 
 on:
   workflow_dispatch:
+    inputs:
+      max_seconds:
+        description: >-
+          How long collection may spend on the network. The default suits a 15 minute
+          cadence. Raise it for a run that has to walk back further than usual, such as
+          the first run after an outage, where the scan must cover every hour since the
+          last success rather than the last quarter of an hour.
+        default: '600'
+      timeout_minutes:
+        description: >-
+          The job's own ceiling, which has to leave room for the budget above plus the
+          commit and the Pages deploy. Raise both together or the run is killed mid-scan.
+        default: '14'
   schedule:
     # A fallback only. schedule does fire on this repository, but nowhere near as often as
     # asked: a 15 minute cron delivered 2 runs in 8 hours against about 32 requested, in
@@ -33,7 +46,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes || '14') }}
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -63,7 +76,7 @@ jobs:
         continue-on-error: true
         env:
           WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
-        run: python collector.py --max-seconds 600
+        run: python collector.py --max-seconds "${{ inputs.max_seconds || '600' }}"
       - name: Validate generated cache
         id: validate
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
