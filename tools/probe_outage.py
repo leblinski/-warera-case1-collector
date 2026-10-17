@@ -25,9 +25,9 @@ PROCEDURE = "transaction.getPaginatedTransactions"
 SHAPES = (
     ("bare, 5", {"limit": 5}),
     ("itemMarket, 5", {"limit": 5, "transactionType": "itemMarket"}),
-    ("commodityMarket, 5", {"limit": 5, "transactionType": "commodityMarket", "itemCode": "scraps"}),
     ("itemCode only, 5", {"limit": 5, "itemCode": "sniper"}),
-    ("what the collector asks", {"limit": 100, "transactionType": "itemMarket"}),
+    ("equipment, as collected", {"limit": 100, "transactionType": "itemMarket"}),
+    ("goods, as collected", {"limit": 25, "transactionType": "trading", "itemCode": "scraps"}),
 )
 
 
