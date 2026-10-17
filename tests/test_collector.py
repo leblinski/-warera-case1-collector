@@ -1059,6 +1059,55 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.validate(output, True, NOW)
 
+    def test_attribution_names_whoever_is_being_read(self):
+        self.assertEqual(c.attribution(c.GATEWAY), 'Supported by warerastats.io')
+        self.assertEqual(c.attribution(c.OFFICIAL), 'Read from the official WarEra API')
+
+    def test_changing_base_keeps_the_history_and_credits_the_new_base(self):
+        """A base change is not a reason to re-walk the retention window.
+
+        The two bases serve the same sales under the same ids, so the cache stays valid
+        across the change. Resetting history_complete would send the scan seven days back,
+        which no single run can cover, and the history would never complete again.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            path = tmp / 'market.json'
+            on_gateway = c.collect(FullClient(), now=NOW)
+            self.assertEqual(on_gateway['source']['base_url'], c.GATEWAY)
+            self.assertTrue(all(row['history_complete'] for row in on_gateway['categories'].values()))
+            path.write_text(json.dumps(on_gateway), encoding='utf-8')
+
+            class OfficialClient(FullClient):
+                base_url = c.OFFICIAL
+
+            # What the run is handed matters more than what it ends with: a fake client
+            # reaches the end of history in one page and so completes it again either way.
+            handed = {}
+            real_collect = c.collect
+
+            def capture(client, previous=None, **kwargs):
+                handed.update(previous or {})
+                return real_collect(client, previous, **kwargs)
+
+            with patch.dict(os.environ, {'WARERA_API_KEY': 'test-only'}), \
+                 patch.object(c, 'Client', lambda *a, **k: OfficialClient()), \
+                 patch.object(c, 'collect', capture), \
+                 contextlib.redirect_stdout(io.StringIO()) as said:
+                self.assertEqual(c.main(['--output', str(path), '--base-url', c.OFFICIAL,
+                                         '--public-dir', str(tmp / 'public'),
+                                         '--books-dir', str(tmp / 'books'),
+                                         '--archive-dir', str(tmp / 'archive')]), 0)
+            self.assertIn('the history carries over', said.getvalue())
+            self.assertTrue(handed['categories'],
+                            'the run was handed no categories to carry over')
+            self.assertTrue(all(row['history_complete'] for row in handed['categories'].values()),
+                            'the base change threw away the history it should have kept')
+            after = json.loads(path.read_text(encoding='utf-8'))
+            self.assertEqual(after['source']['base_url'], c.OFFICIAL)
+            self.assertEqual(after['source']['attribution'], 'Read from the official WarEra API')
+            self.assertTrue(all(row['history_complete'] for row in after['categories'].values()))
+
     def test_missing_key_leaves_existing_file_untouched(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'market.json'

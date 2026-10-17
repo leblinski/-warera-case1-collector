@@ -23,6 +23,15 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
+# Reads go to the official API. The Gateway served this collector from the start and still
+# answers for books, prices and names, but from 2026-10-16 16:00 it began answering HTTP
+# 500 to every transaction.getPaginatedTransactions, in every shape and at every page size,
+# which is the one procedure behind both the equipment scan and the commodity fills. The
+# official base answers all four calls the collector makes, and - measured over sixty-five
+# sales held on both sides - hands back the same transaction ids carrying the same money,
+# quantity and timestamp, so the cache dedupes across the change rather than double-counting
+# it. Pass --base-url to go back once the Gateway is serving transactions again.
+DEFAULT_BASE_URL = OFFICIAL
 # Every code itemTrading.getPrices returns. The call is already made unfiltered on every
 # run; until now all but three of its rows were discarded. The game sends bare numbers with
 # no display name, so the names are ours and have to be kept by hand - a new item appears as
@@ -268,9 +277,15 @@ def retry_delay(header):
             return 0
 
 
+def attribution(base_url):
+    """Who to credit for the data, which is whoever is actually being read."""
+    return ("Supported by warerastats.io" if base_url == GATEWAY
+            else "Read from the official WarEra API")
+
+
 class Client:
     """One shared rate limiter for workers and retries; never logs the API key."""
-    def __init__(self, base_url=GATEWAY, api_key=None, interval=0.5, max_seconds=600):
+    def __init__(self, base_url=DEFAULT_BASE_URL, api_key=None, interval=0.5, max_seconds=600):
         if base_url not in (GATEWAY, OFFICIAL):
             raise CollectionError("Only the official API and WarEraStats Gateway are supported")
         self.base_url = base_url
@@ -305,7 +320,7 @@ class Client:
         whole slice, and the items behind it get nothing.
         """
         url = self.base_url + "/" + procedure + "?" + urlencode({"input": canonical(params or {})})
-        headers = {"Accept": "application/json", "User-Agent": "warera-case1-collector/1.0 (Supported by warerastats.io)"}
+        headers = {"Accept": "application/json", "User-Agent": f"warera-case1-collector/1.0 ({attribution(self.base_url)})"}
         if self.api_key:
             headers["X-API-Key"] = self.api_key
         for attempt in range(attempts):
@@ -1054,7 +1069,8 @@ def collect(client, previous=None, now=None, max_pages=1000):
     return {
         "schema_version": SCHEMA_VERSION, "generated_at": stamp(now),
         "updated_at": stamp(now) if status == "ok" else previous.get("updated_at"),
-        "status": status, "source": {"base_url": client.base_url, "attribution": "Supported by warerastats.io", "read_only": True},
+        "status": status, "source": {"base_url": client.base_url,
+                                     "attribution": attribution(client.base_url), "read_only": True},
         "policy": {"retention_hours": RETENTION_HOURS, "comps_window_hours": COMPS_WINDOW_HOURS,
                    "max_time_on_market_hours": MAX_TIME_ON_MARKET_HOURS,
                    "primary_hours": PRIMARY_HOURS, "min_primary_comps": MIN_PRIMARY_COMPS,
@@ -1701,7 +1717,7 @@ def main(argv=None):
                         help="Where the daily order-book history is appended.")
     parser.add_argument("--archive-dir", type=Path, default=ROOT / "data/archive",
                         help="Write-once daily sale files; the durable history")
-    parser.add_argument("--base-url", choices=(GATEWAY, OFFICIAL), default=GATEWAY)
+    parser.add_argument("--base-url", choices=(GATEWAY, OFFICIAL), default=DEFAULT_BASE_URL)
     parser.add_argument("--max-pages", type=int, default=1000)
     parser.add_argument("--max-seconds", type=int, default=600)
     parser.add_argument("--validate", action="store_true", help="Validate existing JSON without network calls")
@@ -1721,9 +1737,16 @@ def main(argv=None):
         if args.output.exists():
             previous = migrate(json.loads(args.output.read_text(encoding="utf-8")))
             validate(previous)
+            # A base change used to reset history_complete, on the assumption that another
+            # base might not hold the same sales. The two supported bases demonstrably do:
+            # the same ids, money, quantities and timestamps on every sale held on both
+            # sides. Resetting it now would be actively harmful - it sends the scan back to
+            # the retention boundary, seven days of the whole game's market stream, which
+            # does not fit in a run's budget, so every run would come back degraded and the
+            # history would never complete. The incremental path already reaches back to
+            # the last success, which is exactly the ground a base change needs to recover.
             if previous["source"]["base_url"] != args.base_url:
-                for category in previous["categories"].values():
-                    category["history_complete"] = False
+                print(f"Base changed to {args.base_url}; the history carries over.", flush=True)
         client = Client(args.base_url, api_key, max_seconds=args.max_seconds)
         output = collect(client, previous, max_pages=args.max_pages)
         validate(output)

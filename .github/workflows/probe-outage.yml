@@ -1,0 +1,34 @@
+# Answers the one question a red collector run cannot: is the sale history readable from
+# anywhere, in any request shape. Manual only, read-only, and never on a schedule - it
+# exists to be run while the history is down and to stay out of the way otherwise.
+name: Probe sale history outage
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout:
+        description: 'Seconds to wait on each request before giving up'
+        default: '20'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_TIMEOUT: ${{ inputs.timeout || '20' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_outage.py --timeout "$PROBE_TIMEOUT"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
