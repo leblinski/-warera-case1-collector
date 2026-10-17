@@ -41,6 +41,15 @@ CONTROLS = (
     ("getTopOrders, wrong input", "tradingOrder.getTopOrders", "not-an-object"),
 )
 
+# Changing base is only safe if the new base serves everything the collector asks for,
+# not just the procedure that broke. These are the other three, so a switch cannot fix
+# the sale history by breaking the books.
+WHOLE_SURFACE = (
+    ("getTopOrders", "tradingOrder.getTopOrders", {"itemCode": "scraps", "limit": 5}),
+    ("getPrices", "itemTrading.getPrices", None),
+    ("getUserLite", "user.getUserLite", {"userId": "6a15ea8a40616a7ecb782238"}),
+)
+
 
 def ask(client, params, timeout, procedure=PROCEDURE):
     started = time.monotonic()
@@ -48,9 +57,12 @@ def ask(client, params, timeout, procedure=PROCEDURE):
         payload = client.call(procedure, params, attempts=1, timeout=timeout)
         if procedure == PROCEDURE:
             rows, cursor = page_data(payload)
-        else:
+        elif isinstance(payload, dict) and "sellOrders" in payload:
             # A book, not a page: count one side of it so the row says something.
-            rows, cursor = (payload or {}).get("sellOrders") or [], None
+            rows, cursor = payload.get("sellOrders") or [], None
+        else:
+            # A price table or a single user: report how many fields came back.
+            rows, cursor = payload if hasattr(payload, "__len__") else [payload], None
     except (CollectionError, ApiError) as exc:
         status = getattr(exc, "status", None)
         return {"ok": False, "status": status, "detail": str(exc)[:70],
@@ -139,7 +151,7 @@ def check_identity(client, codes, timeout, max_pages=12):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--timeout", type=float, default=20.0)
-    ap.add_argument("--identity-codes", default="sniper,jet,tank")
+    ap.add_argument("--identity-codes", default="jet,tank")
     args = ap.parse_args()
 
     key = os.environ.get("WARERA_API_KEY", "").strip()
@@ -195,6 +207,14 @@ def main():
         print("\nThe collector can be pointed at whichever base and shape above returned rows.")
     official_works = any(r["ok"] and r.get("rows") and r["base"] == "official" for r in results)
     if official_works:
+        print("Does the official base serve the rest of what the collector asks for?")
+        surface = Client(OFFICIAL, key, max_seconds=120)
+        for name, procedure, params in WHOLE_SURFACE:
+            r = ask(surface, params, args.timeout, procedure)
+            got = f"{r['rows']} back" if r["ok"] else r["detail"]
+            print(f"  {name:<14}{r['ms']:>7} ms  {got}")
+        print()
+
         print("Do the two bases agree on what a sale is?")
         codes = [c.strip() for c in args.identity_codes.split(",") if c.strip()]
         check_identity(Client(OFFICIAL, key, max_seconds=120), codes, args.timeout)
