@@ -75,40 +75,64 @@ def archived_sales(codes):
     return held
 
 
-def check_identity(client, codes, timeout):
+def check_identity(client, codes, timeout, max_pages=12):
+    """Page one item back until it crosses what the archive already holds, then compare.
+
+    A single page of a busy item covers only a few hours, and the archive stops nearly a
+    day back, so one page proves nothing either way. This keeps asking for the next page
+    until the rows are older than the newest sale already archived for that item, which is
+    the only point where the two sets can be compared at all.
+    """
     held = archived_sales(set(codes))
     print(f"Archived sales for {', '.join(codes)}: {len(held)}, all collected through the Gateway.")
     if not held:
         print("Nothing archived for these codes, so identity cannot be checked here.")
         return
     for code in codes:
-        try:
-            rows, _ = page_data(client.call(PROCEDURE, {"itemCode": code, "limit": 100},
-                                            attempts=1, timeout=timeout))
-        except (CollectionError, ApiError) as exc:
-            print(f"  {code:<10} could not be read: {str(exc)[:60]}")
+        mine = {i: s for i, s in held.items() if s.get("item_code") == code}
+        if not mine:
+            print(f"  {code:<10} nothing archived")
             continue
-        ids = [r.get("_id") or r.get("id") for r in rows if isinstance(r, dict)]
-        hits = [i for i in ids if i in held]
-        oldest = min((parse_time(r["createdAt"]) for r in rows if r.get("createdAt")), default=None)
-        reach = f"reaches {oldest:%m-%d %H:%M}" if oldest else "no timestamps"
-        print(f"  {code:<10} {len(ids):>3} rows, {reach}, {len(hits):>3} ids already archived")
-        # A matching id is only reassuring if the sale under it matches too.
-        for row in rows:
-            txid = row.get("_id") or row.get("id")
-            if txid in held:
-                mine = held[txid]
-                fields = [("money", number(row.get("money"))),
-                          ("quantity", number(row.get("quantity"))),
-                          ("sold_at", row.get("createdAt"))]
-                same = all(mine.get(k) == v or (isinstance(v, float) and v is not None
-                           and number(mine.get(k)) is not None
-                           and abs(number(mine.get(k)) - v) < 1e-6)
-                           for k, v in fields)
-                print(f"    sample {txid[:10]}: archive {[mine.get(k) for k, _ in fields]} "
-                      f"vs official {[v for _, v in fields]} - "
-                      f"{'same sale' if same else 'DIFFERENT'}")
+        newest = max(parse_time(s["sold_at"]) for s in mine.values())
+        cursor, pages, rows, oldest = None, 0, [], None
+        while pages < max_pages:
+            params = {"itemCode": code, "limit": 100}
+            if cursor:
+                params["cursor"] = cursor
+            try:
+                page, cursor = page_data(client.call(PROCEDURE, params, attempts=1, timeout=timeout))
+            except (CollectionError, ApiError) as exc:
+                print(f"  {code:<10} could not be read: {str(exc)[:60]}")
                 break
+            pages += 1
+            rows.extend(page)
+            stamps = [parse_time(r["createdAt"]) for r in page if r.get("createdAt")]
+            oldest = min(stamps) if stamps else oldest
+            if not cursor or (oldest and oldest < newest):
+                break
+        if not rows:
+            continue
+        ids = {r.get("_id") or r.get("id") for r in rows if isinstance(r, dict)}
+        overlap = [r for r in rows if (r.get("_id") or r.get("id")) in mine]
+        reached = f"{oldest:%m-%d %H:%M}" if oldest else "?"
+        print(f"  {code:<10} {pages} pages, {len(ids)} rows, back to {reached}, "
+              f"archive ends {newest:%m-%d %H:%M}, {len(overlap)} ids in both")
+        if oldest is None or oldest >= newest:
+            print(f"             did not reach the archive in {max_pages} pages: inconclusive")
+            continue
+        if not overlap:
+            print("             NO shared ids where the two sets overlap: the bases "
+                  "re-id sales, so the collector cannot simply change base")
+            continue
+        row = overlap[0]
+        txid = row.get("_id") or row.get("id")
+        archived = mine[txid]
+        pairs = [("money", archived.get("money"), number(row.get("money"))),
+                 ("quantity", archived.get("quantity"), number(row.get("quantity"))),
+                 ("sold_at", archived.get("sold_at"), row.get("createdAt"))]
+        verdict = "identical" if all(a == b for _, a, b in pairs) else "SAME ID, DIFFERENT SALE"
+        print(f"             {txid[:10]}: " +
+              ", ".join(f"{k} {a!r} vs {b!r}" for k, a, b in pairs) + f" - {verdict}")
     print()
 
 
