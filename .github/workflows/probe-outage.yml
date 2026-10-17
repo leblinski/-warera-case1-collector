@@ -4,6 +4,11 @@
 name: Probe sale history outage
 
 on:
+  # Dispatch only works for a workflow that is already on the default branch, and the
+  # answer is wanted before this one gets there, so pushing the probe itself runs it.
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_outage.py', '.github/workflows/probe-outage.yml']
   workflow_dispatch:
     inputs:
       timeout:
@@ -25,7 +30,7 @@ jobs:
       - name: Probe
         env:
           WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
-          PROBE_TIMEOUT: ${{ inputs.timeout }}
+          PROBE_TIMEOUT: ${{ inputs.timeout || '20' }}
         run: |
           {
             echo '```'

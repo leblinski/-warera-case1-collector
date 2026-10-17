@@ -31,10 +31,25 @@ SHAPES = (
 )
 
 
-def ask(client, params, timeout):
+# The Gateway answers 500 where a 400 belongs - user.getUserLite given a bare string
+# does it - so a 500 alone cannot tell a broken backend from a rejected input shape.
+# What tells them apart is how long it takes, and these calibrate that: a healthy
+# procedure asked correctly, and the same one asked wrongly on purpose.
+CONTROLS = (
+    ("getTopOrders, correct input", "tradingOrder.getTopOrders", {"itemCode": "scraps", "limit": 5}),
+    ("getTopOrders, wrong input", "tradingOrder.getTopOrders", "not-an-object"),
+)
+
+
+def ask(client, params, timeout, procedure=PROCEDURE):
     started = time.monotonic()
     try:
-        rows, cursor = page_data(client.call(PROCEDURE, params, attempts=1, timeout=timeout))
+        payload = client.call(procedure, params, attempts=1, timeout=timeout)
+        if procedure == PROCEDURE:
+            rows, cursor = page_data(payload)
+        else:
+            # A book, not a page: count one side of it so the row says something.
+            rows, cursor = (payload or {}).get("sellOrders") or [], None
     except (CollectionError, ApiError) as exc:
         status = getattr(exc, "status", None)
         return {"ok": False, "status": status, "detail": str(exc)[:70],
@@ -57,6 +72,14 @@ def main():
 
     results = []
     print(f"{'base':<18}{'shape':<26}{'rows':>6}{'ms':>8}  note")
+    if key:
+        control_client = Client(GATEWAY, key, max_seconds=120)
+        for name, procedure, params in CONTROLS:
+            r = ask(control_client, params, args.timeout, procedure)
+            results.append({"base": "gateway", "shape": name, **r})
+            note = "answered" if r["ok"] else r["detail"]
+            print(f"{'gateway':<18}{name:<26}{(r.get('rows') if r['ok'] else '-'):>6}{r['ms']:>8}  {note}")
+        print()
     for base_name, base_url, base_key in bases:
         client = Client(base_url, base_key or None, max_seconds=240)
         for shape_name, params in SHAPES:
@@ -68,9 +91,22 @@ def main():
             else:
                 print(f"{base_name:<18}{shape_name:<26}{'-':>6}{r['ms']:>8}  {r['detail']}")
 
+    rejection_ms = [r["ms"] for r in results
+                    if r["shape"] == "getTopOrders, wrong input" and not r["ok"]]
+    shape_names = {name for name, _ in SHAPES}
+    history_ms = [r["ms"] for r in results
+                  if r["base"] == "gateway" and r["shape"] in shape_names and not r["ok"]]
+    if rejection_ms and history_ms:
+        print(f"The Gateway rejects a bad input in {min(rejection_ms)} ms and fails the sale "
+              f"history in {min(history_ms)} ms.\nA gap that wide is a backend giving up, "
+              "not an input it dislikes.\n")
+
     working = [r for r in results if r["ok"] and r.get("rows")]
     print()
-    if not working:
+    if not working and all(r.get("status") == 503 for r in results if not r["ok"]):
+        print("Every call failed before it was answered, so this probe reached nothing and"
+              "\nproves nothing. Run it somewhere the two hosts are reachable.")
+    elif not working:
         print("Nothing answered. The sale history is unreadable from either base, in any shape,"
               "\nso there is nothing to repair on our side: it has to come back upstream.")
     else:
