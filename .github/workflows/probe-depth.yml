@@ -1,0 +1,42 @@
+# How deep a book the API will hand over, and what is in the orders the collector rejects.
+# Manual only, read-only, never on a schedule.
+name: Probe order book depth
+
+on:
+  # Dispatch only reaches a workflow already on the default branch, and the answer is
+  # wanted before this one gets there, so pushing the probe runs it.
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_depth.py', '.github/workflows/probe-depth.yml']
+  workflow_dispatch:
+    inputs:
+      codes:
+        description: 'Item codes to probe, comma separated'
+        default: 'bread,cookedFish,scraps,grain,limestone,ammo,woodenCase,coca'
+      limits:
+        description: 'Depths to ask for, comma separated'
+        default: '100,200,500,1000'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_CODES: ${{ inputs.codes || 'bread,cookedFish,scraps,grain,limestone,ammo,woodenCase,coca' }}
+          PROBE_LIMITS: ${{ inputs.limits || '100,200,500,1000' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_depth.py --codes "$PROBE_CODES" --limits "$PROBE_LIMITS"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
