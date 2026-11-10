@@ -39,17 +39,21 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: warera-case1-collector-main
-  cancel-in-progress: false
+# The lock is taken per job rather than for the whole workflow. One workflow-wide group
+# meant a job that never started still held it, and everything behind it was cancelled
+# while it queued.
 
 jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes || '14') }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    # Collection serialises against itself, because it commits to main and carries one
+    # rolling cache between runs: two at once would race over both.
+    concurrency:
+      group: warera-case1-collector-collect
+      cancel-in-progress: false
+    outputs:
+      publishable: ${{ steps.validate.outcome }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -126,10 +130,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
-      - name: Publish price shards
-        id: deploy
-        if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
-        uses: actions/deploy-pages@v4
       - name: Retain cache for inspection
         if: ${{ !cancelled() && steps.collect.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
@@ -159,3 +159,30 @@ jobs:
             exit 1
           fi
           python collector.py --validate --require-healthy
+
+  # Publishing is a separate job so that a deployment which never starts cannot hold
+  # collection behind it. A job that names an environment waits for it before its first
+  # step, so while the deploy lived in the collect job a deployment stuck in `waiting`
+  # meant no collection at all - on 2026-11-09 one sat there sixteen hours and took
+  # sixty-four runs with it, each cancelled while queued behind the last. Split, a stuck
+  # deployment costs a stale page and nothing else: the archive keeps filling.
+  publish:
+    needs: collect
+    # !cancelled() rather than success(), because a degraded run should still publish what
+    # it did collect. The health gate deliberately fails the collect job, and that must not
+    # also withhold the feed.
+    if: ${{ !cancelled() && needs.collect.outputs.publishable == 'success' }}
+    runs-on: ubuntu-latest
+    # Only the newest page is worth anything, so a wedged deployment is cancelled by the
+    # run behind it rather than outliving it. This is what keeps one stall from becoming
+    # permanent.
+    concurrency:
+      group: warera-case1-collector-pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Publish price shards
+        id: deploy
+        uses: actions/deploy-pages@v4
