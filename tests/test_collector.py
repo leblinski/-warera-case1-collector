@@ -509,6 +509,40 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.normalize_book({'changedSchema': []}, 'case1')
 
+    def test_a_zero_priced_order_costs_itself_not_the_whole_book(self):
+        """Six goods had no book at all because of orders exactly like these.
+
+        They are real rows from the live books, left at price zero since mid-2025. The
+        collector used to reject the entire book over one of them, so ammo, grain, lead,
+        limestone, petroleum and woodenCase published nothing in 73 snapshots in a day.
+        """
+        payload = {'buyOrders': [{'itemCode': 'limestone', 'price': 0, 'quantity': 1009290},
+                                 {'itemCode': 'limestone', 'price': 0.088, 'quantity': 500},
+                                 {'itemCode': 'limestone', 'price': 0.09, 'quantity': 120}],
+                   'sellOrders': [{'itemCode': 'limestone', 'price': 0.095, 'quantity': 80},
+                                  {'itemCode': 'limestone', 'price': 0, 'quantity': 1000}]}
+        book = c.normalize_book(payload, 'limestone')
+        self.assertEqual((book['best_bid'], book['best_ask']), (0.09, 0.095))
+        self.assertEqual(book['dropped_orders'], 2)
+        self.assertEqual([o['quantity'] for o in book['buy_orders']], [120, 500])
+
+    def test_a_book_that_is_mostly_junk_is_still_refused(self):
+        """Dropping a few bad rows is cleaning; dropping most of them is pretending."""
+        payload = {'buyOrders': [{'itemCode': 'grain', 'price': 0, 'quantity': 5},
+                                 {'itemCode': 'grain', 'price': 0, 'quantity': 7},
+                                 {'itemCode': 'grain', 'price': 0, 'quantity': 9}],
+                   'sellOrders': [{'itemCode': 'grain', 'price': 1.2, 'quantity': 4}]}
+        with self.assertRaises(c.CollectionError) as error:
+            c.normalize_book(payload, 'grain')
+        self.assertIn('mostly unusable', str(error.exception))
+
+    def test_a_book_about_another_item_is_still_fatal(self):
+        """Filtering junk must not quietly swallow the API answering about something else."""
+        payload = {'buyOrders': [{'itemCode': 'wood', 'price': 1.0, 'quantity': 4}],
+                   'sellOrders': []}
+        with self.assertRaises(c.CollectionError):
+            c.normalize_book(payload, 'grain')
+
     def test_only_trading_rows_reach_a_commodity_price_series(self):
         """The per-item feed is mixed. On scraps it is mostly other people's crafting."""
         rows = [trade('sale', code='scraps', money=11.908, quantity=52),
