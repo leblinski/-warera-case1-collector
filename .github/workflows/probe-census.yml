@@ -1,0 +1,36 @@
+# What a company census would cost, and whether it can be made incremental.
+# Manual only, read-only, never on a schedule. Long-running by design.
+name: Probe company census cost
+
+on:
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_census.py', '.github/workflows/probe-census.yml']
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: 'Seconds of API calls to spend'
+        default: '1500'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_BUDGET: ${{ inputs.budget || '1500' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_census.py --budget "$PROBE_BUDGET"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
