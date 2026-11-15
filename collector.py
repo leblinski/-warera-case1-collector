@@ -129,6 +129,13 @@ SCHEMA_VERSION = 7
 # are where those answers live. A snapshot of three commodities is about 140 bytes, so the
 # window is roughly 45 KB: small enough to hand a phone whole.
 BOOK_HISTORY_HOURS = 72
+# What a trader asks of a price first: which way, and by how much, over the spans a
+# position is actually held for. Seven days is the longest because that is the retention
+# the fills keep; the book captures on disk go back much further and would serve more.
+TREND_WINDOWS_HOURS = (6, 12, 24, 48, 168)
+# Snapshots land about every fifteen minutes, so three of them is enough slack to survive
+# a missed run without silently comparing against the wrong hour.
+TREND_TOLERANCE_MINUTES = 45
 BOOK_HISTORY_RUNGS = 6
 
 # Whether an item's roll prices it. A roll is worth something when the spread between what
@@ -1441,15 +1448,17 @@ def build_index(payload):
                       for code, row in payload["categories"].items()}}
 
 
-def build_commodities(payload):
+def build_commodities(payload, trend=None):
     """Full order books for the input commodities, fetched on demand rather than on load.
 
     A crafting cost is what the book actually charges for the quantity being bought, not the
     best ask repeated, so a consumer needs the depth to walk it.
     """
+    moves = (trend or {}).get("goods", {})
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
-            "status": payload["status"],
+            "status": payload["status"], "trend": {k: v for k, v in (trend or {}).items() if k != "goods"},
             "commodities": {code: {"item_code": code, "name": row["name"], "status": row["status"],
+                                   "trend": moves.get(code),
                                    "price": row.get("price"),
                                    "price_fetched_at": row.get("price_fetched_at"),
                                    "book_fetched_at": row.get("book_fetched_at"),
@@ -1580,13 +1589,96 @@ def build_book_history(books_dir, now):
             "snapshots": snapshots}
 
 
+def snapshot_mids(books_dir, now, oldest_hours):
+    """Every captured snapshot's mid per good, newest last, back as far as asked.
+
+    The mid rather than the last trade, and deliberately. A traded price moves with what
+    happened to change hands, so a run of small buys and a run of large ones read as a
+    price move when the book has not shifted at all - limestone went a whole day once with
+    an unmoved book and a VWAP that wandered through it. The midpoint moves only when the
+    book does, which is the question "has the price changed" actually asks.
+    """
+    books_dir = Path(books_dir)
+    if not books_dir.exists():
+        return []
+    cutoff = now - timedelta(hours=oldest_hours + 1)
+    out = []
+    for path in sorted(books_dir.glob("*.jsonl")):
+        # The files are named by date, so a day wholly before the cutoff need not be read.
+        try:
+            day = datetime.strptime(path.stem, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        if day < cutoff - timedelta(days=1):
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError:
+                raise CollectionError("Book history file holds a line that is not JSON")
+            stamped = parse_time(row.get("t"))
+            if stamped < cutoff or stamped > now:
+                continue
+            mids = {}
+            for code, sides in row.items():
+                if code == "t" or not isinstance(sides, dict):
+                    continue
+                bid = (sides.get("b") or [[None]])[0][0]
+                ask = (sides.get("a") or [[None]])[0][0]
+                # One-sided is not a price. Saying so beats inventing a mid from a lone side.
+                if bid is None or ask is None:
+                    continue
+                mids[code] = (number(bid) + number(ask)) / 2
+            out.append((stamped, mids))
+    out.sort(key=lambda row: row[0])
+    return out
+
+
+def build_trend(books_dir, now):
+    """How far each good's mid has moved over each window, as a percentage.
+
+    Computed here rather than in the page because the captures on disk reach back months
+    while the served history is three days: the browser cannot see far enough to answer a
+    seven day question, and shipping it the whole ladder history so it could would cost
+    megabytes to deliver five numbers a good.
+    """
+    series = snapshot_mids(books_dir, now, max(TREND_WINDOWS_HOURS))
+    tolerance = timedelta(minutes=TREND_TOLERANCE_MINUTES)
+    latest = series[-1] if series else None
+    goods = {}
+    for code in (latest[1] if latest else {}):
+        now_mid = latest[1][code]
+        windows = {}
+        for hours in TREND_WINDOWS_HOURS:
+            target = now - timedelta(hours=hours)
+            best = None
+            for stamped, mids in series:
+                if code not in mids:
+                    continue
+                gap = abs(stamped - target)
+                if gap <= tolerance and (best is None or gap < best[0]):
+                    best = (gap, stamped, mids[code])
+            if best is None or not best[2]:
+                windows[str(hours)] = None
+                continue
+            windows[str(hours)] = {"pct": round((now_mid / best[2] - 1) * 100, 3),
+                                   "from": round(best[2], 6), "at": stamp(best[1])}
+        goods[code] = {"mid": round(now_mid, 6), "windows": windows}
+    return {"schema_version": SCHEMA_VERSION, "generated_at": stamp(now),
+            "measure": "mid", "windows_hours": list(TREND_WINDOWS_HOURS),
+            "tolerance_minutes": TREND_TOLERANCE_MINUTES,
+            "snapshots_read": len(series), "goods": goods}
+
+
 def publish(payload, public_dir, archive_dir, books_dir, now):
     """Write the consumer-facing artifacts. These are served, not committed; only the
     archive is durable, which is what keeps repository growth flat."""
     public_dir, archive_dir = Path(public_dir), Path(archive_dir)
     atomic_write(public_dir / "index.json", build_index(payload))
     atomic_write(public_dir / "summary.json", build_summary(payload))
-    atomic_write(public_dir / "commodities.json", build_commodities(payload))
+    atomic_write(public_dir / "commodities.json", build_commodities(payload, build_trend(books_dir, now)))
     atomic_write(public_dir / "books.json", build_book_history(books_dir, now))
     atomic_write(public_dir / "users.json", build_users(payload))
     atomic_write(public_dir / "flow.json", build_flow(payload, now))
