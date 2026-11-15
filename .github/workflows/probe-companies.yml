@@ -7,11 +7,9 @@ on:
     paths: ['tools/probe_companies.py', '.github/workflows/probe-companies.yml']
   workflow_dispatch:
     inputs:
-      base:
-        description: 'Which base to ask'
-        default: 'official'
-        type: choice
-        options: ['official', 'gateway']
+      item:
+        description: 'Item code to try as a filter'
+        default: 'steel'
 
 permissions:
   contents: read
@@ -28,10 +26,10 @@ jobs:
       - name: Probe
         env:
           WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
-          PROBE_BASE: ${{ inputs.base || 'official' }}
+          PROBE_ITEM: ${{ inputs.item || 'steel' }}
         run: |
           {
             echo '```'
-            python tools/probe_companies.py --base "$PROBE_BASE"
+            python tools/probe_companies.py --item "$PROBE_ITEM"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
