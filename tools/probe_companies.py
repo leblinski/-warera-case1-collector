@@ -43,12 +43,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--item", default="steel")
     ap.add_argument("--timeout", type=float, default=15.0)
-    ap.add_argument("--walk-pages", type=int, default=6)
+    ap.add_argument("--walk-pages", type=int, default=600)
     args = ap.parse_args()
     key = os.environ.get("WARERA_API_KEY", "").strip()
     if not key:
         print("WARERA_API_KEY is not set", file=sys.stderr); return 2
-    client = Client(DEFAULT_BASE_URL, key, max_seconds=420)
+    client = Client(DEFAULT_BASE_URL, key, max_seconds=480)
 
     print("1. Does the list take a page size, or a filter?\n")
     print(f"{'input':<46}{'items':>7}{'cursor':>8}{'ms':>7}  note")
