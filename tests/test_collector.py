@@ -1093,6 +1093,82 @@ class CollectorTests(unittest.TestCase):
         with self.assertRaises(c.CollectionError):
             c.validate(output, True, NOW)
 
+    def _books(self, tmp, rows):
+        """rows: (hours_before_now, {code: (bid, ask)})"""
+        path = Path(tmp) / 'books'
+        path.mkdir(parents=True, exist_ok=True)
+        by_day = {}
+        for hours, sides in rows:
+            when = NOW - timedelta(hours=hours)
+            snap = {'t': c.stamp(when)}
+            for code, (bid, ask) in sides.items():
+                snap[code] = {}
+                if bid is not None:
+                    snap[code]['b'] = [[bid, 10]]
+                if ask is not None:
+                    snap[code]['a'] = [[ask, 10]]
+            by_day.setdefault(when.date().isoformat(), []).append(json.dumps(snap))
+        for day, lines in by_day.items():
+            (path / (day + '.jsonl')).write_text("\n".join(lines) + "\n", encoding='utf-8')
+        return path
+
+    def test_trend_measures_the_mid_over_each_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            books = self._books(tmp, [
+                (0, {'scraps': (0.99, 1.01)}),      # mid 1.00 now
+                (6, {'scraps': (0.79, 0.81)}),      # mid 0.80 -> +25%
+                (12, {'scraps': (1.24, 1.26)}),     # mid 1.25 -> -20%
+                (24, {'scraps': (0.49, 0.51)}),     # mid 0.50 -> +100%
+                (48, {'scraps': (1.99, 2.01)}),     # mid 2.00 -> -50%
+                (168, {'scraps': (0.39, 0.41)}),    # mid 0.40 -> +150%
+            ])
+            t = c.build_trend(books, NOW)
+            self.assertEqual(t['measure'], 'mid')
+            w = t['goods']['scraps']['windows']
+            self.assertEqual(t['goods']['scraps']['mid'], 1.0)
+            self.assertAlmostEqual(w['6']['pct'], 25.0, places=3)
+            self.assertAlmostEqual(w['12']['pct'], -20.0, places=3)
+            self.assertAlmostEqual(w['24']['pct'], 100.0, places=3)
+            self.assertAlmostEqual(w['48']['pct'], -50.0, places=3)
+            self.assertAlmostEqual(w['168']['pct'], 150.0, places=3)
+
+    def test_trend_says_nothing_rather_than_reaching_past_the_tolerance(self):
+        """A window with no snapshot near it is unknown, not zero and not the next one along."""
+        with tempfile.TemporaryDirectory() as tmp:
+            books = self._books(tmp, [
+                (0, {'steel': (1.0, 1.0)}),
+                (6, {'steel': (2.0, 2.0)}),
+                (10, {'steel': (4.0, 4.0)}),   # 2h adrift of the 12h mark, past tolerance
+            ])
+            w = c.build_trend(books, NOW)['goods']['steel']['windows']
+            self.assertAlmostEqual(w['6']['pct'], -50.0, places=3)
+            self.assertIsNone(w['12'])
+            self.assertIsNone(w['168'])
+
+    def test_a_one_sided_book_has_no_mid_to_compare(self):
+        """Half a book is not a price, and inventing one would move the figure on nothing."""
+        with tempfile.TemporaryDirectory() as tmp:
+            books = self._books(tmp, [
+                (0, {'iron': (1.0, 1.0)}),
+                (6, {'iron': (2.0, None)}),    # bid only
+                (24, {'iron': (None, 3.0)}),   # ask only
+            ])
+            w = c.build_trend(books, NOW)['goods']['iron']['windows']
+            self.assertIsNone(w['6'])
+            self.assertIsNone(w['24'])
+
+    def test_commodities_carries_each_good_its_own_trend(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            books = self._books(tmp, [(0, {'scraps': (0.99, 1.01)}),
+                                      (24, {'scraps': (0.49, 0.51)})])
+            payload = c.collect(FullClient(), now=NOW)
+            built = c.build_commodities(payload, c.build_trend(books, NOW))
+            self.assertEqual(built['trend']['measure'], 'mid')
+            self.assertNotIn('goods', built['trend'])
+            self.assertAlmostEqual(built['commodities']['scraps']['trend']['windows']['24']['pct'],
+                                   100.0, places=3)
+            self.assertIsNone(built['commodities']['steel']['trend'])
+
     def test_attribution_names_whoever_is_being_read(self):
         self.assertEqual(c.attribution(c.GATEWAY), 'Supported by warerastats.io')
         self.assertEqual(c.attribution(c.OFFICIAL), 'Read from the official WarEra API')
