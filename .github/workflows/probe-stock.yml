@@ -1,0 +1,35 @@
+# Does the API say what a country holds in stock? Manual only, read-only.
+name: Probe country stock
+
+on:
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_stock.py', '.github/workflows/probe-stock.yml']
+  workflow_dispatch:
+    inputs:
+      good:
+        description: 'Good of interest'
+        default: 'paper'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_GOOD: ${{ inputs.good || 'paper' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_stock.py --good "$PROBE_GOOD"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
