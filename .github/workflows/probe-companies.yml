@@ -1,0 +1,35 @@
+# Does the API say who produces each good? Manual only, read-only, never on a schedule.
+name: Probe production data
+
+on:
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_companies.py', '.github/workflows/probe-companies.yml']
+  workflow_dispatch:
+    inputs:
+      item:
+        description: 'Item code to try as a filter'
+        default: 'steel'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PROBE_ITEM: ${{ inputs.item || 'steel' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_companies.py --item "$PROBE_ITEM"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

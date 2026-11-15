@@ -759,6 +759,31 @@ def normalize_prices(payload):
     return payload
 
 
+def usable_orders(rows, code):
+    """Split a side into the orders worth keeping and the ones that are not.
+
+    A price of zero is not a price. The books carry a few orders left at zero since
+    mid-2025 - limestone has seven, one of them for a million units - and the whole book
+    used to be rejected over them. That cost ammo, grain, lead, limestone, petroleum and
+    woodenCase their order book on every single run: zero books in seventy-three snapshots
+    on one day alone, which is why they showed as limited feeds. A book with its junk
+    dropped is worth incomparably more than no book, so they are dropped and counted.
+
+    A mismatched item code is still fatal. That is the API answering about something else,
+    which no amount of filtering makes safe.
+    """
+    kept, junk = [], []
+    for row in rows:
+        if not isinstance(row, dict) or row.get("itemCode", code) != code:
+            raise CollectionError("Order book item code mismatch")
+        price, quantity = number(row.get("price")), number(row.get("quantity"))
+        if price is None or quantity is None or price <= 0 or quantity <= 0:
+            junk.append(row)
+        else:
+            kept.append(row)
+    return kept, junk
+
+
 def normalize_book(payload, code):
     if isinstance(payload, dict) and "buyOrders" in payload and "sellOrders" in payload:
         buys, sells = payload["buyOrders"], payload["sellOrders"]
@@ -774,16 +799,20 @@ def normalize_book(payload, code):
             (buys if side == "buy" else sells).append(row)
     if not isinstance(buys, list) or not isinstance(sells, list):
         raise CollectionError("Order book sides must be arrays")
-    for row in buys + sells:
-        if not isinstance(row, dict) or row.get("itemCode", code) != code:
-            raise CollectionError("Order book item code mismatch")
-        if number(row.get("price")) is None or row["price"] <= 0 or number(row.get("quantity")) is None or row["quantity"] < 0:
-            raise CollectionError("Invalid order price or quantity")
-    buys = sorted((r for r in buys if r["quantity"] > 0), key=lambda r: r["price"], reverse=True)
-    sells = sorted((r for r in sells if r["quantity"] > 0), key=lambda r: r["price"])
-    return {"buy_orders": buys, "sell_orders": sells,
-            "best_bid": buys[0]["price"] if buys else None,
-            "best_ask": sells[0]["price"] if sells else None, "raw": payload}
+    buys, buy_junk = usable_orders(buys, code)
+    sells, sell_junk = usable_orders(sells, code)
+    dropped = buy_junk + sell_junk
+    total = len(dropped) + len(buys) + len(sells)
+    # A handful of junk orders is the game's own history. A book that is mostly junk is a
+    # schema change, and publishing a tenth of a book as though it were whole would be
+    # worse than publishing none.
+    if total and len(dropped) * 2 > total:
+        raise CollectionError(f"Order book is mostly unusable: {len(dropped)} of {total} orders")
+    buys = sorted(buys, key=lambda r: number(r["price"]), reverse=True)
+    sells = sorted(sells, key=lambda r: number(r["price"]))
+    return {"buy_orders": buys, "sell_orders": sells, "dropped_orders": len(dropped),
+            "best_bid": number(buys[0]["price"]) if buys else None,
+            "best_ask": number(sells[0]["price"]) if sells else None, "raw": payload}
 
 
 def commodity_sale(raw, code):
