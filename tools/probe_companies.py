@@ -1,99 +1,107 @@
 #!/usr/bin/env python3
-"""Does the API say who produces each good?
+"""Can the API be made to say how many companies produce each good?
 
-The collector can see demand in detail - every fill, both counterparties, the whole book -
-and nothing at all about supply. How many companies make steel, and whether that number is
-growing, is the half of a price that order flow cannot show. If the API will answer it,
-that is worth collecting; if it will not, it is worth knowing so the question stops coming
-back.
+Round one found exactly one live procedure, company.getCompanies, which answers with a
+page of bare company ids and a cursor. Ids alone cannot say who makes steel, so two things
+decide whether supply is collectable at all: whether the list can be filtered or counted
+per item, and whether a single company can be read for what it produces.
 
-tRPC distinguishes the two cases for us. An unknown procedure answers 404 NOT_FOUND; a
-known one given the wrong input answers 400 or 500. So a name that fails with anything
-other than 404 exists, and is worth a second look with better input.
+If it filters, counting is a page walk per good. If it only pages the whole world, the
+cost is the whole world divided by the page size, which is worth knowing before promising
+anything.
 
 Read-only, one attempt each, never prints the key.
 """
 import argparse, json, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from collector import DEFAULT_BASE_URL, GATEWAY, Client, CollectionError, ApiError
+from collector import DEFAULT_BASE_URL, Client, CollectionError, ApiError
 
-# Plain guesses at the shape the rest of the API uses: noun.getThing, sometimes paginated.
-CANDIDATES = [
-    ("company.getCompanies", {}), ("company.getAll", {}),
-    ("company.getPaginatedCompanies", {"limit": 5}),
-    ("company.getCompaniesByItem", {"itemCode": "steel"}),
-    ("company.getByItemCode", {"itemCode": "steel"}),
-    ("company.getCompany", {}), ("company.search", {"itemCode": "steel"}),
-    ("company.getUserCompanies", {}), ("company.getMyCompanies", {}),
-    ("companies.getAll", {}),
-    ("business.getBusinesses", {}),
-    ("factory.getFactories", {}),
-    ("item.getProducers", {"itemCode": "steel"}),
-    ("itemTrading.getProducers", {"itemCode": "steel"}),
-    ("itemTrading.getProduction", {}),
-    ("stats.getProduction", {}), ("stats.getItemStats", {"itemCode": "steel"}),
-    ("country.getCompanies", {}),
-    ("market.getProducers", {"itemCode": "steel"}),
-    ("production.getByItem", {"itemCode": "steel"}),
-]
+LIST = "company.getCompanies"
+DETAIL_NAMES = ["company.getCompanyLite", "company.getById", "company.getCompanyById",
+                "company.get", "company.getOne", "company.getInfo", "company.getDetails"]
+DETAIL_KEYS = ["companyId", "id", "company"]
 
 
-def shape(value, depth=0):
-    """What came back, in one line, without dumping somebody's whole company list."""
-    if isinstance(value, dict):
-        keys = list(value)[:8]
-        return "{" + ", ".join(keys) + ("…" if len(value) > 8 else "") + "}"
-    if isinstance(value, list):
-        return f"[{len(value)} items]" + (" " + shape(value[0], depth + 1) if value and depth < 1 else "")
-    return type(value).__name__
+def ask(client, proc, params, timeout):
+    started = time.monotonic()
+    try:
+        return client.call(proc, params, attempts=1, timeout=timeout), None, int((time.monotonic()-started)*1000)
+    except (CollectionError, ApiError) as exc:
+        return None, exc, int((time.monotonic()-started)*1000)
+
+
+def brief(v, n=3):
+    if isinstance(v, dict):
+        return "{" + ", ".join(list(v)[:10]) + ("…" if len(v) > 10 else "") + "}"
+    if isinstance(v, list):
+        return f"[{len(v)}]"
+    return repr(v)[:60]
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", choices=("official", "gateway"), default="official")
+    ap.add_argument("--item", default="steel")
     ap.add_argument("--timeout", type=float, default=15.0)
+    ap.add_argument("--walk-pages", type=int, default=6)
     args = ap.parse_args()
     key = os.environ.get("WARERA_API_KEY", "").strip()
     if not key:
-        print("WARERA_API_KEY is not set", file=sys.stderr)
-        return 2
-    base = GATEWAY if args.base == "gateway" else DEFAULT_BASE_URL
-    client = Client(base, key, max_seconds=300)
+        print("WARERA_API_KEY is not set", file=sys.stderr); return 2
+    client = Client(DEFAULT_BASE_URL, key, max_seconds=420)
 
-    print(f"Asking the {args.base} base. 404 means no such procedure; anything else means it exists.\n")
-    print(f"{'procedure':<34}{'status':>8}{'ms':>7}  what came back")
-    alive = []
-    for proc, params in CANDIDATES:
-        started = time.monotonic()
-        try:
-            data = client.call(proc, params, attempts=1, timeout=args.timeout)
-            ms = int((time.monotonic() - started) * 1000)
-            print(f"{proc:<34}{'OK':>8}{ms:>7}  {shape(data)}")
-            alive.append((proc, data))
-        except (CollectionError, ApiError) as exc:
-            ms = int((time.monotonic() - started) * 1000)
-            status = getattr(exc, "status", None)
-            tag = str(status) if status else "err"
-            note = "no such procedure" if status == 404 else str(exc)[:46]
-            print(f"{proc:<34}{tag:>8}{ms:>7}  {note}")
-            if status and status != 404:
-                alive.append((proc, None))
+    print("1. Does the list take a page size, or a filter?\n")
+    print(f"{'input':<46}{'items':>7}{'cursor':>8}{'ms':>7}  note")
+    shapes = [{}, {"limit": 50}, {"limit": 100},
+              {"itemCode": args.item}, {"itemCode": args.item, "limit": 50},
+              {"item": args.item}, {"produces": args.item}, {"countryId": None}]
+    first_ids = []
+    for params in shapes:
+        data, err, ms = ask(client, LIST, params, args.timeout)
+        label = json.dumps(params)
+        if err:
+            print(f"{label:<46}{'-':>7}{'-':>8}{ms:>7}  {str(err)[:40]}")
+            continue
+        items = (data or {}).get("items") or []
+        cur = bool((data or {}).get("nextCursor"))
+        if not first_ids and items and isinstance(items[0], str):
+            first_ids = items[:]
+        print(f"{label:<46}{len(items):>7}{str(cur):>8}{ms:>7}  {brief(data)}")
 
-    print()
-    if not alive:
-        print("Nothing answered and nothing existed. The API does not publish production,\n"
-              "at least not under any of these names.")
+    print("\n2. Can one company be read?\n")
+    if not first_ids:
+        print("   No ids came back, so nothing to look up.")
     else:
-        print("Worth a second look, with better input where it only complained:")
-        for proc, data in alive:
-            print(f"  {proc}" + ("" if data is None else "   (already returns data)"))
-        for proc, data in alive:
-            if data is not None:
-                print(f"\nFirst row of {proc}:")
-                row = data[0] if isinstance(data, list) and data else data
-                print("  " + json.dumps(row)[:400])
-                break
+        cid = first_ids[0]
+        found = False
+        for proc in DETAIL_NAMES:
+            for k in DETAIL_KEYS:
+                data, err, ms = ask(client, proc, {k: cid}, args.timeout)
+                if err and getattr(err, "status", None) == 404 and k == DETAIL_KEYS[0]:
+                    print(f"   {proc:<28} no such procedure"); break
+                if not err:
+                    print(f"   {proc:<28} OK with {{{k}}}  -> {brief(data)}")
+                    print("   " + json.dumps(data)[:500])
+                    found = True; break
+            if found: break
+        if not found:
+            print("   None of the detail names answered. Ids may only be usable elsewhere.")
+
+    print("\n3. How big is the whole list?\n")
+    seen, cursor, pages = 0, None, 0
+    while pages < args.walk_pages:
+        params = {"limit": 100}
+        if cursor: params["cursor"] = cursor
+        data, err, ms = ask(client, LIST, params, args.timeout)
+        if err: print(f"   page {pages+1}: {str(err)[:50]}"); break
+        items = (data or {}).get("items") or []
+        seen += len(items); pages += 1
+        cursor = (data or {}).get("nextCursor")
+        if not cursor:
+            print(f"   {seen} companies in {pages} pages - that is all of them."); break
+    else:
+        print(f"   {seen} companies in {pages} pages and still going, so the list is at "
+              f"least that long at {seen//max(pages,1)} a page.")
     return 0
 
 
