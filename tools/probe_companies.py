@@ -87,7 +87,40 @@ def main():
         if not found:
             print("   None of the detail names answered. Ids may only be usable elsewhere.")
 
-    print("\n3. How big is the whole list?\n")
+    print("\n3. Can the API just count them?\n")
+    # The client bundle names two counting procedures. Both refuse an unauthenticated
+    # caller with 401, which is the one error a key can fix, so they are worth asking
+    # properly: a count per item would turn a four-hour census into one call a good.
+    counters = ["company.getActiveCompaniesCount", "company.getCompaniesCount"]
+    goods = [args.item, "wood", "paper", "limestone", "concrete", "iron", "lead",
+             "lightAmmo", "oil", "petroleum", "grain", "bread", "coca", "cocain",
+             "fish", "cookedFish", "livestock", "steak", "ammo", "heavyAmmo"]
+    working = []
+    for proc in counters:
+        for params in ({}, {"itemCode": args.item}, {"item": args.item}):
+            data, err, ms = ask(client, proc, params, args.timeout)
+            label = f"{proc} {json.dumps(params)}"
+            if err:
+                print(f"   {label:<62} {str(err)[:40]}")
+                continue
+            print(f"   {label:<62} -> {json.dumps(data)[:120]}")
+            if "itemCode" in params:
+                working.append(proc)
+    if working:
+        proc = working[0]
+        print(f"\n   Counting every good with {proc}:\n")
+        print(f"   {'good':<14}{'companies':>10}")
+        for code in goods:
+            data, err, ms = ask(client, proc, {"itemCode": code}, args.timeout)
+            if err:
+                print(f"   {code:<14}{'-':>10}  {str(err)[:30]}")
+            else:
+                n = data if isinstance(data, int) else json.dumps(data)[:40]
+                print(f"   {code:<14}{str(n):>10}")
+    else:
+        print("\n   No counter took an item, so supply per good still means walking the list.")
+
+    print("\n4. How big is the whole list?\n")
     seen, cursor, pages = 0, None, 0
     while pages < args.walk_pages:
         params = {"limit": 100}
