@@ -1,0 +1,35 @@
+# What are people building this week? Manual, read-only, never on a schedule.
+name: Probe supply
+
+on:
+  push:
+    branches: ['claude/repo-description-s77idy']
+    paths: ['tools/probe_supply.py', '.github/workflows/probe-supply.yml']
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: 'Pages of ten companies to sample'
+        default: '100'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe
+        env:
+          WARERA_API_KEY: ${{ secrets.WARERA_API_KEY }}
+          PAGES: ${{ inputs.pages || '100' }}
+        run: |
+          {
+            echo '```'
+            python tools/probe_supply.py --pages "$PAGES"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
