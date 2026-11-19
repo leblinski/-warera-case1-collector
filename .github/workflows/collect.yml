@@ -94,15 +94,16 @@ jobs:
         with:
           path: data/warera_case1_market.json
           key: warera-case1-state-${{ github.run_id }}
-      # The write-once archive and the daily book snapshots are committed; the rolling
-      # cache is not - see the restore step above - and neither are the served artifacts
-      # under public/. Both exclusions are what keeps repository growth flat.
+      # The write-once archive, the daily book snapshots and the supply series are
+      # committed; the rolling cache is not - see the restore step above - and neither are
+      # the served artifacts under public/. Those exclusions keep repository growth flat,
+      # and supply.json is a few kilobytes that replaces itself rather than accumulating.
       - name: Commit archive and book history
         if: ${{ !cancelled() && steps.validate.outcome == 'success' }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/archive data/books
+          git add data/archive data/books data/supply.json
           git diff --cached --quiet && exit 0
           git commit -m 'Update WarEra Case I archive and book history'
           # A single push with no rebase and no retry made every lost race a failed run,

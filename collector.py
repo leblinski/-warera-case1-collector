@@ -1703,6 +1703,138 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
     return written
 
 
+SUPPLY_URL = "https://spywarera.com/economy/companies"
+SUPPLY_COMPONENT = "Economy/Companies"
+
+
+def fetch_supply(timeout=20.0):
+    """How many companies make each good, read from SPYWarera rather than counted.
+
+    Counting it ourselves is closed off and not by a little. company.getCompanies takes no
+    filter and answers ten bare ids a page; the two counting procedures refuse this key
+    outright; and an id says nothing about what it produces, so the real cost is one read
+    per company. A sample of a thousand took eight and a half minutes and bought an
+    estimate. SPYWarera publishes the census - a hundred and five thousand producing
+    companies, thirty days of history per good - and it does it in one request of seven
+    kilobytes, from the same public API we would have been calling.
+
+    Their page is Inertia with deferred props, which means the numbers are not in the HTML
+    at all: they arrive in a second request the page makes for itself, as JSON. Asking for
+    that directly is the lightest thing we can do to them - no markup to parse, nothing to
+    break when they restyle a table, and one hit a run rather than one a viewer, which is
+    why this lives in the collector and not in the page.
+
+    The version hash pins the deploy. When they ship, the server answers 409 and names the
+    new one, so the retry reads it from the header and asks again. Any failure returns None
+    and the run carries on: this is a courtesy feed, never a dependency.
+    """
+    def ask(version):
+        headers = {"Accept": "application/json", "X-Inertia": "true",
+                   "X-Inertia-Partial-Component": SUPPLY_COMPONENT,
+                   "X-Inertia-Partial-Data": "rows,trend",
+                   "User-Agent": "warera-case1-collector/1.0 (once per run; data credited to spywarera.com)"}
+        if version:
+            headers["X-Inertia-Version"] = version
+        request = Request(SUPPLY_URL, headers=headers)
+        with build_opener(NoRedirect()).open(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8")), None
+
+    try:
+        try:
+            body, _ = ask(None)
+        except HTTPError as exc:
+            if exc.code != 409:
+                raise
+            body, _ = ask(exc.headers.get("X-Inertia-Location") and None or
+                          exc.headers.get("X-Inertia-Version"))
+        props = (body or {}).get("props") or {}
+        rows = props.get("rows") or []
+        if not isinstance(rows, list) or not rows:
+            return None
+        # Their thirty day series is the economy as a whole, not one line per good, so it
+        # cannot say which goods are filling up. That part we keep ourselves: the census is
+        # read every run anyway, so storing one point a day per good costs nothing and in a
+        # week it answers the question their chart cannot.
+        trend = props.get("trend") or {}
+        whole = None
+        for row in (trend.get("goods") or []):
+            if isinstance(row, dict) and row.get("code") == "all":
+                whole = {"labels": trend.get("labels") or [],
+                         "companies": row.get("companies"),
+                         "producing": row.get("producing")}
+        goods = {}
+        for row in rows:
+            code = row.get("code")
+            if not code:
+                continue
+            producing = number(row.get("producingCompanies"))
+            goods[code] = {
+                "producing": producing,
+                "disabled": number(row.get("disabledCompanies")),
+                "total": number(row.get("totalCompanies")),
+                "units_per_day": number(row.get("unitsPerDay")),
+                "production_points": number(row.get("ppPerUnit")),
+                "profit_per_point": number(row.get("profitPerPp")),
+            }
+        if not goods:
+            return None
+        total = sum(g["producing"] or 0 for g in goods.values())
+        for code, g in goods.items():
+            g["share_pct"] = round((g["producing"] or 0) / total * 100, 2) if total else None
+            g.pop("history", None)
+        return {"schema_version": SCHEMA_VERSION,
+                "fetched_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "source": {"name": "SPYWarera", "url": SUPPLY_URL,
+                           "note": "Company counts are SPYWarera's work, read once per run and credited."},
+                "producing_total": total,
+                "whole_economy": whole,
+                "goods": goods}
+    except (HTTPError, URLError, OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"Supply feed unavailable ({str(exc)[:60]}); publishing without it.", flush=True)
+        return None
+
+
+SUPPLY_HISTORY_DAYS = 60
+
+
+def write_supply(public_dir, data_dir, now):
+    """Publish the census, carrying forward one point a day per good.
+
+    Their numbers are today's. The question a producer asks is which way a good is going,
+    and that only exists if somebody writes it down - so each run stamps the day's count
+    per good into the file it is about to replace, and sixty days of it ride along at a
+    few kilobytes. A failed fetch leaves yesterday's file where it is rather than blanking
+    a history that cannot be recovered.
+    """
+    # public/ is rebuilt from nothing every run and never committed, so a history kept
+    # there would be one day long for ever. The series lives beside the archive, which is
+    # committed, and a copy of the whole thing is served.
+    public_dir, store = Path(public_dir), Path(data_dir) / "supply.json"
+    previous = None
+    if store.exists():
+        try:
+            previous = json.loads(store.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            previous = None
+    supply = fetch_supply()
+    if not supply:
+        return 0
+    day = now.date().isoformat()
+    kept = (previous or {}).get("daily") or {}
+    for code, row in supply["goods"].items():
+        points = {point["day"]: point for point in kept.get(code, []) if isinstance(point, dict)}
+        points[day] = {"day": day, "producing": row["producing"]}
+        series = sorted(points.values(), key=lambda point: point["day"])[-SUPPLY_HISTORY_DAYS:]
+        kept[code] = series
+        first = series[0]["producing"] if series else None
+        row["since"] = series[0]["day"] if series else None
+        row["change"] = (row["producing"] - first) if (first is not None and row["producing"] is not None) else None
+    supply["daily"] = kept
+    atomic_write(store, supply)
+    atomic_write(public_dir / "supply.json", supply)
+    return 1
+
+
 def atomic_write(path, payload):
     atomic_text(path, json.dumps(payload, ensure_ascii=False, allow_nan=False,
                                  separators=(",", ":")) + "\n")
@@ -1877,6 +2009,7 @@ def main(argv=None):
         books = append_book_history(output, args.books_dir, parse_time(output["generated_at"]))
         files = publish(output, args.public_dir, args.archive_dir, args.books_dir,
                         parse_time(output["generated_at"]))
+        files += write_supply(args.public_dir, args.output.parent, parse_time(output["generated_at"]))
         print(f"Saved {output['health']['transaction_count']} transactions and {files} published files"
               f"{' plus a book snapshot' if books else ''}; status={output['status']}")
         return 0 if output["status"] == "ok" else 1
