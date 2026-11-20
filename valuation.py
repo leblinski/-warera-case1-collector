@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import statistics
+from datetime import date
 
 WINDOWS = (1, 2, 3, 7, 14, 30, 60)
 SHRINKAGE = (0.25, 0.5, 1.0, 2.0)
@@ -104,14 +105,19 @@ def _line(points):
 
 def build(window_days, k):
     """A model over a list of (day, cells) in time order, newest last, prices normalised."""
-    pooled = {}
-    for _day, cells in window_days:
+    pooled, last_seen = {}, {}
+    for day, cells in window_days:
         for key, row in cells.items():
             slot = pooled.setdefault(key, [0, 0.0, []])
             slot[0] += row[0]
             slot[1] += row[1] * row[0]
             if row[2] is not None:
                 slot[2].append(row[2])
+            last_seen[key] = day
+            # Age is not weighted - a roll's standing against its item's own level holds
+            # across the window, measured at 2.2% drift over thirty days against 2.2%
+            # within a few days. It is published so a reader can see how thin the evidence
+            # under a price is, which a sale count alone does not say.
     cells = {key: [n, total / n, (statistics.median(secs) if secs else None)]
              for key, (n, total, secs) in pooled.items() if n}
     if not cells:
@@ -130,7 +136,8 @@ def build(window_days, k):
             lines[bucket] = _line(weighted)
     whole = _line([(x, y) for points in buckets.values() for x, y, n in points
                    for _ in range(min(n, 20)) if x is not None])
-    return {"cells": cells, "main": main, "lines": lines, "whole": whole, "k": k}
+    return {"cells": cells, "main": main, "lines": lines, "whole": whole, "k": k,
+            "last_seen": last_seen}
 
 
 def price(model, key):
@@ -206,7 +213,7 @@ def fit(history):
         return None
     level = statistics.median([history[d]["level"] for d in days[-2:]])
     return {"window_days": window, "k": k, "accuracy": accuracy, "level": round(level, 4),
-            "days_available": len(days), "model": model}
+            "days_available": len(days), "as_of": days[-1], "model": model}
 
 
 def grid(model):
@@ -229,24 +236,38 @@ def grid(model):
     return [roll_key(r) for r in out]
 
 
+def _as_date(value):
+    """A stored day as a date, or None if it is missing or not one."""
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def value_item(history):
     """The published block: what every roll is worth, and how well the method is doing."""
     fitted = fit(history)
     if not fitted:
         return None
     model, level = fitted["model"], fitted["level"]
-    rolls = {}
+    last_seen, rolls = model["last_seen"], {}
+    end = _as_date(fitted["as_of"])
     for key in grid(model):
         relative = price(model, key)
         if relative is None:
             continue
         cell = model["cells"].get(key)
+        # How old the evidence is, in days, or null for a roll read off the curve alone.
+        # A price with no sales under it and one with forty are both just a number without
+        # this, and they are not the same claim.
+        seen = _as_date(last_seen.get(key))
         rolls[key] = {"price": round(relative * level, 3),
                       "sales": cell[0] if cell else 0,
+                      "last_seen_days": (end - seen).days if end and seen else None,
                       "hours_to_sell": (round(cell[2] / 3600, 2)
                                         if cell and cell[2] is not None else None)}
     return {"window_days": fitted["window_days"], "k": fitted["k"],
-            "days_available": fitted["days_available"],
+            "days_available": fitted["days_available"], "as_of": fitted["as_of"],
             "level": level, "accuracy": fitted["accuracy"],
             "priced_rolls": len(rolls),
             "traded_rolls": sum(1 for r in rolls.values() if r["sales"]),
