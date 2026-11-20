@@ -1829,14 +1829,16 @@ def build_gear_feed(payload, gear, history):
     for code, valued in gear.items():
         series = {day: row["level"] for day, row in sorted(history.get(code, {}).items())}
         items[code] = {key: valued[key] for key in
-                       ("window_days", "k", "days_available", "as_of", "level", "accuracy",
-                        "priced_rolls", "traded_rolls", "rolls")}
+                       ("source", "window_days", "k", "days_available", "as_of", "level",
+                        "accuracy", "fit_accuracy", "window_accuracy",
+                        "priced_rolls", "window_rolls", "traded_rolls", "rolls")}
         items[code]["daily_level"] = series
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "retention_days": GEAR_HISTORY_DAYS,
-            "note": "Per-roll prices, with the age of the evidence under each. "
-                    "last_seen_days is days since that roll's newest sale, null if it has "
-                    "never traded and is priced from its neighbours.",
+            "note": "Per-roll prices. source says which method won this item's bake-off - "
+                    "'window' is the roll's own recent median, 'fit' is the tuned model - "
+                    "and each roll's 'from' says which priced it. last_seen_days is days "
+                    "since that roll's newest sale, null if it has never traded.",
             "items": items}
 
 

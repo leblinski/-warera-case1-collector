@@ -34,6 +34,13 @@ SHRINKAGE = (0.25, 0.5, 1.0, 2.0)
 SCORE_DAYS = 5          # how many recent days a candidate is judged on
 MIN_CELL = 3            # sales at a roll before it is trusted on its own
 MIN_PEERS = 5           # sales in a crit bucket before it beats the whole item
+# How much better than the plain window a fitted model has to be before it is used. The
+# fit is the more complex claim and the one a reader cannot check by opening the market,
+# so it earns its place or it does not get it. Most of the bake-off's margins are hundredths
+# of a point - noise that a second week of data would reverse - and on gloves and boots
+# those coin flips were handing the fit an item it loses by a full point on an independent
+# seven-day grading. Jets clear this bar at 4.10% against 5.66% and nothing else comes close.
+FIT_MARGIN = 0.9
 
 
 def roll_key(skills):
@@ -159,10 +166,11 @@ def price(model, key):
     return (n * own + model["k"] * surface) / (n + model["k"])
 
 
-def score(history, days, window, k):
-    """Average absolute error predicting each of the last days from the ones before it."""
+def score(history, days, window, k, end=None):
+    """Average absolute error predicting the SCORE_DAYS before `end` from the days before each."""
+    end = len(days) if end is None else end
     errors = []
-    for i in range(max(1, len(days) - SCORE_DAYS), len(days)):
+    for i in range(max(1, end - SCORE_DAYS), end):
         past = [(d, history[d]["cells"]) for d in days[max(0, i - window):i]
                 if history[d]["level"]]
         if not past:
@@ -186,25 +194,84 @@ def score(history, days, window, k):
             "n": len(errors)}
 
 
+def window_price(history, days, key, upto=None):
+    """What the plain window says: this roll's own median yesterday, or the day before.
+
+    The method every consumer used before the fit existed - no pooling, no neighbours, no
+    normalisation. It is the thing to beat, not a strawman: where a roll trades several
+    times a day its own recent median is hard to improve on, and the fit's smoothing only
+    adds lag. Carried here so an item can choose it on the evidence.
+    """
+    end = len(days) if upto is None else upto
+    for day in reversed(days[max(0, end - 2):end]):
+        cell = history[day]["cells"].get(key)
+        if cell and cell[1]:
+            return cell[1]
+    return None
+
+
+def score_window(history, days, end=None):
+    """The plain window, graded exactly as a fitted model is: predict a day, unseen."""
+    end = len(days) if end is None else end
+    errors = []
+    for i in range(max(1, end - SCORE_DAYS), end):
+        for key, row in history[days[i]]["cells"].items():
+            want = window_price(history, days, key, upto=i)
+            if want is None or not row[1]:
+                continue
+            errors.append(abs(want - row[1]) / row[1])
+    if not errors:
+        return None
+    errors.sort()
+    return {"avg_pct": round(statistics.mean(errors) * 100, 3),
+            "tail_pct": round(statistics.mean(errors[int(len(errors) * 0.9):]) * 100, 3),
+            "n": len(errors)}
+
+
 def fit(history):
-    """Choose the window and the shrinkage this item's own history argues for, then fit.
+    """Choose what prices this item - the plain window, or a fitted one - on its own record.
+
+    Searching windows inside the fit could only ever pick the least-bad fit; it had no way
+    to say "do not fit this one". Measured over seven graded days the plain window beat the
+    fit on every mythic armour slot (gloves 3.45% against 4.96%) and lost to it on jets
+    (6.08% against 4.47%), which is the same split the history always showed: ten rolls
+    trading five times a day each need no help, eight hundred rolls sharing a fifth of a
+    sale each do. So the window is a candidate like any other and the item picks.
+
+    A fitted model is built either way. Where the window wins it still prices only the
+    rolls that traded, and the fit fills the rest - better than the tier average that
+    stood in for them before.
 
     History is {day: {"cells": {...}, "level": float}}, any number of days.
     """
     days = sorted(d for d in history if history[d].get("level"))
     if len(days) < 3:
         return None
+    # Hyperparameters are chosen on days earlier than the ones the two methods are then
+    # judged on. Without that the comparison is rigged: the fit picks its best of
+    # twenty-eight candidates against the very days it is scored on and the window, which
+    # has nothing to choose, gets one shot. On gloves that flattered the fit from 3.58%
+    # to 2.71% - enough to hand it a bake-off it actually loses.
+    pick_end = len(days) - SCORE_DAYS if len(days) >= 2 * SCORE_DAYS else None
     best = None
     for window in WINDOWS:
         if window > len(days):
             continue
         for k in SHRINKAGE:
-            got = score(history, days, window, k)
+            got = score(history, days, window, k, end=pick_end)
             if got and (best is None or got["avg_pct"] < best[2]["avg_pct"]):
                 best = (window, k, got)
     if best is None:
         return None
-    window, k, accuracy = best
+    window, k, chosen_on = best
+    # Both judged on the same held-out days, each with one shot.
+    accuracy = score(history, days, window, k) if pick_end else chosen_on
+    plain = score_window(history, days)
+    # A tie goes to the window: it is the simpler claim and the one a reader can check by
+    # opening the market.
+    # Strictly better, by the margin. Equal scores - including two methods that are both
+    # exactly right - are a tie, and a tie goes to the window.
+    source = "fit" if (not plain or accuracy["avg_pct"] < plain["avg_pct"] * FIT_MARGIN) else "window"
     recent = [(d, history[d]["cells"]) for d in days[-window:]]
     normalised = [(d, {key: [row[0], row[1] / history[d]["level"], row[2]]
                        for key, row in cells.items()}) for d, cells in recent]
@@ -212,8 +279,11 @@ def fit(history):
     if not model:
         return None
     level = statistics.median([history[d]["level"] for d in days[-2:]])
-    return {"window_days": window, "k": k, "accuracy": accuracy, "level": round(level, 4),
-            "days_available": len(days), "as_of": days[-1], "model": model}
+    return {"window_days": window, "k": k, "source": source,
+            "accuracy": plain if source == "window" else accuracy,
+            "fit_accuracy": accuracy, "window_accuracy": plain,
+            "level": round(level, 4), "days_available": len(days), "as_of": days[-1],
+            "model": model, "days": days}
 
 
 def grid(model):
@@ -252,23 +322,32 @@ def value_item(history):
     model, level = fitted["model"], fitted["level"]
     last_seen, rolls = model["last_seen"], {}
     end = _as_date(fitted["as_of"])
+    use_window = fitted["source"] == "window"
+    from_window = 0
     for key in grid(model):
         relative = price(model, key)
         if relative is None:
             continue
         cell = model["cells"].get(key)
-        # How old the evidence is, in days, or null for a roll read off the curve alone.
-        # A price with no sales under it and one with forty are both just a number without
-        # this, and they are not the same claim.
+        # Where the window won, it prices the rolls it can and the fit fills the rest. The
+        # window is the better estimate on a roll that trades daily and has nothing at all
+        # to say about one that does not, so taking each where it is strongest beats
+        # choosing one of them for the whole item.
+        own = window_price(history, fitted["days"], key) if use_window else None
+        if own:
+            from_window += 1
         seen = _as_date(last_seen.get(key))
-        rolls[key] = {"price": round(relative * level, 3),
+        rolls[key] = {"price": round(own if own else relative * level, 3),
+                      "from": "window" if own else "fit",
                       "sales": cell[0] if cell else 0,
                       "last_seen_days": (end - seen).days if end and seen else None,
                       "hours_to_sell": (round(cell[2] / 3600, 2)
                                         if cell and cell[2] is not None else None)}
     return {"window_days": fitted["window_days"], "k": fitted["k"],
+            "source": fitted["source"],
+            "fit_accuracy": fitted["fit_accuracy"], "window_accuracy": fitted["window_accuracy"],
             "days_available": fitted["days_available"], "as_of": fitted["as_of"],
             "level": level, "accuracy": fitted["accuracy"],
-            "priced_rolls": len(rolls),
+            "priced_rolls": len(rolls), "window_rolls": from_window,
             "traded_rolls": sum(1 for r in rolls.values() if r["sales"]),
             "rolls": rolls}
