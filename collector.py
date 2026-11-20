@@ -1709,6 +1709,14 @@ def publish(payload, public_dir, archive_dir, books_dir, now, gear=None):
 
 GEAR_HISTORY_DAYS = 70
 
+# What the fit may read, and what is kept on disk. The longest window a search considers is
+# 60 days and the walk-forward score needs 5 more, so 70 is the read window with headroom.
+# Disk keeps nearly twice that: day files are written once and never rewritten, so retention
+# is the only thing bounding repository growth, and 120 days of equipment cells is a few
+# megabytes that stops growing - while leaving enough history to try a longer window later
+# without having already thrown the days away.
+GEAR_RETAIN_DAYS = 120
+
 
 def gear_day_cells(payload):
     """The retained equipment sales, bucketed by the day they sold and the roll they carry.
@@ -1758,7 +1766,22 @@ def write_gear_history(payload, gear_dir, now):
         if existing != record:
             atomic_write(path, record)
             written += 1
+    prune_gear_history(gear_dir, now)
     return written
+
+
+def prune_gear_history(gear_dir, now, days=GEAR_RETAIN_DAYS):
+    """Drop day files past retention, so the directory stops growing rather than creeping."""
+    cutoff = (now.date() - timedelta(days=days)).isoformat()
+    dropped = 0
+    for path in sorted(Path(gear_dir).glob("*.json")):
+        if path.stem < cutoff:
+            try:
+                path.unlink()
+            except OSError:
+                continue
+            dropped += 1
+    return dropped
 
 
 def load_gear_history(payload, gear_dir, now, days=GEAR_HISTORY_DAYS):
@@ -2123,11 +2146,11 @@ def main(argv=None):
         # Equipment valuation runs off its own history rather than the week the collector
         # retains, because a jet wants sixty days of it and mythic gloves want one.
         days = write_gear_history(output, args.gear_dir, when)
-        gear = build_gear(load_gear_history(output, args.gear_dir, when))
+        history = load_gear_history(output, args.gear_dir, when)
+        gear = build_gear(history)
         files = publish(output, args.public_dir, args.archive_dir, args.books_dir, when, gear)
         if gear:
-            atomic_write(args.public_dir / "gear.json",
-                         build_gear_feed(output, gear, load_gear_history(output, args.gear_dir, when)))
+            atomic_write(args.public_dir / "gear.json", build_gear_feed(output, gear, history))
             files += 1
         files += days
         files += write_supply(args.public_dir, args.output.parent, when)

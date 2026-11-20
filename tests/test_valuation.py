@@ -148,6 +148,32 @@ class Plumbing(unittest.TestCase):
             history = c.load_gear_history(payload, Path(tmp), now)
             self.assertIn("2026-11-20", history["boots6"])
 
+    def test_old_days_are_pruned_so_the_directory_settles(self):
+        now = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            for date in ("2026-01-01", "2026-07-22", "2026-07-24", "2026-11-19"):
+                (tmp / f"{date}.json").write_text("{}")
+            dropped = c.prune_gear_history(tmp, now)       # 120 days back is 2026-07-23
+            kept = sorted(q.stem for q in tmp.glob("*.json"))
+            self.assertEqual(dropped, 2)
+            self.assertEqual(kept, ["2026-07-24", "2026-11-19"])
+
+    def test_the_read_window_fits_inside_what_disk_keeps(self):
+        # A window the fit may choose, plus the days the score holds back, must still be on
+        # disk - otherwise retention quietly caps the search.
+        self.assertLessEqual(max(v.WINDOWS) + v.SCORE_DAYS, c.GEAR_HISTORY_DAYS)
+        self.assertLess(c.GEAR_HISTORY_DAYS, c.GEAR_RETAIN_DAYS)
+
+    def test_the_history_is_committed_by_the_workflow(self):
+        # The fit reads months of its own sales. A history written only on the runner would
+        # be rebuilt from one day and discarded every run, and the model would never learn.
+        flow = Path(__file__).resolve().parent.parent / ".github/workflows/collect.yml"
+        committed = [line for line in flow.read_text(encoding="utf-8").splitlines()
+                     if line.strip().startswith("git add ")]
+        self.assertTrue(committed, "no git add step found in collect.yml")
+        self.assertTrue(any("data/gear" in line for line in committed), committed)
+
     def test_writing_twice_changes_nothing(self):
         now = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
         payload = self.payload(now)
