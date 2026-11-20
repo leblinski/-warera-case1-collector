@@ -1816,23 +1816,27 @@ def build_gear(history):
 
 
 def build_gear_feed(payload, gear, history):
-    """The small file: what each fit chose and how well it scores, plus the daily levels.
+    """Every item's fit, its per-roll prices, and the level by day.
 
-    The per-roll prices ride in each item's own shard, where a consumer who wants one item
-    does not have to fetch forty. What belongs here is the shape of the thing - which window
-    each item wanted, what it costs in accuracy, and the level by day, which is the price
-    history equipment has never had.
+    The rolls ride here as well as in each item's own shard, because the two readers want
+    opposite things. Someone pricing one jet fetches prices/jet.json and gets its sales
+    too. A page costing a craft needs six slots at once and none of the sale rows, and the
+    shards for one mythic tier are over a megabyte of them. All thirty-six items' rolls are
+    178 KB, so the whole valuation in one file is cheaper than six shards and answers every
+    tier rather than one.
     """
     items = {}
     for code, valued in gear.items():
         series = {day: row["level"] for day, row in sorted(history.get(code, {}).items())}
         items[code] = {key: valued[key] for key in
-                       ("window_days", "k", "days_available", "level", "accuracy",
-                        "priced_rolls", "traded_rolls")}
+                       ("window_days", "k", "days_available", "as_of", "level", "accuracy",
+                        "priced_rolls", "traded_rolls", "rolls")}
         items[code]["daily_level"] = series
     return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
             "retention_days": GEAR_HISTORY_DAYS,
-            "note": "Per-roll prices are in prices/<item>.json under 'valuation'.",
+            "note": "Per-roll prices, with the age of the evidence under each. "
+                    "last_seen_days is days since that roll's newest sale, null if it has "
+                    "never traded and is priced from its neighbours.",
             "items": items}
 
 
