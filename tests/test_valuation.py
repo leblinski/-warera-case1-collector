@@ -136,6 +136,44 @@ class Fitting(unittest.TestCase):
         self.assertEqual(got["rolls"][gap]["sales"], 0)
         self.assertIsNone(got["rolls"][gap]["last_seen_days"])
 
+    def test_an_item_its_own_median_already_prices_keeps_the_plain_window(self):
+        # Every roll trades every day on a steady line: the window is exact and the fit has
+        # nothing to add, so the simpler claim has to win.
+        got = v.value_item(line_history(days=30))
+        self.assertEqual(got["source"], "window")
+        self.assertTrue(all(r["from"] == "window" for r in got["rolls"].values()))
+
+    def test_the_fit_has_to_beat_the_window_by_a_margin_not_a_hair(self):
+        history = line_history(days=30)
+        fitted = v.fit(history)
+        window, fit = fitted["window_accuracy"]["avg_pct"], fitted["fit_accuracy"]["avg_pct"]
+        # Whatever the two scored, the rule is the same: a coin flip goes to the window.
+        self.assertEqual(fitted["source"],
+                         "fit" if fit < window * v.FIT_MARGIN else "window")
+
+    def test_a_window_item_still_prices_the_rolls_the_window_cannot(self):
+        # dodge 55 never trades. The window has nothing to say about it; the fit fills it,
+        # which beats leaving it out of the average entirely.
+        history = line_history(days=20)
+        gap = v.roll_key({"dodge": 55})
+        for day in history.values():
+            day["cells"].pop(gap, None)
+            day["level"] = v.day_level(day["cells"])
+        got = v.value_item(history)
+        self.assertEqual(got["source"], "window")
+        self.assertEqual(got["rolls"][gap]["from"], "fit")
+        self.assertIsNotNone(got["rolls"][gap]["price"])
+
+    def test_hyperparameters_are_chosen_on_days_the_score_does_not_grade(self):
+        # The fit picks its best of twenty-eight candidates. Scoring it on the same days it
+        # chose them from flattered it enough to win bake-offs it loses.
+        history = line_history(days=40)
+        days = sorted(history)
+        fitted = v.fit(history)
+        graded = v.score(history, days, fitted["window_days"], fitted["k"])
+        self.assertEqual(fitted["fit_accuracy"], graded)
+        self.assertGreaterEqual(len(days), 2 * v.SCORE_DAYS)
+
     def test_too_little_history_declines_to_guess(self):
         self.assertIsNone(v.fit({DAY: day({v.roll_key({"dodge": 50}): [100.0]})}))
 
