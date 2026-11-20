@@ -174,6 +174,22 @@ class Fitting(unittest.TestCase):
         self.assertEqual(fitted["fit_accuracy"], graded)
         self.assertGreaterEqual(len(days), 2 * v.SCORE_DAYS)
 
+    def test_a_window_priced_roll_carries_the_evidence_it_was_priced_on(self):
+        # A one-day fit sees only today. A roll that sold yesterday and not today is priced
+        # by the window from yesterday's sales, and has to say so: sales from that day, last
+        # seen a day ago - not "never traded", which is what the fit's own window reported.
+        history = line_history(days=20)
+        days = sorted(history)
+        quiet = v.roll_key({"dodge": 55})
+        history[days[-1]]["cells"].pop(quiet)
+        history[days[-1]]["level"] = v.day_level(history[days[-1]]["cells"])
+        got = v.value_item(history)
+        roll = got["rolls"][quiet]
+        self.assertEqual(roll["from"], "window")
+        self.assertEqual(roll["last_seen_days"], 1)
+        self.assertGreater(roll["sales"], 0)
+        self.assertEqual(roll["price"], round(history[days[-2]]["cells"][quiet][1], 3))
+
     def test_too_little_history_declines_to_guess(self):
         self.assertIsNone(v.fit({DAY: day({v.roll_key({"dodge": 50}): [100.0]})}))
 

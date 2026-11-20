@@ -194,6 +194,16 @@ def score(history, days, window, k, end=None):
             "n": len(errors)}
 
 
+def window_cell(history, days, key, upto=None):
+    """The cell the plain window reads: this roll on the newest of the last two days it traded."""
+    end = len(days) if upto is None else upto
+    for day in reversed(days[max(0, end - 2):end]):
+        cell = history[day]["cells"].get(key)
+        if cell and cell[1]:
+            return cell
+    return None
+
+
 def window_price(history, days, key, upto=None):
     """What the plain window says: this roll's own median yesterday, or the day before.
 
@@ -202,12 +212,8 @@ def window_price(history, days, key, upto=None):
     times a day its own recent median is hard to improve on, and the fit's smoothing only
     adds lag. Carried here so an item can choose it on the evidence.
     """
-    end = len(days) if upto is None else upto
-    for day in reversed(days[max(0, end - 2):end]):
-        cell = history[day]["cells"].get(key)
-        if cell and cell[1]:
-            return cell[1]
-    return None
+    cell = window_cell(history, days, key, upto)
+    return cell[1] if cell else None
 
 
 def score_window(history, days, end=None):
@@ -264,7 +270,14 @@ def fit(history):
     if best is None:
         return None
     window, k, chosen_on = best
-    # Both judged on the same held-out days, each with one shot.
+    # Both judged on the same held-out days, each with one shot. Note what this does not
+    # hold out: the choice between them is made on these same days, so the published
+    # accuracy is the winner's score on the days that picked it, and reads a little better
+    # than the method will do next. Deciding on earlier days instead was tried and replayed
+    # over fourteen days: the honest choice priced worse (2.80% average next-day error
+    # against 2.69%, the plain yesterday-median baseline 2.80%), because five-day-old
+    # evidence is staler than the bias it removes. So the decision stays where it prices
+    # best, and readers are told what the number is rather than that it is held out.
     accuracy = score(history, days, window, k) if pick_end else chosen_on
     plain = score_window(history, days)
     # A tie goes to the window: it is the simpler claim and the one a reader can check by
@@ -320,24 +333,33 @@ def value_item(history):
     if not fitted:
         return None
     model, level = fitted["model"], fitted["level"]
-    last_seen, rolls = model["last_seen"], {}
+    rolls = {}
     end = _as_date(fitted["as_of"])
     use_window = fitted["source"] == "window"
+    # When a roll last traded is read off every day held, not off the fit's own window.
+    # A one-day fit only sees today, so a roll that sold four hundred times this season and
+    # last sold yesterday came out as "never traded" - and was published that way beside a
+    # price taken from yesterday's sale.
+    last_seen = {}
+    for day in fitted["days"]:
+        for key in history[day]["cells"]:
+            last_seen[key] = day
     from_window = 0
     for key in grid(model):
         relative = price(model, key)
         if relative is None:
             continue
-        cell = model["cells"].get(key)
         # Where the window won, it prices the rolls it can and the fit fills the rest. The
         # window is the better estimate on a roll that trades daily and has nothing at all
         # to say about one that does not, so taking each where it is strongest beats
-        # choosing one of them for the whole item.
-        own = window_price(history, fitted["days"], key) if use_window else None
+        # choosing one of them for the whole item. The count and time to sell go with the
+        # price: a window price is that day's sales, a fitted one the fit's pooled cell.
+        own = window_cell(history, fitted["days"], key) if use_window else None
+        cell = own or model["cells"].get(key)
         if own:
             from_window += 1
         seen = _as_date(last_seen.get(key))
-        rolls[key] = {"price": round(own if own else relative * level, 3),
+        rolls[key] = {"price": round(own[1] if own else relative * level, 3),
                       "from": "window" if own else "fit",
                       "sales": cell[0] if cell else 0,
                       "last_seen_days": (end - seen).days if end and seen else None,
