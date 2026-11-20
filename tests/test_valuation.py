@@ -110,6 +110,32 @@ class Fitting(unittest.TestCase):
         priced = got["rolls"][v.roll_key({"dodge": 50})]["price"]
         self.assertGreater(priced, (100 + 2 * 50) * 1.10 ** 9)
 
+    def test_a_roll_still_trading_reads_as_current(self):
+        got = v.value_item(line_history(days=20))
+        self.assertTrue(all(r["last_seen_days"] == 0 for r in got["rolls"].values()),
+                        {k: r["last_seen_days"] for k, r in got["rolls"].items()})
+
+    def test_the_model_remembers_the_newest_day_each_roll_traded(self):
+        # Two rolls priced the same way are not the same claim if one last traded today and
+        # the other three weeks ago, and a sale count does not separate them.
+        fresh, stale = v.roll_key({"dodge": 50}), v.roll_key({"dodge": 51})
+        model = v.build([("2026-11-01", {fresh: [4, 1.0, None], stale: [4, 1.1, None]}),
+                         ("2026-11-09", {fresh: [4, 1.0, None]})], k=1.0)
+        self.assertEqual(model["last_seen"][fresh], "2026-11-09")
+        self.assertEqual(model["last_seen"][stale], "2026-11-01")
+
+    def test_a_roll_read_off_the_curve_admits_it_has_no_evidence(self):
+        # dodge 55 never trades, but it sits inside the range, so it is still priced.
+        history = line_history(days=20)
+        gap = v.roll_key({"dodge": 55})
+        for day in history.values():
+            day["cells"].pop(gap, None)
+            day["level"] = v.day_level(day["cells"])
+        got = v.value_item(history)
+        self.assertIsNotNone(got["rolls"][gap]["price"])
+        self.assertEqual(got["rolls"][gap]["sales"], 0)
+        self.assertIsNone(got["rolls"][gap]["last_seen_days"])
+
     def test_too_little_history_declines_to_guess(self):
         self.assertIsNone(v.fit({DAY: day({v.roll_key({"dodge": 50}): [100.0]})}))
 
