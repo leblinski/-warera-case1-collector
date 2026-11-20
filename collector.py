@@ -20,6 +20,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+import valuation
+
 ROOT = Path(__file__).resolve().parent
 GATEWAY = "https://gateway.warerastats.io/trpc"
 OFFICIAL = "https://api2.warera.io/trpc"
@@ -1146,9 +1148,10 @@ def shard_rows(code, category):
     return rows, [json.loads(key) for key in keys]
 
 
-def build_shard(code, category, payload):
+def build_shard(code, category, payload, valued=None):
     rows, rolls = shard_rows(code, category)
     return {"item_code": code, "name": category["name"], "tier": category["tier"],
+            "valuation": valued,
             "rarity": category["rarity"], "slot": category["slot"],
             "generated_at": payload["generated_at"], "status": category["status"],
             "last_success_at": category["last_success_at"],
@@ -1672,7 +1675,7 @@ def build_trend(books_dir, now):
             "snapshots_read": len(series), "goods": goods}
 
 
-def publish(payload, public_dir, archive_dir, books_dir, now):
+def publish(payload, public_dir, archive_dir, books_dir, now, gear=None):
     """Write the consumer-facing artifacts. These are served, not committed; only the
     archive is durable, which is what keeps repository growth flat."""
     public_dir, archive_dir = Path(public_dir), Path(archive_dir)
@@ -1684,7 +1687,8 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
     atomic_write(public_dir / "flow.json", build_flow(payload, now))
     written = 6
     for code, category in payload["categories"].items():
-        atomic_write(public_dir / "prices" / f"{code}.json", build_shard(code, category, payload))
+        atomic_write(public_dir / "prices" / f"{code}.json",
+                     build_shard(code, category, payload, (gear or {}).get(code)))
         written += 1
     for code, row in payload["commodities"].items():
         atomic_write(public_dir / "trades" / f"{code}.json", build_trades(code, row, payload))
@@ -1701,6 +1705,112 @@ def publish(payload, public_dir, archive_dir, books_dir, now):
             written += 1
     written += write_trade_archive(payload, archive_dir, now)
     return written
+
+
+GEAR_HISTORY_DAYS = 70
+
+
+def gear_day_cells(payload):
+    """The retained equipment sales, bucketed by the day they sold and the roll they carry.
+
+    A day and a roll is as fine as the fit needs, and it is what makes seventy days of this
+    affordable to keep: the spread within one roll on one day is the only thing lost, and
+    nothing downstream asks for it.
+    """
+    days = {}
+    for code, category in payload.get("categories", {}).items():
+        for stored in category.get("transactions", []):
+            tx = unpack_transaction(stored, code)
+            if not tx["eligible_for_comps"] or not tx.get("roll_key"):
+                continue
+            skills = (json.loads(tx["roll_key"]) or {}).get("skills") or {}
+            if not skills:
+                continue
+            day = str(tx["sold_at"])[:10]
+            days.setdefault(day, {}).setdefault(code, []).append(
+                (valuation.roll_key(skills), tx["unit_price"], tx["time_to_sell_seconds"]))
+    return days
+
+
+def write_gear_history(payload, gear_dir, now):
+    """One file a day of equipment cells, and today's is deliberately not written.
+
+    A day still running changes on every collection, and a file rewritten hourly is a commit
+    hourly. Finished days settle, so they are written once and touched again only if a late
+    sale arrives inside the week the collector still retains. Today's cells are not lost -
+    they are handed to the fit in memory by load_gear_history().
+    """
+    today, written = now.date().isoformat(), 0
+    for day, items in gear_day_cells(payload).items():
+        if day >= today:
+            continue
+        record = {"schema_version": SCHEMA_VERSION, "date": day, "items": {}}
+        for code, sales in sorted(items.items()):
+            cells = valuation.aggregate(sales)
+            record["items"][code] = {"cells": cells, "level": valuation.day_level(cells)}
+        path = Path(gear_dir) / f"{day}.json"
+        existing = None
+        if path.exists():
+            try:
+                existing = json.loads(path.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                existing = None
+        if existing != record:
+            atomic_write(path, record)
+            written += 1
+    return written
+
+
+def load_gear_history(payload, gear_dir, now, days=GEAR_HISTORY_DAYS):
+    """Every item's recent days, newest included from memory rather than from disk."""
+    history = {}
+    paths = sorted(Path(gear_dir).glob("*.json"))[-days:] if Path(gear_dir).exists() else []
+    for path in paths:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            continue
+        for code, row in (record.get("items") or {}).items():
+            if row.get("level"):
+                history.setdefault(code, {})[record["date"]] = row
+    today = now.date().isoformat()
+    for code, sales in gear_day_cells(payload).get(today, {}).items():
+        cells = valuation.aggregate(sales)
+        level = valuation.day_level(cells)
+        if level:
+            history.setdefault(code, {})[today] = {"cells": cells, "level": level}
+    return history
+
+
+def build_gear(history):
+    """Price every roll of every item whose history can carry a fit."""
+    out = {}
+    for code, item_history in sorted(history.items()):
+        valued = valuation.value_item(item_history)
+        if valued:
+            out[code] = valued
+    return out
+
+
+def build_gear_feed(payload, gear, history):
+    """The small file: what each fit chose and how well it scores, plus the daily levels.
+
+    The per-roll prices ride in each item's own shard, where a consumer who wants one item
+    does not have to fetch forty. What belongs here is the shape of the thing - which window
+    each item wanted, what it costs in accuracy, and the level by day, which is the price
+    history equipment has never had.
+    """
+    items = {}
+    for code, valued in gear.items():
+        series = {day: row["level"] for day, row in sorted(history.get(code, {}).items())}
+        items[code] = {key: valued[key] for key in
+                       ("window_days", "k", "days_available", "level", "accuracy",
+                        "priced_rolls", "traded_rolls")}
+        items[code]["daily_level"] = series
+    return {"schema_version": SCHEMA_VERSION, "generated_at": payload["generated_at"],
+            "retention_days": GEAR_HISTORY_DAYS,
+            "note": "Per-roll prices are in prices/<item>.json under 'valuation'.",
+            "items": items}
 
 
 SUPPLY_URL = "https://spywarera.com/economy/companies"
@@ -1964,6 +2074,8 @@ def validate(payload, require_healthy=False, current_time=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "data/warera_case1_market.json")
+    parser.add_argument("--gear-dir", type=Path, default=ROOT / "data/gear",
+                        help="Where the daily equipment cells are kept; the valuation reads them.")
     parser.add_argument("--public-dir", type=Path, default=ROOT / "public",
                         help="Consumer-facing index/summary/price shards; served, not committed")
     parser.add_argument("--books-dir", type=Path, default=ROOT / "data/books",
@@ -2007,11 +2119,21 @@ def main(argv=None):
         # The snapshot is appended before the publication reads it, so the served history
         # ends at the run that just happened rather than the one before it.
         books = append_book_history(output, args.books_dir, parse_time(output["generated_at"]))
-        files = publish(output, args.public_dir, args.archive_dir, args.books_dir,
-                        parse_time(output["generated_at"]))
-        files += write_supply(args.public_dir, args.output.parent, parse_time(output["generated_at"]))
+        when = parse_time(output["generated_at"])
+        # Equipment valuation runs off its own history rather than the week the collector
+        # retains, because a jet wants sixty days of it and mythic gloves want one.
+        days = write_gear_history(output, args.gear_dir, when)
+        gear = build_gear(load_gear_history(output, args.gear_dir, when))
+        files = publish(output, args.public_dir, args.archive_dir, args.books_dir, when, gear)
+        if gear:
+            atomic_write(args.public_dir / "gear.json",
+                         build_gear_feed(output, gear, load_gear_history(output, args.gear_dir, when)))
+            files += 1
+        files += days
+        files += write_supply(args.public_dir, args.output.parent, when)
         print(f"Saved {output['health']['transaction_count']} transactions and {files} published files"
-              f"{' plus a book snapshot' if books else ''}; status={output['status']}")
+              f"{' plus a book snapshot' if books else ''}"
+              f"{f'; valued {len(gear)} equipment items' if gear else ''}; status={output['status']}")
         return 0 if output["status"] == "ok" else 1
     except (CollectionError, OSError, ValueError, KeyError, TypeError) as exc:
         print(f"Collector failed: {exc}", file=sys.stderr)
