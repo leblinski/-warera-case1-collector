@@ -235,6 +235,46 @@ class Fitting(unittest.TestCase):
         self.assertAlmostEqual(got["rolls"][edge]["price"], 100.0 + 2 * 60, delta=3)
         self.assertEqual(got["rolls"][edge]["last_seen_days"], 2)
 
+    def _recent_history(self, today_sales):
+        """A steady item; today holds `today_sales` sales of dodge 55 at a new price."""
+        history = line_history(days=20)
+        days = sorted(history)
+        today = days[-1]
+        key = v.roll_key({"dodge": 55})
+        cells = dict(history[today]["cells"])
+        cells[key] = [today_sales, 300.0, 600]
+        history[today] = {"cells": cells, "level": v.day_level(cells)}
+        return history, today, key
+
+    def test_ten_sales_today_price_a_roll_on_their_own(self):
+        history, today, key = self._recent_history(v.TODAY_MIN_SALES)
+        last24 = {key: [v.TODAY_MIN_SALES + 30, 250.0, 600]}
+        got = v.value_item(history, last24=last24, today=today)
+        self.assertEqual(got["rolls"][key]["price"], 300.0)
+        self.assertEqual(got["rolls"][key]["sales"], v.TODAY_MIN_SALES)
+
+    def test_fewer_than_ten_today_and_the_last_24_hours_price_it(self):
+        history, today, key = self._recent_history(v.TODAY_MIN_SALES - 1)
+        last24 = {key: [40, 250.0, 900]}
+        got = v.value_item(history, last24=last24, today=today)
+        self.assertEqual(got["rolls"][key]["price"], 250.0)
+        self.assertEqual(got["rolls"][key]["sales"], 40)
+        self.assertEqual(got["rolls"][key]["from"], "window")
+
+    def test_nothing_in_24_hours_falls_back_to_the_last_day_held(self):
+        history = line_history(days=20)
+        days = sorted(history)
+        key = v.roll_key({"dodge": 55})
+        history[days[-1]]["cells"].pop(key)
+        history[days[-1]]["level"] = v.day_level(history[days[-1]]["cells"])
+        got = v.value_item(history, last24={}, today=days[-1])
+        self.assertEqual(got["rolls"][key]["price"], round(history[days[-2]]["cells"][key][1], 3))
+
+    def test_without_the_last_24_hours_the_calendar_rule_is_unchanged(self):
+        history, today, key = self._recent_history(1)
+        got = v.value_item(history)
+        self.assertEqual(got["rolls"][key]["price"], 300.0)
+
     def test_too_little_history_declines_to_guess(self):
         self.assertIsNone(v.fit({DAY: day({v.roll_key({"dodge": 50}): [100.0]})}))
 
@@ -272,6 +312,14 @@ class Plumbing(unittest.TestCase):
             self.assertEqual(on_disk, ["2026-11-18", "2026-11-19"])
             history = c.load_gear_history(payload, Path(tmp), now)
             self.assertIn("2026-11-20", history["boots6"])
+
+    def test_recent_cells_hold_the_last_24_hours_only(self):
+        # The fixture's sales are 2h, 26h and 50h old: only the first is in the last day.
+        now = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)
+        recent = c.gear_recent_cells(self.payload(now), now)
+        self.assertEqual(list(recent), ["boots6"])
+        self.assertEqual(recent["boots6"][v.roll_key({"dodge": 55})][0], 1)
+        self.assertEqual(recent["boots6"][v.roll_key({"dodge": 55})][1], 400.0)
 
     def test_old_days_are_pruned_so_the_directory_settles(self):
         now = datetime(2026, 11, 20, 12, tzinfo=timezone.utc)

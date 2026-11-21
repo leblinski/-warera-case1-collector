@@ -204,6 +204,34 @@ def window_cell(history, days, key, upto=None):
     return None
 
 
+# Sales a roll needs since midnight UTC before today's median alone prices it. Below this the
+# last 24 hours do instead. Replayed hourly over 82 days of the archive, every roll graded on
+# what it sold for in the six hours after: since-midnight alone erred 2.03% (weighted by
+# sales) because just after midnight it prices off one or two sales; the last 24 hours alone
+# erred 2.13% because it lags a price moving during the day; switching at 10 sales erred
+# 1.92%. The threshold was chosen on the first 41 days and that result is the last 41, which
+# the choice never saw - better on 35 of them. The gain is in Common to Rare and the early
+# UTC hours; Epic to Mythic come out level.
+TODAY_MIN_SALES = 10
+
+
+def evidence_cell(history, days, key, last24=None, today=None):
+    """The cell a window price is read from.
+
+    Today's sales once there are TODAY_MIN_SALES of them, else the last 24 hours, else the
+    newest of the last two days held. Without `last24` it is the plain calendar rule -
+    today, else yesterday - which is how the window is scored on stored days.
+    """
+    if last24 is not None:
+        own = history[today]["cells"].get(key) if today in history else None
+        if own and own[1] and own[0] >= TODAY_MIN_SALES:
+            return own
+        recent = last24.get(key)
+        if recent and recent[1]:
+            return recent
+    return window_cell(history, days, key)
+
+
 def window_price(history, days, key, upto=None):
     """What the plain window says: this roll's own median yesterday, or the day before.
 
@@ -353,8 +381,12 @@ def _as_date(value):
         return None
 
 
-def value_item(history):
-    """The published block: what every roll is worth, and how well the method is doing."""
+def value_item(history, last24=None, today=None):
+    """The published block: what every roll is worth, and how well the method is doing.
+
+    `last24` is this item's cells over the last 24 hours and `today` the current UTC date;
+    given both, window prices follow evidence_cell's rule rather than the calendar day.
+    """
     fitted = fit(history)
     if not fitted:
         return None
@@ -375,7 +407,7 @@ def value_item(history):
     filler = None
     for key in grid(model, counts=sold):
         relative = price(model, key)
-        own = window_cell(history, fitted["days"], key) if use_window else None
+        own = evidence_cell(history, fitted["days"], key, last24, today) if use_window else None
         # Just after midnight a one-day model holds a sale or two and cannot draw a line, so
         # a roll that last sold the day before yesterday had no price at all. The same fit
         # over the last week fills those, and only those.

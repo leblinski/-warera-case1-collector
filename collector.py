@@ -1740,6 +1740,31 @@ def gear_day_cells(payload):
     return days
 
 
+def gear_recent_cells(payload, now, hours=24):
+    """Each item's equipment cells over the last `hours`, the same sales gear_day_cells reads.
+
+    A calendar day just after midnight holds a sale or two, so a window price read off today
+    alone was a coin toss for the first hours of every UTC day; below valuation's
+    TODAY_MIN_SALES the last 24 hours price a roll instead.
+    """
+    cutoff, items = now - timedelta(hours=hours), {}
+    for code, category in payload.get("categories", {}).items():
+        for stored in category.get("transactions", []):
+            tx = unpack_transaction(stored, code)
+            if not tx["eligible_for_comps"] or not tx.get("roll_key"):
+                continue
+            skills = (json.loads(tx["roll_key"]) or {}).get("skills") or {}
+            try:
+                sold = parse_time(tx["sold_at"])
+            except CollectionError:
+                continue
+            if not skills or not cutoff < sold <= now:
+                continue
+            items.setdefault(code, []).append(
+                (valuation.roll_key(skills), tx["unit_price"], tx["time_to_sell_seconds"]))
+    return {code: valuation.aggregate(sales) for code, sales in items.items()}
+
+
 def write_gear_history(payload, gear_dir, now):
     """One file a day of equipment cells, and today's is deliberately not written.
 
@@ -1805,11 +1830,16 @@ def load_gear_history(payload, gear_dir, now, days=GEAR_HISTORY_DAYS):
     return history
 
 
-def build_gear(history):
-    """Price every roll of every item whose history can carry a fit."""
+def build_gear(history, recent=None, today=None):
+    """Price every roll of every item whose history can carry a fit.
+
+    `recent` is gear_recent_cells(); with it, window prices switch from today's sales to the
+    last 24 hours until today has enough of its own.
+    """
     out = {}
     for code, item_history in sorted(history.items()):
-        valued = valuation.value_item(item_history)
+        last24 = None if recent is None else recent.get(code, {})
+        valued = valuation.value_item(item_history, last24=last24, today=today)
         if valued:
             out[code] = valued
     return out
@@ -2153,7 +2183,7 @@ def main(argv=None):
         # retains, because a jet wants sixty days of it and mythic gloves want one.
         days = write_gear_history(output, args.gear_dir, when)
         history = load_gear_history(output, args.gear_dir, when)
-        gear = build_gear(history)
+        gear = build_gear(history, gear_recent_cells(output, when), when.date().isoformat())
         files = publish(output, args.public_dir, args.archive_dir, args.books_dir, when, gear)
         if gear:
             atomic_write(args.public_dir / "gear.json", build_gear_feed(output, gear, history))
