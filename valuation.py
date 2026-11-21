@@ -299,23 +299,49 @@ def fit(history):
             "model": model, "days": days}
 
 
-def grid(model):
-    """Every roll the item has been seen in, filled out across the range of its stats."""
-    rolls = [parse_roll(key) for key in model["cells"]]
+# A stat value at the edge of an item's range has to carry at least this share of the item's
+# sales to widen it. Seventy days hold a handful of sales outside every band - six rifle
+# sales at a Common crit, one Uncommon boot at a Common dodge - and the grid is a product of
+# ranges, so one stray sale doubled the sniper to 300 rolls. Real edge values carry percents.
+EDGE_SHARE = 0.002
+# How far back a roll the item's own model cannot price is filled from.
+FILL_DAYS = 7
+
+
+def grid(model, counts=None):
+    """Every roll the item has been seen in, filled out across the range of its stats.
+
+    `counts` is {roll: sales} over the history held. Without it the range is read off the
+    model's own cells, which for a one-day fit is whatever has traded since midnight UTC:
+    at 07:30 the top and bottom Mythic glove rolls had not sold yet and were dropped from
+    the feed outright, and just after midnight gloves4 was down to a single roll.
+    """
+    counts = counts if counts else {key: cell[0] for key, cell in model["cells"].items()}
+    rolls = [(parse_roll(key), n) for key, n in counts.items()]
     if not rolls:
         return []
-    names = sorted({n for r in rolls for n in r})
+    total = sum(n for _, n in rolls) or 1
+    names = sorted({name for r, _ in rolls for name in r})
     spans = {}
     for name in names:
-        seen = sorted({r[name] for r in rolls if name in r})
+        by_value = {}
+        for r, n in rolls:
+            if name in r:
+                by_value[r[name]] = by_value.get(r[name], 0) + n
+        seen = sorted(by_value)
         if not seen or not all(isinstance(v, int) for v in seen):
-            return [roll_key(r) for r in rolls]
-        spans[name] = range(min(seen), max(seen) + 1)
+            return [roll_key(r) for r, _ in rolls]
+        # Trim strays off the ends only; a gap inside the range is still filled.
+        while len(seen) > 1 and by_value[seen[0]] < EDGE_SHARE * total:
+            seen.pop(0)
+        while len(seen) > 1 and by_value[seen[-1]] < EDGE_SHARE * total:
+            seen.pop()
+        spans[name] = range(seen[0], seen[-1] + 1)
     out = [{}]
     for name in names:
         out = [dict(base, **{name: v}) for base in out for v in spans[name]]
         if len(out) > 5000:
-            return [roll_key(r) for r in rolls]
+            return [roll_key(r) for r, _ in rolls]
     return [roll_key(r) for r in out]
 
 
@@ -340,21 +366,35 @@ def value_item(history):
     # A one-day fit only sees today, so a roll that sold four hundred times this season and
     # last sold yesterday came out as "never traded" - and was published that way beside a
     # price taken from yesterday's sale.
-    last_seen = {}
+    last_seen, sold = {}, {}
     for day in fitted["days"]:
-        for key in history[day]["cells"]:
+        for key, cell in history[day]["cells"].items():
             last_seen[key] = day
+            sold[key] = sold.get(key, 0) + cell[0]
     from_window = 0
-    for key in grid(model):
+    filler = None
+    for key in grid(model, counts=sold):
         relative = price(model, key)
-        if relative is None:
+        own = window_cell(history, fitted["days"], key) if use_window else None
+        # Just after midnight a one-day model holds a sale or two and cannot draw a line, so
+        # a roll that last sold the day before yesterday had no price at all. The same fit
+        # over the last week fills those, and only those.
+        if relative is None and not own:
+            if filler is None:
+                recent = [d for d in fitted["days"][-FILL_DAYS:] if history[d]["level"]]
+                filler = build([(d, {k: [row[0], row[1] / history[d]["level"], row[2]]
+                                     for k, row in history[d]["cells"].items()})
+                                for d in recent], fitted["k"]) or {}
+            relative = price(filler, key) if filler else None
+        # A roll the window can price does not need the fit to have an opinion: on a quiet
+        # morning a one-day model has too few cells to draw a line at all.
+        if relative is None and not own:
             continue
         # Where the window won, it prices the rolls it can and the fit fills the rest. The
         # window is the better estimate on a roll that trades daily and has nothing at all
         # to say about one that does not, so taking each where it is strongest beats
         # choosing one of them for the whole item. The count and time to sell go with the
         # price: a window price is that day's sales, a fitted one the fit's pooled cell.
-        own = window_cell(history, fitted["days"], key) if use_window else None
         cell = own or model["cells"].get(key)
         if own:
             from_window += 1
